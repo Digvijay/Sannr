@@ -115,11 +115,8 @@ public class SannrValidationSchemaFilter : ISchemaFilter
                 break;
 
             case FileExtensionsAttribute fileExt:
-                if (!string.IsNullOrEmpty(fileExt.Extensions))
-                {
-                    schema.Format = "file";
-                    // Could add pattern validation for extensions
-                }
+                schema.Format = "file";
+                // Could add pattern validation for extensions if specified
                 break;
         }
     }

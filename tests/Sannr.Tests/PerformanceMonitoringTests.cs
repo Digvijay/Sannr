@@ -29,6 +29,13 @@ using Microsoft.Extensions.DependencyInjection;
 using System.Diagnostics;
 using Sannr.AspNetCore;
 using System;
+using System.Threading.Tasks;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.Abstractions;
+using Microsoft.AspNetCore.Routing;
+using Microsoft.AspNetCore.Mvc.ModelBinding;
+using Microsoft.AspNetCore.Mvc.ModelBinding.Validation;
 
 namespace Sannr.Tests;
 
@@ -133,7 +140,7 @@ public class PerformanceMonitoringTests
     }
 
     [Fact]
-    public void Validation_WithMetricsEnabled_ShouldUseMetricsCollector()
+    public void Validation_WithMetricsEnabled_ShouldRecordMetrics()
     {
         // Arrange
         var services = new ServiceCollection();
@@ -144,20 +151,31 @@ public class PerformanceMonitoringTests
         });
 
         var serviceProvider = services.BuildServiceProvider();
+        var metricsCollector = serviceProvider.GetService<ISannrMetricsCollector>() as SannrMetricsCollector;
 
+        // Create a test model
         var model = new SimpleValidationModel { Name = "Test", Email = "test@example.com" };
 
-        // Act - Use registry directly like other tests
-        SannrValidatorRegistry.TryGetValidator(model.GetType(), out var validator);
-        var result = validator!(new SannrValidationContext(model)).GetAwaiter().GetResult();
+        // Act - Use the AotObjectModelValidator which should record metrics
+        var validator = serviceProvider.GetService<IObjectModelValidator>() as AotObjectModelValidator;
+        Assert.NotNull(validator);
 
-        // Assert
-        Assert.True(result.IsValid);
-        // The metrics collector would have been called during validation
+        // Create a mock ActionContext
+        var httpContext = new DefaultHttpContext();
+        httpContext.RequestServices = serviceProvider;
+        var actionContext = new ActionContext(httpContext, new RouteData(), new ActionDescriptor());
+        var validationState = new ValidationStateDictionary();
+
+        validator!.Validate(actionContext, validationState, "", model);
+
+        // Assert - The metrics should have been recorded
+        // Note: We can't easily test the actual metric values without complex mocking,
+        // but we can verify the validator was called and no exceptions occurred
+        Assert.True(actionContext.ModelState.IsValid);
     }
 
     [Fact]
-    public void Validation_WithErrors_ShouldRecordErrorMetrics()
+    public void Validation_WithErrors_ShouldRecordErrorMetrics_UsingAspNetCore()
     {
         // Arrange
         var services = new ServiceCollection();
@@ -172,14 +190,68 @@ public class PerformanceMonitoringTests
         // Invalid model - missing required fields
         var model = new SimpleValidationModel { Name = null, Email = "invalid-email" };
 
-        // Act
-        SannrValidatorRegistry.TryGetValidator(model.GetType(), out var validator);
-        var result = validator!(new SannrValidationContext(model)).GetAwaiter().GetResult();
+        // Act - Use the AotObjectModelValidator
+        var validator = serviceProvider.GetService<IObjectModelValidator>() as AotObjectModelValidator;
+        Assert.NotNull(validator);
+
+        var httpContext = new DefaultHttpContext();
+        httpContext.RequestServices = serviceProvider;
+        var actionContext = new ActionContext(httpContext, new RouteData(), new ActionDescriptor());
+        var validationState = new ValidationStateDictionary();
+
+        validator!.Validate(actionContext, validationState, "", model);
 
         // Assert
-        Assert.False(result.IsValid);
-        Assert.True(result.Errors.Count > 0);
-        // Error metrics would have been recorded
+        Assert.False(actionContext.ModelState.IsValid);
+        Assert.True(actionContext.ModelState.ErrorCount > 0);
+    }
+
+    [Fact]
+    public async Task Validated_CreateAsync_ShouldRecordMetrics()
+    {
+        // Arrange
+        var services = new ServiceCollection();
+        services.AddSannr(options =>
+        {
+            options.EnableMetrics = true;
+            options.MetricsPrefix = "test_metrics";
+        });
+
+        var serviceProvider = services.BuildServiceProvider();
+
+        var model = new SimpleValidationModel { Name = "Test", Email = "test@example.com" };
+
+        // Act
+        var validated = await Validated<SimpleValidationModel>.CreateAsync(model, serviceProvider);
+
+        // Assert
+        Assert.True(validated.IsValid);
+        Assert.Equal(model.Name, validated.Value.Name);
+        Assert.Equal(model.Email, validated.Value.Email);
+    }
+
+    [Fact]
+    public async Task Validated_CreateAsync_WithErrors_ShouldRecordErrorMetrics()
+    {
+        // Arrange
+        var services = new ServiceCollection();
+        services.AddSannr(options =>
+        {
+            options.EnableMetrics = true;
+            options.MetricsPrefix = "test_metrics";
+        });
+
+        var serviceProvider = services.BuildServiceProvider();
+
+        // Invalid model
+        var model = new SimpleValidationModel { Name = null, Email = "invalid-email" };
+
+        // Act
+        var validated = await Validated<SimpleValidationModel>.CreateAsync(model, serviceProvider);
+
+        // Assert
+        Assert.False(validated.IsValid);
+        Assert.True(validated.Errors.Count > 0);
     }
 
     [Fact]

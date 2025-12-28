@@ -202,28 +202,12 @@ Structured error responses with problem details and correlation IDs.
 }
 ```
 
-### 8. **Testing Utilities**
+### 6. **Testing Utilities** ❌ NOT IMPLEMENTED
 Comprehensive testing helpers for validation scenarios.
 
-```csharp
-// Enhanced testing support
-[Theory]
-[ValidModelData(typeof(UserModel))] // Generates valid test data
-public void ValidUserModel_PassesValidation(UserModel model)
-{
-    var result = model.Validate();
-    Assert.True(result.IsValid);
-}
+**Status**: Not implemented due to AOT compatibility requirements. Testing utilities would require reflection to dynamically generate test data, which violates Sannr's commitment to pure AOT compatibility.
 
-[Theory]
-[InvalidModelData(typeof(UserModel), "Email")] // Generates invalid test data
-public void InvalidEmail_FailsValidation(UserModel model)
-{
-    var result = model.Validate();
-    Assert.False(result.IsValid);
-    Assert.Contains(result.Errors, e => e.PropertyName == "Email");
-}
-```
+**Alternative**: Use standard xUnit data attributes or manual test data generation for testing Sannr validation.
 
 ### 9. **Migration Tools**
 Easy migration from other validation libraries.
@@ -267,7 +251,7 @@ public class UserModel
 ### Phase 2 (Medium Impact, Medium Effort)
 4. **Built-in Business Rule Validators** ✅ IMPLEMENTED - Addresses common validation needs
 5. **Performance Monitoring & Diagnostics** ✅ IMPLEMENTED - Production readiness
-6. **Testing Utilities** - Improved testing workflow
+6. **Testing Utilities** ❌ NOT IMPLEMENTED - Requires reflection, conflicts with AOT goals
 
 ### Phase 3 (High Impact, High Effort)
 7. **Visual Studio Integration** - Premium developer experience
