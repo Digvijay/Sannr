@@ -182,7 +182,54 @@ public class EmploymentModel : Sannr.IValidatableObject
 
 ---
 
-## � OpenAPI/Swagger Integration
+## 🔍 Advanced Error Handling
+
+Sannr provides structured, enterprise-grade error responses with correlation IDs, validation rule metadata, and RFC 7807 Problem Details compliance.
+
+### Configuration
+
+```csharp
+builder.Services.AddSannr(options =>
+{
+    options.EnableEnhancedErrorResponses = true;
+    options.IncludeValidationRuleMetadata = true;
+    options.IncludeValidationDuration = false;
+});
+```
+
+### Enhanced Error Responses
+
+```json
+{
+    "type": "https://tools.ietf.org/html/rfc7231#section-6.5.1",
+    "title": "One or more validation errors occurred.",
+    "status": 400,
+    "correlationId": "550e8400-e29b-41d4-a716-446655440000",
+    "modelType": "UserRegistration",
+    "timestamp": "2024-01-15T10:30:00.0000000Z",
+    "validationDurationMs": 15.5,
+    "errors": {
+        "Email": ["The Email field is required."],
+        "Age": ["The Age must be between 18 and 120."]
+    },
+    "validationRules": {
+        "Email": { "required": true, "email": true },
+        "Age": { "range": { "min": 18, "max": 120 } }
+    }
+}
+```
+
+**Features:**
+- **Correlation IDs**: Automatic generation or extraction from `X-Correlation-ID` header
+- **Validation Rule Metadata**: Structured information about applied validation rules
+- **Model Type Information**: Identifies which model type was validated
+- **Timestamps**: When validation occurred
+- **Performance Metrics**: Optional validation duration tracking
+- **Problem Details**: RFC 7807 compliant error responses
+
+---
+
+## 📋 OpenAPI/Swagger Integration
 
 Sannr automatically generates OpenAPI schema constraints from your validation attributes, ensuring your API documentation stays in sync with your validation rules.
 

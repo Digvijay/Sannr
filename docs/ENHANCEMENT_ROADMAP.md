@@ -181,26 +181,47 @@ Enhanced IDE experience with better IntelliSense and code analysis.
 - **Refactoring Support**: Safe renaming of validation properties
 - **Code Generation**: Generate validators from existing models
 
-### 7. **Advanced Error Handling**
-Structured error responses with problem details and correlation IDs.
+### 7. **Advanced Error Handling** ✅ IMPLEMENTED
+Structured error responses with problem details, correlation IDs, and validation rule metadata.
 
 ```csharp
-// Enhanced error responses
+// Enhanced error responses with correlation IDs and validation metadata
 {
     "type": "https://tools.ietf.org/html/rfc7231#section-6.5.1",
     "title": "One or more validation errors occurred.",
     "status": 400,
-    "traceId": "00-1234567890abcdef1234567890abcdef-1234567890abcdef-00",
+    "correlationId": "550e8400-e29b-41d4-a716-446655440000",
+    "modelType": "CreateUserRequest",
+    "timestamp": "2024-01-15T10:30:00.0000000Z",
+    "validationDurationMs": 15.5,
     "errors": {
-        "email": ["The email field is required."],
-        "age": ["Age must be between 18 and 120."]
+        "Email": ["The Email field is required."],
+        "Age": ["The Age must be between 18 and 120."]
     },
     "validationRules": {
-        "email": { "required": true, "email": true },
-        "age": { "range": { "min": 18, "max": 120 } }
+        "Email": { "required": true, "email": true },
+        "Age": { "range": { "min": 18, "max": 120 } }
     }
 }
 ```
+
+**Configuration:**
+```csharp
+builder.Services.AddSannr(options =>
+{
+    options.EnableEnhancedErrorResponses = true;
+    options.IncludeValidationRuleMetadata = true;
+    options.IncludeValidationDuration = false; // Optional
+});
+```
+
+**Features:**
+- **Correlation IDs**: Automatic generation or extraction from `X-Correlation-ID` header
+- **Validation Rule Metadata**: Structured information about applied validation rules
+- **Model Type Information**: Identifies which model type was validated
+- **Timestamps**: When validation occurred
+- **Performance Metrics**: Optional validation duration tracking
+- **Problem Details**: RFC 7807 compliant error responses
 
 ### 6. **Testing Utilities** ❌ NOT IMPLEMENTED
 Comprehensive testing helpers for validation scenarios.
