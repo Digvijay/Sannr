@@ -30,6 +30,7 @@ Standard validation libraries rely on Reflection, which is slow, memory-intensiv
 | **Sanitization** | ❌ Manual code in Controllers | **✅ `[Sanitize]` Built-in** |
 | **OpenAPI Integration** | ❌ Manual schema definitions | **✅ Auto-generated schemas** |
 | **Minimal API Support** | ❌ Manual validation boilerplate | **✅ `Validated<T>` wrapper** |
+| **Client-Side Validation** | ❌ Manual JavaScript/TypeScript | **✅ Auto-generated JSON rules** |
 | **Model-Level Validation** | ✅ `IValidatableObject` | **✅ `Sannr.IValidatableObject`** |
 
 ---
@@ -297,6 +298,83 @@ app.MapPost("/users", async (Validated<CreateUserRequest> request) =>
 - ✅ **OpenAPI Integration**: Automatic schema generation with validation constraints
 
 📖 **[Complete Minimal API Integration Guide](docs/MINIMAL_API_INTEGRATION.md)**
+
+---
+## 🌐 Client-Side Validation
+
+Sannr automatically generates JSON validation rules from your server-side attributes, enabling seamless client-side validation in JavaScript/TypeScript applications.
+
+### Setup
+
+Mark your model classes with the `[GenerateClientValidators]` attribute:
+
+```csharp
+using Sannr;
+
+[GenerateClientValidators]
+public class UserRegistrationForm
+{
+    [Required]
+    public string? Username { get; set; }
+
+    [Required, EmailAddress]
+    public string? Email { get; set; }
+
+    [Required, StringLength(100, MinimumLength = 8)]
+    public string? Password { get; set; }
+
+    [Range(13, 120)]
+    public int Age { get; set; }
+}
+```
+
+### Generated Output
+
+Sannr generates a static class with JSON validation rules:
+
+```csharp
+public static class UserRegistrationFormValidators
+{
+    public const string ValidationRulesJson = @"{
+  ""username"": { ""required"": true },
+  ""email"": { ""required"": true, ""email"": true },
+  ""password"": { ""required"": true, ""minLength"": 8, ""maxLength"": 100 },
+  ""age"": { ""min"": 13, ""max"": 120 }
+}";
+}
+```
+
+### Client-Side Usage
+
+Use the generated JSON in your JavaScript/TypeScript validation:
+
+```javascript
+// Fetch validation rules from your API
+const rules = JSON.parse(UserRegistrationFormValidators.ValidationRulesJson);
+
+// Apply to your form validation library
+const validator = new FormValidator(rules);
+```
+
+### Supported Mappings
+
+| Sannr Attribute | Generated JSON Rule |
+| :--- | :--- |
+| `[Required]` | `"required": true` |
+| `[EmailAddress]` | `"email": true` |
+| `[StringLength(max, min)]` | `"minLength": min, "maxLength": max` |
+| `[Range(min, max)]` | `"min": min, "max": max` |
+| `[RegularExpression(pattern)]` | `"pattern": "pattern"` |
+| `[Url]` | `"url": true` |
+| `[Phone]` | `"phone": true` |
+
+**Benefits:**
+- ✅ **Single Source of Truth**: Client and server validation rules stay synchronized
+- ✅ **Type Safety**: Compile-time generation prevents typos
+- ✅ **Framework Agnostic**: Works with any JavaScript validation library
+- ✅ **Zero Runtime Cost**: Validation rules generated at compile-time
+
+📖 **[Complete Client-Side Validation Guide](docs/CLIENT_SIDE_VALIDATION.md)**
 
 ---
 ## �🔧 Architecture
