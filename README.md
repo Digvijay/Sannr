@@ -29,6 +29,7 @@ Standard validation libraries rely on Reflection, which is slow, memory-intensiv
 | **Conditional Logic** | ❌ Custom implementation required | **✅ `[RequiredIf]` Built-in** |
 | **Sanitization** | ❌ Manual code in Controllers | **✅ `[Sanitize]` Built-in** |
 | **OpenAPI Integration** | ❌ Manual schema definitions | **✅ Auto-generated schemas** |
+| **Minimal API Support** | ❌ Manual validation boilerplate | **✅ `Validated<T>` wrapper** |
 | **Model-Level Validation** | ✅ `IValidatableObject` | **✅ `Sannr.IValidatableObject`** |
 
 ---
@@ -261,7 +262,43 @@ public class CreateUserRequest
 📖 **[Complete OpenAPI Integration Guide](docs/OPENAPI_INTEGRATION.md)**
 
 ---
+## ⚡ Minimal API Integration
 
+Sannr provides seamless integration with ASP.NET Core Minimal APIs through the `Validated<T>` wrapper, which automatically handles validation and returns appropriate HTTP responses.
+
+**Before (Manual Validation):**
+```csharp
+app.MapPost("/users", async (CreateUserRequest request) =>
+{
+    if (!ModelState.IsValid)
+    {
+        return Results.ValidationProblem(ModelState);
+    }
+    // Process request...
+});
+```
+
+**After (with Sannr):**
+```csharp
+app.MapPost("/users", async (Validated<CreateUserRequest> request) =>
+{
+    if (!request.IsValid)
+    {
+        return request.ToBadRequestResult();
+    }
+    // Process request...
+});
+```
+
+**Key Benefits:**
+- ✅ **Clean Code**: Eliminates boilerplate validation logic
+- ✅ **Type Safety**: Strongly-typed access to validated data
+- ✅ **Consistent Errors**: Standardized validation error responses
+- ✅ **OpenAPI Integration**: Automatic schema generation with validation constraints
+
+📖 **[Complete Minimal API Integration Guide](docs/MINIMAL_API_INTEGRATION.md)**
+
+---
 ## �🔧 Architecture
 
 When you compile your project, Sannr generates a static class for every model marked with validation attributes.

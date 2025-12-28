@@ -41,11 +41,11 @@ public class CreateUserRequest
 - Reduced boilerplate code
 - Consistent validation across runtime and documentation
 
-### 2. **Minimal API Integration**
-Enhanced support for .NET Minimal APIs with automatic validation and error handling.
+### 2. **Minimal API Integration** ✅ IMPLEMENTED
+Enhanced support for .NET Minimal APIs with automatic validation and error handling through the `Validated<T>` wrapper.
 
 ```csharp
-// Current approach
+// Before: Manual validation boilerplate
 app.MapPost("/users", async (CreateUserRequest request, SannrValidator<CreateUserRequest> validator) =>
 {
     var result = await validator.ValidateAsync(request);
@@ -55,13 +55,25 @@ app.MapPost("/users", async (CreateUserRequest request, SannrValidator<CreateUse
     // Handle valid request
 });
 
-// Future: Automatic validation
+// After: Clean, automatic validation
 app.MapPost("/users", async (Validated<CreateUserRequest> request) =>
 {
+    if (!request.IsValid)
+    {
+        return request.ToBadRequestResult(); // Automatic 400 with validation errors
+    }
+
     // request.Value is guaranteed to be valid
-    // Automatic 400 responses for invalid data
+    var user = request.Value;
+    // Handle valid request...
 });
 ```
+
+**Benefits:**
+- Eliminates validation boilerplate in Minimal API endpoints
+- Strongly-typed access to validated data
+- Consistent error responses across all endpoints
+- Seamless integration with OpenAPI schema generation
 
 ### 3. **Client-Side Validation**
 Generate TypeScript/JavaScript validation code for Blazor and SPA applications.
