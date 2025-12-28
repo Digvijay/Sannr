@@ -255,7 +255,7 @@ public class PerformanceMonitoringTests
     }
 
     [Fact]
-    public void Validation_WithMetricsDisabled_ShouldNotImpactPerformance()
+    public async Task Validation_WithMetricsDisabled_ShouldNotImpactPerformance()
     {
         // Arrange
         var services = new ServiceCollection();
@@ -273,7 +273,7 @@ public class PerformanceMonitoringTests
         for (int i = 0; i < 1000; i++)
         {
             SannrValidatorRegistry.TryGetValidator(model.GetType(), out var validator);
-            var result = validator!(new SannrValidationContext(model)).GetAwaiter().GetResult();
+            var result = await validator!(new SannrValidationContext(model));
             Assert.True(result.IsValid);
         }
         stopwatch.Stop();
@@ -283,7 +283,7 @@ public class PerformanceMonitoringTests
     }
 
     [Fact]
-    public void AsyncValidation_WithMetricsEnabled_ShouldWork()
+    public async Task AsyncValidation_WithMetricsEnabled_ShouldWork()
     {
         // Arrange
         var services = new ServiceCollection();
@@ -299,14 +299,14 @@ public class PerformanceMonitoringTests
 
         // Act
         SannrValidatorRegistry.TryGetValidator(model.GetType(), out var validator);
-        var result = validator!(new SannrValidationContext(model)).GetAwaiter().GetResult();
+        var result = await validator!(new SannrValidationContext(model));
 
         // Assert
         Assert.True(result.IsValid);
     }
 
     [Fact]
-    public void ComplexModelValidation_ShouldWorkWithMetrics()
+    public async Task ComplexModelValidation_ShouldWorkWithMetrics()
     {
         // Arrange
         var services = new ServiceCollection();
@@ -330,7 +330,7 @@ public class PerformanceMonitoringTests
 
         // Act
         SannrValidatorRegistry.TryGetValidator(validModel.GetType(), out var validator);
-        var result = validator!(new SannrValidationContext(validModel)).GetAwaiter().GetResult();
+        var result = await validator!(new SannrValidationContext(validModel));
 
         // Assert
         Assert.True(result.IsValid);
@@ -357,7 +357,7 @@ public class PerformanceMonitoringTests
     }
 
     [Fact]
-    public void MultipleValidations_ShouldWork()
+    public async Task MultipleValidations_ShouldWork()
     {
         // Arrange
         var services = new ServiceCollection();
@@ -374,7 +374,7 @@ public class PerformanceMonitoringTests
         {
             var model = new SimpleValidationModel { Name = $"Test{i}", Email = $"test{i}@example.com" };
             SannrValidatorRegistry.TryGetValidator(model.GetType(), out var validator);
-            var result = validator!(new SannrValidationContext(model)).GetAwaiter().GetResult();
+            var result = await validator!(new SannrValidationContext(model));
             Assert.True(result.IsValid);
         }
 
