@@ -164,3 +164,37 @@ public class CustomValidatorAttribute : Attribute
         IsAsync = isAsync;
     }
 }
+
+/// <summary>
+/// Defines a method that validates an object.
+/// </summary>
+public interface IValidatableObject
+{
+    /// <summary>
+    /// Validates the object and returns a collection of validation results.
+    /// </summary>
+    /// <param name="validationContext">The context information about the validation operation.</param>
+    /// <returns>A collection of validation results.</returns>
+    System.Collections.Generic.IEnumerable<ModelValidationResult> Validate(SannrValidationContext validationContext);
+}
+
+/// <summary>
+/// Represents the result of validating a single property or model.
+/// </summary>
+public class ModelValidationResult
+{
+    /// <summary>
+    /// Gets or sets the name of the member that was validated.
+    /// </summary>
+    public string? MemberName { get; set; }
+
+    /// <summary>
+    /// Gets or sets the validation error message.
+    /// </summary>
+    public string Message { get; set; } = "";
+
+    /// <summary>
+    /// Gets or sets the severity of the validation error.
+    /// </summary>
+    public Severity Severity { get; set; } = Severity.Error;
+}

@@ -28,6 +28,8 @@ Standard validation libraries rely on Reflection, which is slow, memory-intensiv
 | **Dependency Injection** | ❌ Service Locator Anti-Pattern | **✅ `IServiceProvider` Support** |
 | **Conditional Logic** | ❌ Custom implementation required | **✅ `[RequiredIf]` Built-in** |
 | **Sanitization** | ❌ Manual code in Controllers | **✅ `[Sanitize]` Built-in** |
+| **OpenAPI Integration** | ❌ Manual schema definitions | **✅ Auto-generated schemas** |
+| **Model-Level Validation** | ✅ `IValidatableObject` | **✅ `Sannr.IValidatableObject`** |
 
 ---
 
@@ -148,9 +150,119 @@ public int Age { get; set; }
 // Error Output: "The field User Age must be between 18 and 100."
 ```
 
+### 5. Model-Level Validation
+Sannr provides `IValidatableObject` for cross-property business rules that can't be expressed with attributes.
+
+```csharp
+public class EmploymentModel : Sannr.IValidatableObject
+{
+    [Required]
+    public string? Name { get; set; }
+    
+    public bool IsEmployed { get; set; }
+    
+    [Range(0, 1000000)]
+    public decimal? Salary { get; set; }
+
+    public IEnumerable<Sannr.ModelValidationResult> Validate(SannrValidationContext context)
+    {
+        if (IsEmployed && (!Salary.HasValue || Salary.Value <= 0))
+        {
+            yield return new Sannr.ModelValidationResult
+            {
+                MemberName = nameof(Salary),
+                Message = "Salary required when employed"
+            };
+        }
+    }
+}
+```
+
 ---
 
-## 🔧 Architecture
+## � OpenAPI/Swagger Integration
+
+Sannr automatically generates OpenAPI schema constraints from your validation attributes, ensuring your API documentation stays in sync with your validation rules.
+
+### Setup
+
+```csharp
+// In Program.cs
+builder.Services.AddSwaggerGen(options =>
+{
+    options.AddSannrValidationSchemas(); // ✨ One line to enable!
+});
+```
+
+### Automatic Schema Generation
+
+```csharp
+public class CreateUserRequest
+{
+    [Required, EmailAddress]
+    public string Email { get; set; }
+
+    [Range(18, 120)]
+    public int Age { get; set; }
+
+    [StringLength(100, MinimumLength = 2)]
+    public string Name { get; set; }
+
+    [Url]
+    public string? Website { get; set; }
+}
+```
+
+**Generated OpenAPI Schema:**
+```json
+{
+  "CreateUserRequest": {
+    "type": "object",
+    "properties": {
+      "email": {
+        "type": "string",
+        "format": "email"
+      },
+      "age": {
+        "type": "integer",
+        "minimum": 18,
+        "maximum": 120
+      },
+      "name": {
+        "type": "string",
+        "minLength": 2,
+        "maxLength": 100
+      },
+      "website": {
+        "type": "string",
+        "format": "uri"
+      }
+    }
+  }
+}
+```
+
+### Supported Mappings
+
+| Sannr Attribute | OpenAPI Schema |
+| :--- | :--- |
+| `[EmailAddress]` | `"format": "email"` |
+| `[Url]` | `"format": "uri"` |
+| `[Range(min, max)]` | `"minimum": min, "maximum": max` |
+| `[StringLength(max, min)]` | `"minLength": min, "maxLength": max` |
+| `[FileExtensions]` | `"format": "file"` |
+
+**Benefits:**
+- ✅ **Single Source of Truth**: Validation rules automatically become API documentation
+- ✅ **Always Up-to-Date**: Schema updates when validation attributes change
+- ✅ **No Boilerplate**: Eliminates manual schema definitions
+- ✅ **Type Safety**: Compile-time validation of attribute usage
+
+📖 **[Complete OpenAPI Integration Guide](docs/OPENAPI_INTEGRATION.md)**
+
+---
+
+## �🔧 Architecture
 
 When you compile your project, Sannr generates a static class for every model marked with validation attributes.
 
@@ -194,6 +306,7 @@ This ensures **zero allocations** for metadata lookups and **maximum throughput*
 | `[RequiredIf]` | **Conditional:** Required only if another property matches a value. |
 | `[Sanitize]` | **Mutation:** Trims, Uppercases, or Lowercases input. |
 | `[CustomValidator]` | Points to static sync or async methods. |
+| `IValidatableObject` | **Model-level:** Cross-property business rules. |
 
 ---
 

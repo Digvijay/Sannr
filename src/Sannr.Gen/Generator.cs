@@ -159,12 +159,28 @@ public class SannrGenerator : IIncrementalGenerator
 
                 if (attrName == "RequiredAttribute") {
                     var msg = GetFormattedError(attr, "{0} is required.", nameVar);
-                    sb.AppendLine($$"""if (model.{{prop}} is null || (model.{{prop}} is string s_{{prop}} && string.IsNullOrWhiteSpace(s_{{prop}}))) result.Add("{{prop}}", {{msg}}, {{severity}});""");
+                    var propType = member.Type;
+                    bool isValueType = propType.IsValueType;
+                    
+                    if (isValueType) {
+                        // For value types, Required always passes since they can't be null
+                        // But we could add a check for default values if needed
+                    } else {
+                        // For reference types, check for null or empty strings
+                        sb.AppendLine($$"""if (model.{{prop}} is null || (model.{{prop}} is string s_{{prop}} && string.IsNullOrWhiteSpace(s_{{prop}}))) result.Add("{{prop}}", {{msg}}, {{severity}});""");
+                    }
                 }
                 else if (attrName == "StringLengthAttribute") {
                     int max = (int)(attr.ConstructorArguments[0].Value ?? 0);
+                    int min = 0;
+                    var minArg = attr.NamedArguments.FirstOrDefault(k => k.Key == "MinimumLength");
+                    if (minArg.Value.Value != null) min = (int)minArg.Value.Value;
                     var msg = GetFormattedError(attr, "The field {0} must be a string with a maximum length of {1}.", nameVar, max.ToString());
-                    sb.AppendLine($$"""if (model.{{prop}} is string str_{{prop}} && str_{{prop}}.Length > {{max}}) result.Add("{{prop}}", {{msg}}, {{severity}});""");
+                    if (min > 0) {
+                        sb.AppendLine($$"""if (model.{{prop}} is string str_{{prop}} && (str_{{prop}}.Length < {{min}} || str_{{prop}}.Length > {{max}})) result.Add("{{prop}}", {{msg}}, {{severity}});""");
+                    } else {
+                        sb.AppendLine($$"""if (model.{{prop}} is string str_{{prop}} && str_{{prop}}.Length > {{max}}) result.Add("{{prop}}", {{msg}}, {{severity}});""");
+                    }
                 }
                 else if (attrName == "RangeAttribute") {
                     var min = attr.ConstructorArguments[0].Value;
@@ -180,12 +196,52 @@ public class SannrGenerator : IIncrementalGenerator
                     var msg = GetFormattedError(attr, "The {0} field is not a valid credit card number.", nameVar);
                     sb.AppendLine($$"""if (model.{{prop}} != null && !_ccRgx.IsMatch(model.{{prop}}.ToString())) result.Add("{{prop}}", {{msg}}, {{severity}});""");
                 }
+                else if (attrName == "UrlAttribute") {
+                    var msg = GetFormattedError(attr, "The {0} field is not a valid URL.", nameVar);
+                    sb.AppendLine($$"""if (model.{{prop}} != null && !_urlRgx.IsMatch(model.{{prop}}.ToString())) result.Add("{{prop}}", {{msg}}, {{severity}});""");
+                }
+                else if (attrName == "PhoneAttribute") {
+                    var msg = GetFormattedError(attr, "The {0} field is not a valid phone number.", nameVar);
+                    sb.AppendLine($$"""if (model.{{prop}} != null && !_phoneRgx.IsMatch(model.{{prop}}.ToString())) result.Add("{{prop}}", {{msg}}, {{severity}});""");
+                }
+                else if (attrName == "FileExtensionsAttribute") {
+                    var extensions = attr.NamedArguments.FirstOrDefault(k => k.Key == "Extensions").Value.Value as string ?? "png,jpg,jpeg,gif";
+                    var extArray = extensions.Split(',').Select(e => e.Trim().ToLower()).Where(e => !string.IsNullOrEmpty(e)).ToArray();
+                    var extList = string.Join(", ", extArray.Select(e => "."+e));
+                    // Build all parts as separate strings
+                    var msgText = "The {0} field must have one of the following extensions: " + extList + ".";
+                    var msgPart = "string.Format(\"" + msgText + "\", " + nameVar + ")";
+                    var condParts = new System.Collections.Generic.List<string>();
+                    foreach (var ext in extArray) {
+                        condParts.Add("!model." + prop + ".ToString().ToLower().EndsWith(\"." + ext + "\")");
+                    }
+                    var conditionStr = string.Join(" && ", condParts);
+                    sb.AppendLine("if (model." + prop + " != null && (" + conditionStr + ")) result.Add(\"" + prop + "\", " + msgPart + ", " + severity + ");");
+                }
                 else if (attrName == "RequiredIfAttribute") {
                     var other = attr.ConstructorArguments[0].Value?.ToString();
                     var val = attr.ConstructorArguments[1].Value;
-                    string valStr = val is string s ? $"\"{s}\"" : (val?.ToString().ToLower() ?? "null");
-                    var msg = GetFormattedError(attr, "{0} is required due to {{other}}.", nameVar);
-                    sb.AppendLine($$"""if (object.Equals(model.{{other}}, {{valStr}}) && (model.{{prop}} is null || (model.{{prop}} is string s2_{{prop}} && string.IsNullOrWhiteSpace(s2_{{prop}})))) result.Add("{{prop}}", {{msg}}, {{severity}});""");
+                    string valStr;
+                    if (val is string s) {
+                        valStr = $"\"{s}\"";
+                    } else if (val == null) {
+                        valStr = "null";
+                    } else {
+                        valStr = val.ToString();
+                        if (val is bool) valStr = valStr.ToLower();
+                    }
+                    var msg = GetFormattedError(attr, "{0} is required.", nameVar);
+                    
+                    // Check if the property type is a string
+                    var propType = member.Type;
+                    bool isStringType = propType.SpecialType == SpecialType.System_String;
+                    
+                    if (isStringType) {
+                        sb.AppendLine($$"""if (object.Equals(model.{{other}}, {{valStr}}) && (model.{{prop}} is null || string.IsNullOrWhiteSpace(model.{{prop}}))) result.Add("{{prop}}", {{msg}}, {{severity}});""");
+                    } else {
+                        // For non-string types, just check if the condition is met
+                        sb.AppendLine($$"""if (object.Equals(model.{{other}}, {{valStr}}) && model.{{prop}} is null) result.Add("{{prop}}", {{msg}}, {{severity}});""");
+                    }
                 }
                 else if (attrName == "CustomValidatorAttribute") {
                     var type = attr.ConstructorArguments[0].Value as INamedTypeSymbol;
@@ -200,6 +256,23 @@ public class SannrGenerator : IIncrementalGenerator
                 }
                 if (groupArg != null) sb.AppendLine("}");
             }
+        }
+
+        // Check if the class implements IValidatableObject
+        var iValidatableObjectInterface = classSymbol.AllInterfaces.FirstOrDefault(i => i.Name == "IValidatableObject" && i.ContainingNamespace.Name == "Sannr");
+        if (iValidatableObjectInterface != null)
+        {
+            sb.AppendLine($$"""
+                        // Call IValidatableObject.Validate if implemented
+                        if (model is Sannr.IValidatableObject validatable)
+                        {
+                            var modelResults = validatable.Validate(context);
+                            foreach (var modelResult in modelResults)
+                            {
+                                result.Add(modelResult.MemberName ?? "", modelResult.Message, modelResult.Severity);
+                            }
+                        }
+            """);
         }
 
         sb.AppendLine($$"""
