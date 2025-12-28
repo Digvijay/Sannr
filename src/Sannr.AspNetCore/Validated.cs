@@ -93,21 +93,41 @@ public class Validated<T> where T : class
             throw new ArgumentNullException(nameof(serviceProvider));
         }
 
-        if (!SannrValidatorRegistry.TryGetValidator(typeof(T), out var validator))
+        var metricsCollector = serviceProvider.GetService<ISannrMetricsCollector>() ?? new NoOpMetricsCollector();
+        var modelType = typeof(T).Name;
+        var stopwatch = System.Diagnostics.Stopwatch.StartNew();
+
+        try
         {
-            // If no validator is registered, consider the model valid
-            return new Validated<T>(model, ValidationResult.Success());
+            if (!SannrValidatorRegistry.TryGetValidator(typeof(T), out var validator))
+            {
+                // If no validator is registered, consider the model valid
+                stopwatch.Stop();
+                metricsCollector.RecordValidationDuration(modelType, stopwatch.Elapsed.TotalMilliseconds);
+                return new Validated<T>(model, ValidationResult.Success());
+            }
+
+            var sannrContext = new SannrValidationContext(
+                instance: model,
+                serviceProvider: serviceProvider,
+                items: new System.Collections.Generic.Dictionary<object, object?>(),
+                group: null
+            );
+
+            var validationResult = await validator!(sannrContext);
+            
+            stopwatch.Stop();
+            metricsCollector.RecordValidationDuration(modelType, stopwatch.Elapsed.TotalMilliseconds);
+            metricsCollector.RecordValidationErrors(modelType, validationResult.Errors.Count);
+            
+            return new Validated<T>(model, validationResult);
         }
-
-        var sannrContext = new SannrValidationContext(
-            instance: model,
-            serviceProvider: serviceProvider,
-            items: new System.Collections.Generic.Dictionary<object, object?>(),
-            group: null
-        );
-
-        var validationResult = await validator!(sannrContext);
-        return new Validated<T>(model, validationResult);
+        catch
+        {
+            stopwatch.Stop();
+            metricsCollector.RecordValidationDuration(modelType, stopwatch.Elapsed.TotalMilliseconds);
+            throw;
+        }
     }
 
     /// <summary>

@@ -140,22 +140,38 @@ public class OrderModel
 - Automatic client-side validation rule generation
 - Type-safe attribute usage with compile-time validation
 
-### 5. **Performance Monitoring & Diagnostics**
+### 5. **Performance Monitoring & Diagnostics** ✅ IMPLEMENTED
 Built-in metrics and performance monitoring for validation operations.
 
 ```csharp
 // Automatic metrics collection
-services.AddSannrValidation(options =>
+services.AddSannr(options =>
 {
     options.EnableMetrics = true;
-    options.MetricsPrefix = "sannr_validation";
+    options.MetricsPrefix = "myapp_validation";
 });
 
 // Metrics available:
-// - sannr_validation_duration
-// - sannr_validation_errors_total
-// - sannr_validation_cache_hit_ratio
+// - {prefix}_validation_duration (histogram in ms)
+// - {prefix}_validation_errors_total (counter)
 ```
+
+**Features Implemented:**
+- Automatic metrics collection using `System.Diagnostics.Metrics`
+- Validation duration tracking with histograms
+- Validation error counting with counters
+- Model type tagging for detailed analysis
+- Zero overhead when disabled
+- Full AOT compatibility
+- Integration with Prometheus, Application Insights, and custom monitoring systems
+- Comprehensive performance characteristics documentation
+
+**Benefits:**
+- Production-ready observability with minimal configuration
+- Performance bottleneck identification
+- SLA monitoring and alerting capabilities
+- Capacity planning insights
+- Zero runtime overhead when metrics are disabled
 
 ### 6. **Visual Studio Integration**
 Enhanced IDE experience with better IntelliSense and code analysis.
@@ -250,7 +266,7 @@ public class UserModel
 
 ### Phase 2 (Medium Impact, Medium Effort)
 4. **Built-in Business Rule Validators** ✅ IMPLEMENTED - Addresses common validation needs
-5. **Performance Monitoring** - Production readiness
+5. **Performance Monitoring & Diagnostics** ✅ IMPLEMENTED - Production readiness
 6. **Testing Utilities** - Improved testing workflow
 
 ### Phase 3 (High Impact, High Effort)

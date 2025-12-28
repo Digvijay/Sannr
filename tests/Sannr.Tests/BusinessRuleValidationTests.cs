@@ -22,6 +22,7 @@
 // SOFTWARE.
 // ----------------------------------------------------------------------------------
 
+using System;
 using Sannr;
 using Xunit;
 
@@ -278,5 +279,4 @@ public class BusinessRuleValidationTests
         // Act & Assert
         Assert.IsAssignableFrom<SannrValidationAttribute>(attribute);
     }
-}</content>
-<parameter name="filePath">/Users/digvijay/source/github/Sannr/tests/Sannr.Tests/BusinessRuleValidationTests.cs
+}

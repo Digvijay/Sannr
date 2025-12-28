@@ -455,7 +455,86 @@ All business rule validators generate appropriate client-side JSON rules:
 
 📖 **[Complete Business Rule Validators Guide](docs/BUSINESS_RULE_VALIDATORS.md)**
 
----## �🔧 Architecture
+---
+## 📊 Performance Monitoring & Diagnostics
+
+Sannr provides built-in performance monitoring and diagnostics to help you track validation performance in production environments.
+
+### Setup
+
+Enable metrics collection in your `Program.cs`:
+
+```csharp
+var builder = WebApplication.CreateBuilder(args);
+
+// Enable performance monitoring
+builder.Services.AddSannr(options =>
+{
+    options.EnableMetrics = true;
+    options.MetricsPrefix = "myapp_validation"; // Optional: customize metric names
+});
+
+builder.Services.AddControllers();
+var app = builder.Build();
+```
+
+### Available Metrics
+
+Sannr automatically collects the following metrics using `System.Diagnostics.Metrics`:
+
+#### Validation Duration
+- **Name**: `{prefix}_validation_duration`
+- **Type**: Histogram (milliseconds)
+- **Description**: Duration of validation operations
+- **Tags**: `model_type` (the name of the validated model class)
+
+#### Validation Errors
+- **Name**: `{prefix}_validation_errors_total`
+- **Type**: Counter
+- **Description**: Total number of validation errors encountered
+- **Tags**: `model_type` (the name of the validated model class)
+
+### Integration with Monitoring Systems
+
+#### Prometheus (via OpenTelemetry)
+
+```csharp
+// Add OpenTelemetry metrics export
+builder.Services.AddOpenTelemetry()
+    .WithMetrics(builder => builder
+        .AddMeter("myapp_validation") // Matches your MetricsPrefix
+        .AddPrometheusExporter());
+```
+
+#### Application Insights
+
+```csharp
+builder.Services.AddApplicationInsightsTelemetry();
+builder.Services.ConfigureTelemetryModule<DependencyTrackingTelemetryModule>((module, o) =>
+{
+    module.IncludeDiagnosticSourceActivities.Add("System.Diagnostics.Metrics");
+});
+```
+
+### Performance Characteristics
+
+- **Zero Overhead When Disabled**: Metrics collection is completely bypassed when `EnableMetrics = false`
+- **Minimal Overhead When Enabled**: Uses efficient `System.Diagnostics.Metrics` APIs
+- **AOT Compatible**: No dynamic code generation or reflection
+- **Thread Safe**: All metric recording is thread-safe
+
+### Best Practices
+
+1. **Use Descriptive Prefixes**: Choose metric prefixes that match your application naming conventions
+2. **Monitor in Production**: Enable metrics in production to track performance trends
+3. **Set Up Alerts**: Alert on significant increases in validation duration or error rates
+4. **Profile Performance**: Use metrics to identify models with complex validation logic
+5. **Resource Monitoring**: Correlate validation metrics with CPU/memory usage
+
+📖 **[Complete Performance Monitoring Guide](docs/PERFORMANCE_MONITORING.md)**
+
+---
+## �🔧 Architecture
 
 When you compile your project, Sannr generates a static class for every model marked with validation attributes.
 
