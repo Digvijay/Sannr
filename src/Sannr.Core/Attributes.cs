@@ -113,19 +113,78 @@ public class CreditCardAttribute : SannrValidationAttribute { }
 /// Specifies that a property must be a valid URL.
 /// </summary>
 public class UrlAttribute : SannrValidationAttribute { }
-/// <summary>
-/// Specifies that a property must be a valid phone number.
-/// </summary>
+
 public class PhoneAttribute : SannrValidationAttribute { }
+
+public class FileExtensionsAttribute : SannrValidationAttribute
+{
+    public string? Extensions { get; set; }
+}
+
 /// <summary>
-/// Specifies allowed file extensions for a property.
+/// Specifies that a date property must be in the future.
 /// </summary>
-public class FileExtensionsAttribute : SannrValidationAttribute 
+public class FutureDateAttribute : SannrValidationAttribute { }
+
+/// <summary>
+/// Specifies that a property value must be one of the allowed values.
+/// </summary>
+public class AllowedValuesAttribute : SannrValidationAttribute
 {
     /// <summary>
-    /// Gets or sets the allowed file extensions.
+    /// Gets the allowed values.
     /// </summary>
-    public string Extensions { get; set; } = "png,jpg,jpeg,gif";
+    public string[] Values { get; }
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="AllowedValuesAttribute"/> class.
+    /// </summary>
+    /// <param name="values">The allowed values.</param>
+    public AllowedValuesAttribute(params string[] values)
+    {
+        Values = values ?? Array.Empty<string>();
+    }
+}
+
+/// <summary>
+/// Specifies a conditional range validation based on another property's value.
+/// </summary>
+public class ConditionalRangeAttribute : SannrValidationAttribute
+{
+    /// <summary>
+    /// Gets the name of the other property to check.
+    /// </summary>
+    public string OtherProperty { get; }
+
+    /// <summary>
+    /// Gets the target value that the other property must have.
+    /// </summary>
+    public object TargetValue { get; }
+
+    /// <summary>
+    /// Gets the minimum allowable value.
+    /// </summary>
+    public double Minimum { get; }
+
+    /// <summary>
+    /// Gets the maximum allowable value.
+    /// </summary>
+    public double Maximum { get; }
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="ConditionalRangeAttribute"/> class.
+    /// </summary>
+    /// <param name="otherProperty">The name of the other property.</param>
+    /// <param name="targetValue">The target value.</param>
+    /// <param name="minimum">The minimum value.</param>
+    /// <param name="maximum">The maximum value.</param>
+    public ConditionalRangeAttribute(string otherProperty, object targetValue, double minimum, double maximum)
+    {
+        OtherProperty = otherProperty;
+        TargetValue = targetValue;
+        Minimum = minimum;
+        Maximum = maximum;
+    }
 }
 
 public class RequiredIfAttribute : SannrValidationAttribute 

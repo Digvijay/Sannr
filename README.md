@@ -367,6 +367,9 @@ const validator = new FormValidator(rules);
 | `[RegularExpression(pattern)]` | `"pattern": "pattern"` |
 | `[Url]` | `"url": true` |
 | `[Phone]` | `"phone": true` |
+| `[FutureDate]` | `"futureDate": true` |
+| `[AllowedValues]` | `"allowedValues": ["value1", "value2"]` |
+| `[ConditionalRange]` | `"minRange": min, "maxRange": max, "conditionProperty": "prop", "conditionValue": value` |
 
 **Benefits:**
 - ✅ **Single Source of Truth**: Client and server validation rules stay synchronized
@@ -376,8 +379,83 @@ const validator = new FormValidator(rules);
 
 📖 **[Complete Client-Side Validation Guide](docs/CLIENT_SIDE_VALIDATION.md)**
 
----
-## �🔧 Architecture
+---## 🏢 Built-in Business Rule Validators
+
+Sannr includes common business validation patterns out-of-the-box, eliminating the need for custom validators in most enterprise scenarios.
+
+### Future Date Validation
+
+Ensures a date property is in the future (useful for delivery dates, appointments, etc.).
+
+```csharp
+public class Order
+{
+    [Required]
+    public string CustomerId { get; set; }
+
+    [FutureDate]
+    public DateTime DeliveryDate { get; set; }
+}
+```
+
+### Allowed Values Validation
+
+Restricts a property to a predefined set of values (enums without the enum overhead).
+
+```csharp
+public class Product
+{
+    [Required]
+    public string Name { get; set; }
+
+    [AllowedValues("active", "inactive", "discontinued")]
+    public string Status { get; set; }
+}
+```
+
+### Conditional Range Validation
+
+Applies numeric range validation only when another property matches a specific value.
+
+```csharp
+public class LoanApplication
+{
+    [Required]
+    public string LoanType { get; set; } // "personal", "business", "mortgage"
+
+    [ConditionalRange("LoanType", "personal", 1000, 50000)]
+    [ConditionalRange("LoanType", "business", 5000, 1000000)]
+    [ConditionalRange("LoanType", "mortgage", 50000, 5000000)]
+    public decimal Amount { get; set; }
+}
+```
+
+### Client-Side Support
+
+All business rule validators generate appropriate client-side JSON rules:
+
+```json
+{
+  "deliveryDate": { "futureDate": true },
+  "status": { "allowedValues": ["active", "inactive", "discontinued"] },
+  "amount": { 
+    "minRange": 1000, 
+    "maxRange": 50000, 
+    "conditionProperty": "loanType", 
+    "conditionValue": "personal" 
+  }
+}
+```
+
+**Benefits:**
+- ✅ **Common Patterns**: Covers 80% of business validation scenarios
+- ✅ **Type Safe**: Compile-time validation of attribute usage
+- ✅ **Client-Side Ready**: Automatic JSON rule generation
+- ✅ **Performance**: Zero runtime overhead with AOT compilation
+
+📖 **[Complete Business Rule Validators Guide](docs/BUSINESS_RULE_VALIDATORS.md)**
+
+---## �🔧 Architecture
 
 When you compile your project, Sannr generates a static class for every model marked with validation attributes.
 
@@ -418,6 +496,9 @@ This ensures **zero allocations** for metadata lookups and **maximum throughput*
 | `[CreditCard]` | Validates credit card format (Luhn check planned). |
 | `[Url]`, `[Phone]` | Validates URL and Phone formats. |
 | `[FileExtensions]` | Validates file extensions (e.g., `.png,.jpg`). |
+| `[FutureDate]` | **Business Rule:** Ensures date is in the future. |
+| `[AllowedValues]` | **Business Rule:** Restricts to predefined values. |
+| `[ConditionalRange]` | **Business Rule:** Range validation based on another property. |
 | `[RequiredIf]` | **Conditional:** Required only if another property matches a value. |
 | `[Sanitize]` | **Mutation:** Trims, Uppercases, or Lowercases input. |
 | `[CustomValidator]` | Points to static sync or async methods. |

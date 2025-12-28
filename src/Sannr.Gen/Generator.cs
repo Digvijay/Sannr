@@ -484,6 +484,27 @@ public class SannrGenerator : IIncrementalGenerator
                         rules.Add($"\"compare\": \"{ToCamelCase(otherProp)}\"");
                     }
                     break;
+
+                case "FutureDateAttribute":
+                    rules.Add("\"futureDate\": true");
+                    break;
+
+                case "ConditionalRangeAttribute":
+                    var minRange = attr.NamedArguments.FirstOrDefault(k => k.Key == "Minimum").Value.Value;
+                    var maxRange = attr.NamedArguments.FirstOrDefault(k => k.Key == "Maximum").Value.Value;
+                    var condPropArg = attr.NamedArguments.FirstOrDefault(k => k.Key == "OtherProperty");
+                    var condProp = condPropArg.Value.Value as string;
+                    var condValueArg = attr.NamedArguments.FirstOrDefault(k => k.Key == "TargetValue");
+                    var condValue = condValueArg.Value.Value;
+
+                    if (minRange != null) rules.Add($"\"minRange\": {minRange}");
+                    if (maxRange != null) rules.Add($"\"maxRange\": {maxRange}");
+                    if (condProp != null && !string.IsNullOrEmpty(condProp))
+                    {
+                        rules.Add($"\"conditionProperty\": \"{ToCamelCase(condProp)}\"");
+                    }
+                    if (condValue != null) rules.Add($"\"conditionValue\": {condValue}");
+                    break;
             }
         }
 
