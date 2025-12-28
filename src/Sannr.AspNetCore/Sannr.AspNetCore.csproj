@@ -1,0 +1,41 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    
+    <PackageId>Sannr</PackageId>
+    <Version>1.0.0</Version>
+    <Authors>Sannr Team</Authors>
+    <Description>The AOT-first validation engine for .NET. (Single Package)</Description>
+    <PackageTags>validation;aot;aspnetcore</PackageTags>
+    
+    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+    <IncludeBuildOutput>true</IncludeBuildOutput>
+    <TargetsForTfmSpecificBuildOutput>$(TargetsForTfmSpecificBuildOutput);CopyProjectReferencesToPackage</TargetsForTfmSpecificBuildOutput>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+    
+    <ProjectReference Include="..\Sannr.Core\Sannr.Core.csproj" PrivateAssets="all" />
+
+    <ProjectReference Include="..\Sannr.Gen\Sannr.Gen.csproj" 
+                      OutputItemType="Analyzer" 
+                      ReferenceOutputAssembly="false"
+                      PrivateAssets="all" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="..\Sannr.Gen\bin\$(Configuration)\netstandard2.0\Sannr.Gen.dll" 
+          Pack="true" 
+          PackagePath="analyzers/dotnet/cs" 
+          Visible="false" />
+  </ItemGroup>
+
+  <Target Name="CopyProjectReferencesToPackage" DependsOnTargets="ResolveReferences">
+    <ItemGroup>
+      <BuildOutputInPackage Include="@(ReferenceCopyLocalPaths->WithMetadataValue('ReferenceSourceTarget', 'ProjectReference'))" />
+    </ItemGroup>
+  </Target>
+
+</Project>

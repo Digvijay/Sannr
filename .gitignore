@@ -1,0 +1,47 @@
+# =======================================================
+# Sannr - Official Git Ignore
+# =======================================================
+
+# --- Build Output ---
+[Bb]in/
+[Oo]bj/
+/out/
+/artifacts/
+/sannr-feed/
+
+# --- IDEs & Editors ---
+.vs/
+.vscode/
+.idea/
+*.user
+*.suo
+*.userprefs
+
+# --- .NET & NuGet ---
+*.nupkg
+*.snupkg
+project.lock.json
+project.fragment.lock.json
+artifacts/
+
+# --- Testing ---
+TestResults/
+*.trx
+coverage.json
+*.coverlet.xml
+
+# --- OS Specific ---
+.DS_Store
+Thumbs.db
+
+# --- Source Generator Caching (Roslyn) ---
+# Sometimes Roslyn caches generated files in obj, which is already ignored.
+# But if you ever emit them to disk for debugging:
+generated/
+
+# --- Azure & Publish ---
+publish/
+app.zip
+
+# --- Internal Documentation ---
+docs/PUBLISHING.md
