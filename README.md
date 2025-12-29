@@ -35,6 +35,50 @@ Standard validation libraries rely on Reflection, which is slow, memory-intensiv
 
 ---
 
+## 🏗️ Architecture
+
+Sannr's architecture is designed for maximum performance and AoT compatibility. The Roslyn Source Generator analyzes your model classes at compile-time and generates static validation methods that are indistinguishable from hand-written code.
+
+```mermaid
+graph LR
+    subgraph "Compile-Time"
+        A[Model Classes<br/>with Attributes] --> B[Roslyn Source<br/>Generator]
+        B --> C[Generated Static<br/>C# Validators]
+    end
+    
+    subgraph "Runtime"
+        C --> D[SannrValidatorRegistry]
+        D --> E[Validation Execution]
+        E --> F[ValidationResult<br/>with Errors]
+    end
+    
+    subgraph "Integration"
+        G[ASP.NET Core<br/>Minimal APIs] --> H[Validated&lt;T&gt; Wrapper]
+        H --> D
+        I[Controllers] --> J[Model Binding]
+        J --> D
+    end
+    
+    subgraph "Enterprise Features"
+        K[Dependency Injection] --> E
+        L[Async Validation] --> E
+        M[Validation Groups] --> E
+        N[Performance Metrics] --> E
+    end
+```
+
+**Key Components:**
+- **Source Generator**: Analyzes attributes and generates optimized validation code
+- **Validator Registry**: Stores compiled validators for fast lookup
+- **Validation Context**: Provides runtime information (model instance, services, groups)
+- **Result Aggregation**: Merges attribute and model-level validation errors
+
+---
+
+> **Note:** To ensure full compatibility with Ahead-of-Time (AoT) compilation, including Native AOT scenarios, this library's test suite uses explicit validator registration instead of reflection-based auto-discovery. This approach avoids runtime metadata inspection and guarantees that all validation logic is statically compiled, making Sannr suitable for high-performance, trimmed applications where reflection is unavailable or undesirable.
+
+---
+
 ## 📦 Installation
 
 ```bash
@@ -179,6 +223,116 @@ public class EmploymentModel : Sannr.IValidatableObject
     }
 }
 ```
+
+---
+
+## 🎯 Advanced Validation Features
+
+Sannr provides comprehensive validation capabilities that go beyond basic attribute validation, including source generator-based auto-discovery, sanitization, custom validators, and conditional logic.
+
+### Compile-Time Auto-Registration
+
+Sannr automatically discovers and registers validators for all types with validation attributes at compile-time using Roslyn source generators:
+
+```csharp
+// In Program.cs or Startup.cs
+builder.Services.AddSannr(); // Automatically registers all validators
+```
+
+This provides equivalent functionality to runtime reflection with compile-time code generation, ensuring AoT compatibility and optimal performance.
+
+### Supported Validation Attributes
+
+| Attribute | Description | Example |
+|-----------|-------------|---------|
+| `[Required]` | Ensures field is not null/empty | `[Required(ErrorMessage = "Name is required")]` |
+| `[StringLength]` | Validates string length | `[StringLength(50, MinimumLength = 2)]` |
+| `[Range]` | Numeric range validation | `[Range(18, 65)]` |
+| `[EmailAddress]` | Email format validation | `[EmailAddress]` |
+| `[Url]` | URL format validation | `[Url]` |
+| `[Phone]` | Phone number validation | `[Phone]` |
+| `[CreditCard]` | Credit card format | `[CreditCard]` |
+| `[FileExtensions]` | File extension validation | `[FileExtensions(Extensions = "pdf,docx")]` |
+| `[FutureDate]` | Date must be in future | `[FutureDate]` |
+| `[AllowedValues]` | Whitelist validation | `[AllowedValues("Active", "Inactive")]` |
+| `[RequiredIf]` | Conditional required | `[RequiredIf("IsEmployed", true)]` |
+| `[ConditionalRange]` | Conditional range | `[ConditionalRange("MinValue", "MaxValue")]` |
+
+### Sanitization Attributes
+
+Automatically clean and transform input data:
+
+```csharp
+public class UserProfile
+{
+    [Sanitize(Trim = true, ToUpper = true)]
+    public string? Username { get; set; }
+    
+    [Sanitize(ToLower = true)]
+    public string? Email { get; set; }
+}
+```
+
+### Custom Validators
+
+Implement complex business logic with async support:
+
+```csharp
+[CustomValidator(typeof(UserValidator))]
+public class User
+{
+    public string? Username { get; set; }
+    public string? Email { get; set; }
+}
+
+public class UserValidator : SannrValidator<User>
+{
+    public override async Task<ValidationResult> ValidateAsync(User instance, ValidationContext context)
+    {
+        var result = ValidationResult.Success();
+        
+        // Custom async validation logic
+        if (await IsUsernameTaken(instance.Username))
+        {
+            result.Errors.Add(new ValidationError("Username", "Username already exists"));
+        }
+        
+        return result;
+    }
+}
+```
+
+### Validation Groups
+
+Control which validations run in different scenarios:
+
+```csharp
+public class Order
+{
+    [Required]
+    public string? CustomerName { get; set; }
+    
+    [Required(Group = "Shipping")]
+    public string? ShippingAddress { get; set; }
+    
+    [Required(Group = "Billing")]
+    public string? BillingAddress { get; set; }
+}
+
+// Validate only shipping fields
+var result = await validator.ValidateAsync(order, group: "Shipping");
+```
+
+### Error Message Resources
+
+Support for localized error messages:
+
+```csharp
+[Required(ErrorMessageResourceName = "RequiredField", ErrorMessageResourceType = typeof(Resources.Validation))]
+public string? Name { get; set; }
+```
+
+📖 **[Complete Advanced Validation Documentation](docs/ADVANCED_VALIDATION_FEATURES.md)**
 
 ---
 

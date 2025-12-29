@@ -293,6 +293,10 @@ public static class SannrExtensions
             services.AddSannrProblemDetails();
         }
 
+        // Note: Validators should be explicitly registered by the application
+        // for AoT compatibility. Auto-registration using reflection is not AoT-compatible.
+        // SannrValidatorRegistry.AutoRegisterValidators();
+
         return services;
     }
 }

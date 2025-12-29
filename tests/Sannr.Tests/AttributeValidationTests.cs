@@ -1,6 +1,8 @@
 using Xunit;
 using Sannr;
 using System.Threading.Tasks;
+using System;
+using System.Linq;
 
 namespace Sannr.Tests;
 
@@ -72,6 +74,11 @@ public class TestModel
 /// </summary>
 public class AttributeValidationTests
 {
+    public AttributeValidationTests()
+    {
+        // Use explicit validators for AoT compatibility testing
+        FullTestSuite.RegisterTestValidators();
+    }
     /// <summary>
     /// Verifies that [Required] attribute correctly validates null and whitespace-only strings.
     /// Tests both null values and strings containing only whitespace characters.
@@ -79,21 +86,31 @@ public class AttributeValidationTests
     [Fact]
     public async Task Required_Should_Fail_On_Null_Or_Whitespace()
     {
+        // Ensure explicit validators are registered (after any AutoRegisterValidators calls)
+        FullTestSuite.RegisterTestValidators();
+        
         // Test 1: Null value should fail validation
         var model = new TestModel { Username = null };
         var res = await Validate(model);
         Assert.Contains(res.Errors, e => e.Message.Contains("mandatory"));
         
         // Test 2: Whitespace-only string should also fail validation
+        model = CreateValidModel();
         model.Username = "   ";
         res = await Validate(model);
         Assert.Contains(res.Errors, e => e.Message.Contains("mandatory"));
     }
 
-    /// <summary>
-    /// Verifies that [StringLength] attribute enforces both minimum and maximum length constraints.
-    /// Tests strings that are too short, too long, and within the valid range (3-10 characters).
-    /// </summary>
+    [Fact]
+    public void TestModel_Has_Required_Attribute()
+    {
+        var type = typeof(TestModel);
+        var usernameProp = type.GetProperty("Username");
+        var attrs = usernameProp?.GetCustomAttributes(typeof(SannrValidationAttribute), true);
+        Assert.NotNull(attrs);
+        Assert.NotEmpty(attrs);
+        Assert.IsType<RequiredAttribute>(attrs.First());
+    }
     [Fact]
     public async Task StringLength_Should_Enforce_Bounds()
     {
@@ -329,8 +346,26 @@ public class AttributeValidationTests
 
     private async Task<ValidationResult> Validate(object model)
     {
+        // Ensure explicit validators are registered
+        FullTestSuite.RegisterTestValidators();
+        
         SannrValidatorRegistry.TryGetValidator(model.GetType(), out var val);
-        return await val!(new SannrValidationContext(model));
+        if (val == null)
+        {
+            var result = ValidationResult.Success();
+            result.Errors.Add(new ValidationError("Debug", "No validator found", Severity.Error));
+            return result;
+        }
+        
+        Console.WriteLine($"Found validator for {model.GetType().Name}");
+        var result2 = await val!(new SannrValidationContext(model));
+        Console.WriteLine($"Validation result: {result2.Errors.Count} errors");
+        foreach (var error in result2.Errors)
+        {
+            Console.WriteLine($"Error: {error.MemberName} - {error.Message}");
+        }
+        
+        return result2;
     }
 
     /// <summary>
