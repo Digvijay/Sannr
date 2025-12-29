@@ -35,6 +35,10 @@
           Visible="false" />
   </ItemGroup>
 
+  <ItemGroup>
+    <None Include="../../README.md" Pack="true" PackagePath="README.md" />
+  </ItemGroup>
+
   <Target Name="CopyProjectReferencesToPackage" DependsOnTargets="ResolveReferences">
     <ItemGroup>
       <BuildOutputInPackage Include="@(ReferenceCopyLocalPaths->WithMetadataValue('ReferenceSourceTarget', 'ProjectReference'))" />
