@@ -5,12 +5,12 @@
     
     <PackageId>Sannr</PackageId>
     <Version>1.0.0</Version>
-    <Authors>Sannr Team</Authors>
+    <Authors>Digvijay Chauhan</Authors>
     <Description>The AOT-first validation engine for .NET. (Single Package)</Description>
     <PackageTags>validation;aot;aspnetcore;performance;enterprise</PackageTags>
     
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
-    <Copyright>Copyright (c) 2025 Sannr Team</Copyright>
+    <Copyright>Copyright (c) 2025 Digvijay Chauhan</Copyright>
     <PackageProjectUrl>https://github.com/digvijay/sannr</PackageProjectUrl>
     <RepositoryUrl>https://github.com/digvijay/sannr</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
