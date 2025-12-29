@@ -77,6 +77,8 @@ graph LR
 
 > **Note:** To ensure full compatibility with Ahead-of-Time (AoT) compilation, including Native AOT scenarios, this library's test suite uses explicit validator registration instead of reflection-based auto-discovery. This approach avoids runtime metadata inspection and guarantees that all validation logic is statically compiled, making Sannr suitable for high-performance, trimmed applications where reflection is unavailable or undesirable.
 
+📖 **[AoT Testing Strategy](docs/TESTING_STRATEGY.md)**
+
 ---
 
 ## 📦 Installation
@@ -195,6 +197,8 @@ Sannr fully supports `.resx` localization resources and string formatting, check
 public int Age { get; set; }
 // Error Output: "The field User Age must be between 18 and 100."
 ```
+
+📖 **[Complete Localization Guide](docs/LOCALIZATION.md)**
 
 ### 5. Model-Level Validation
 Sannr provides `IValidatableObject` for cross-property business rules that can't be expressed with attributes.
@@ -783,6 +787,8 @@ This ensures **zero allocations** for metadata lookups and **maximum throughput*
 | `[Sanitize]` | **Mutation:** Trims, Uppercases, or Lowercases input. |
 | `[CustomValidator]` | Points to static sync or async methods. |
 | `IValidatableObject` | **Model-level:** Cross-property business rules. |
+
+📖 **[Complete Attributes Reference](docs/ATTRIBUTES.md)**
 
 ---
 
