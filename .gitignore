@@ -30,6 +30,9 @@ TestResults/
 coverage.json
 *.coverlet.xml
 
+# --- Benchmarking ---
+BenchmarkDotNet.Artifacts/
+
 # --- OS Specific ---
 .DS_Store
 Thumbs.db
@@ -45,3 +48,4 @@ app.zip
 
 # --- Internal Documentation ---
 docs/PUBLISHING.md
+docs/IMAGE_PROMPTS.md
