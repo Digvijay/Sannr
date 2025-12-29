@@ -1,7 +1,8 @@
 # Sannr
 
 [![NuGet](https://img.shields.io/nuget/v/Sannr.svg)](https://www.nuget.org/packages/Sannr)
-[![Build Status](https://github.com/digvijay/sannr/actions/workflows/build.yml/badge.svg)](https://github.com/digvijay/sannr/actions)
+[![Build Status](https://github.com/Digvijay/Sannr/actions/workflows/ci.yml/badge.svg)](https://github.com/Digvijay/Sannr/actions)
+[![Publish Status](https://github.com/Digvijay/Sannr/actions/workflows/publish.yml/badge.svg)](https://github.com/Digvijay/Sannr/actions)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
 [![Native AOT](https://img.shields.io/badge/Native%20AOT-Compatible-green)](https://learn.microsoft.com/en-us/dotnet/core/deploying/native-aot/)
 [![.NET 8 LTS](https://img.shields.io/badge/.NET-8.0%20LTS-purple)](https://dotnet.microsoft.com/en-us/download/dotnet/8.0)
