@@ -15,6 +15,7 @@
     <RepositoryUrl>https://github.com/Digvijay/Sannr</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
     <PackageIcon>icon.png</PackageIcon>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
     <PackageReleaseNotes>Initial release of Sannr v1.0.0 - The enterprise-grade, AOT-first validation engine for .NET. Features include 15-20x performance improvements, async validation, conditional logic, auto-sanitization, validation groups, dependency injection, OpenAPI integration, client-side validation, migration tools, custom validation rules, internationalization, and performance monitoring.</PackageReleaseNotes>
     
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
