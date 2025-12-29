@@ -7,7 +7,15 @@
     <Version>1.0.0</Version>
     <Authors>Sannr Team</Authors>
     <Description>The AOT-first validation engine for .NET. (Single Package)</Description>
-    <PackageTags>validation;aot;aspnetcore</PackageTags>
+    <PackageTags>validation;aot;aspnetcore;performance;enterprise</PackageTags>
+    
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <Copyright>Copyright (c) 2025 Sannr Team</Copyright>
+    <PackageProjectUrl>https://github.com/digvijay/sannr</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/digvijay/sannr</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <PackageIcon>icon.png</PackageIcon>
+    <PackageReleaseNotes>Initial release of Sannr v1.0.0 - The enterprise-grade, AOT-first validation engine for .NET. Features include 15-20x performance improvements, async validation, conditional logic, auto-sanitization, validation groups, dependency injection, OpenAPI integration, client-side validation, migration tools, custom validation rules, internationalization, and performance monitoring.</PackageReleaseNotes>
     
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <IncludeBuildOutput>true</IncludeBuildOutput>
@@ -36,6 +44,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <None Include="../../icon.png" Pack="true" PackagePath="icon.png" />
     <None Include="../../README.md" Pack="true" PackagePath="README.md" />
   </ItemGroup>
 
