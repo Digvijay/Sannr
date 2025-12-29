@@ -38,6 +38,4 @@ jobs:
         dotnet pack src/Sannr.AspNetCore/Sannr.AspNetCore.csproj -c Release -o out /p:Version=$VERSION
 
     - name: Push to NuGet
-      run: |
-        dotnet nuget setApiKey ${{ secrets.NUGET_API_KEY }} --source https://api.nuget.org/v3/index.json
-        dotnet nuget push "./out/*.nupkg" --source https://api.nuget.org/v3/index.json --skip-duplicate
+      run: dotnet nuget push "./out/*.nupkg" --source https://api.nuget.org/v3/index.json --api-key ${{ secrets.NUGET_API_KEY }} --skip-duplicate
