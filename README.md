@@ -1,7 +1,7 @@
 # Sannr
 
 [![NuGet](https://img.shields.io/nuget/v/Sannr.svg)](https://www.nuget.org/packages/Sannr)
-[![Build Status](https://github.com/microsoft/sannr/actions/workflows/build.yml/badge.svg)](https://github.com/microsoft/sannr/actions)
+[![Build Status](https://github.com/digvijay/sannr/actions/workflows/build.yml/badge.svg)](https://github.com/digvijay/sannr/actions)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
 [![Native AOT](https://img.shields.io/badge/Native%20AOT-Compatible-green)](https://learn.microsoft.com/en-us/dotnet/core/deploying/native-aot/)
 [![.NET 8 LTS](https://img.shields.io/badge/.NET-8.0%20LTS-purple)](https://dotnet.microsoft.com/en-us/download/dotnet/8.0)
@@ -32,6 +32,12 @@ Standard validation libraries rely on Reflection, which is slow, memory-intensiv
 | **Minimal API Support** | ❌ Manual validation boilerplate | **✅ `Validated<T>` wrapper** |
 | **Client-Side Validation** | ❌ Manual JavaScript/TypeScript | **✅ Auto-generated JSON rules** |
 | **Model-Level Validation** | ✅ `IValidatableObject` | **✅ `Sannr.IValidatableObject`** |
+
+---
+
+## 🔍 Transparency First
+
+**Before you start:** Sannr uses compile-time source generation for maximum performance, but this comes with specific limitations. Please review our **[Limitations & Future Roadmap](docs/LIMITATIONS_AND_ROADMAP.md)** to ensure Sannr fits your use case.
 
 ---
 
@@ -78,6 +84,8 @@ graph LR
 > **Note:** To ensure full compatibility with Ahead-of-Time (AoT) compilation, including Native AOT scenarios, this library's test suite uses explicit validator registration instead of reflection-based auto-discovery. This approach avoids runtime metadata inspection and guarantees that all validation logic is statically compiled, making Sannr suitable for high-performance, trimmed applications where reflection is unavailable or undesirable.
 
 📖 **[AoT Testing Strategy](docs/TESTING_STRATEGY.md)**
+
+⚠️ **[Important: Limitations & Future Roadmap](docs/LIMITATIONS_AND_ROADMAP.md)** - *Read this first to understand current limitations and planned improvements.*
 
 ---
 
@@ -965,3 +973,5 @@ dotnet run --project Sannr.Cli -- fluentvalidation --input <path> --output <path
 Sannr is open-source. We welcome contributions to expand the standard validator set and optimize regex generation patterns.
 
 **License**: MIT
+
+📖 **[TECHNICAL SUMMARY](docs/TECHNICAL_SUMMARY.md)** | **[EXECUTIVE SUMMARY](docs/EXECUTIVE_SUMMARY.md)** | **[LIMITATIONS & ROADMAP](docs/LIMITATIONS_AND_ROADMAP.md)**
