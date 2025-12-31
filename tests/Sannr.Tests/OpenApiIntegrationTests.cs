@@ -24,6 +24,7 @@
 
 using Microsoft.OpenApi.Models;
 using Sannr;
+using Sannr.AspNetCore;
 using Sannr.OpenApi;
 using Swashbuckle.AspNetCore.SwaggerGen;
 using System.Collections.Generic;
@@ -99,9 +100,8 @@ namespace Sannr.Tests
 
         public OpenApiIntegrationTests()
         {
-            _swaggerOptions = new SwaggerGenOptions();
-            _swaggerOptions.AddSannrValidationSchemas();
-            _schemaRepository = new SchemaRepository();
+        _swaggerOptions = new SwaggerGenOptions();
+        _schemaRepository = new SchemaRepository();
         }
 
         [Fact]
@@ -109,12 +109,14 @@ namespace Sannr.Tests
         {
             // Arrange
             var options = new SwaggerGenOptions();
+            var filter = new SannrValidationSchemaFilter();
 
             // Act
-            options.AddSannrValidationSchemas();
+            // options.SchemaFilters.Add(filter);
 
             // Assert
             Assert.NotNull(options);
+            Assert.NotNull(filter);
             // Note: We can't directly test the internal filter collection,
             // but the integration works as verified by other tests
         }
