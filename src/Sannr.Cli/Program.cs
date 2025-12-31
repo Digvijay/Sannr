@@ -314,8 +314,13 @@ public class DataAnnotationsMigrationService
         // Convert [Required] to Sannr [Required]
         result = Regex.Replace(result, @"\[Required(\([^)]*\))?\]", "[Required]", RegexOptions.IgnoreCase);
 
-        // Convert [StringLength(max)] to Sannr [StringLength(max)]
-        result = Regex.Replace(result, @"\[StringLength\((\d+)\)\]", "[StringLength($1)]", RegexOptions.IgnoreCase);
+        // Convert [StringLength(max, MinimumLength = min)] or [StringLength(max)] to Sannr [StringLength(max, MinimumLength = min)]
+        result = Regex.Replace(result, @"\[StringLength\((\d+)(?:,\s*MinimumLength\s*=\s*(\d+))?\)\]", match =>
+        {
+            var max = match.Groups[1].Value;
+            var min = match.Groups[2].Success ? match.Groups[2].Value : null;
+            return min != null ? $"[StringLength({max}, MinimumLength = {min})]" : $"[StringLength({max})]";
+        }, RegexOptions.IgnoreCase);
 
         // Convert [MaxLength(max)] to Sannr [StringLength(max)]
         result = Regex.Replace(result, @"\[MaxLength\((\d+)\)\]", "[StringLength($1)]", RegexOptions.IgnoreCase);

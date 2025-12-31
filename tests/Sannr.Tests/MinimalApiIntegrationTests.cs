@@ -65,7 +65,7 @@ public class MinimalApiIntegrationTests
     public MinimalApiIntegrationTests()
     {
         var services = new ServiceCollection();
-        services.AddSannr();
+        services.AddSannrValidators();
         _serviceProvider = services.BuildServiceProvider();
     }
 

@@ -2,9 +2,10 @@
   <PropertyGroup>
     <TargetFramework>net8.0</TargetFramework>
     <Nullable>enable</Nullable>
+    <IsAotCompatible Condition="$([MSBuild]::IsTargetFrameworkCompatible('$(TargetFramework)', 'net8.0'))">true</IsAotCompatible> <!-- Ensures AOT compatibility for performance and deployment -->
     
     <PackageId>Sannr</PackageId>
-    <Version>1.0.0</Version>
+    <Version>1.1.0</Version>
     <Authors>Digvijay Chauhan</Authors>
     <Description>The AOT-first validation engine for .NET. (Single Package)</Description>
     <PackageTags>validation;aot;aspnetcore;performance;enterprise</PackageTags>
@@ -16,7 +17,7 @@
     <RepositoryType>git</RepositoryType>
     <PackageIcon>icon.png</PackageIcon>
     <PackageReadmeFile>README.md</PackageReadmeFile>
-    <PackageReleaseNotes>Initial release of Sannr v1.0.0 - The enterprise-grade, AOT-first validation engine for .NET. Features include 15-20x performance improvements, async validation, conditional logic, auto-sanitization, validation groups, dependency injection, OpenAPI integration, client-side validation, migration tools, custom validation rules, internationalization, and performance monitoring.</PackageReleaseNotes>
+    <PackageReleaseNotes>v1.1.0 - Enhanced AOT compatibility with source-generated automatic validator registration. Added comprehensive OpenAPI schema generation, improved migration tools with better attribute handling, enhanced observability with metrics collection, and enterprise-grade dependency injection patterns. All features now fully AOT-compatible while maintaining the same developer experience.</PackageReleaseNotes>
     
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <IncludeBuildOutput>true</IncludeBuildOutput>
@@ -26,7 +27,7 @@
   <ItemGroup>
     <FrameworkReference Include="Microsoft.AspNetCore.App" />
     
-    <PackageReference Include="Swashbuckle.AspNetCore" Version="6.5.0" />
+    <PackageReference Include="Swashbuckle.AspNetCore" Version="6.4.0" />
     <PackageReference Include="System.Diagnostics.DiagnosticSource" Version="8.0.0" />
     
     <ProjectReference Include="..\Sannr.Core\Sannr.Core.csproj" PrivateAssets="all" />
