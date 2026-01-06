@@ -15,7 +15,7 @@
   </PropertyGroup>
 
   <!-- Common build settings for AOT-friendly libraries -->
-  <PropertyGroup Condition="'$(IsAotCompatible)' == ''">
+  <PropertyGroup Condition="'$(IsAotCompatible)' == '' and '$(TargetFrameworkIdentifier)' == '.NETCoreApp'">
     <IsAotCompatible>true</IsAotCompatible>
   </PropertyGroup>
 

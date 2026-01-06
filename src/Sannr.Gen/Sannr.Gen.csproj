@@ -4,7 +4,7 @@
     <EnforceExtendedAnalyzerRules>true</EnforceExtendedAnalyzerRules>
     <LangVersion>latest</LangVersion>
     <Nullable>enable</Nullable>
-    <IsAotCompatible Condition="$([MSBuild]::IsTargetFrameworkCompatible('$(TargetFramework)', 'net8.0'))">true</IsAotCompatible> <!-- AOT compatibility for source generator -->
+
     <IsPackable>false</IsPackable>
   </PropertyGroup>
   <ItemGroup>

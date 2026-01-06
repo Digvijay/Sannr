@@ -196,6 +196,7 @@ public class RequiredIfAttribute : SannrValidationAttribute
     }
 }
 
+[AttributeUsage(AttributeTargets.Property)]
 public class SanitizeAttribute : Attribute
 {
     public bool Trim { get; set; }
@@ -203,6 +204,7 @@ public class SanitizeAttribute : Attribute
     public bool ToLower { get; set; }
 }
 
+[AttributeUsage(AttributeTargets.Property | AttributeTargets.Field | AttributeTargets.Parameter, AllowMultiple = false)]
 public class DisplayAttribute : Attribute
 {
     public string? Name { get; set; }
