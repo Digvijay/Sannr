@@ -22,13 +22,12 @@
 // SOFTWARE.
 // ----------------------------------------------------------------------------------
 
-using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.DependencyInjection;
-using Sannr;
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Sannr.AspNetCore;
 
@@ -115,11 +114,11 @@ public class Validated<T> where T : class
             );
 
             var validationResult = await validator!(sannrContext);
-            
+
             stopwatch.Stop();
             metricsCollector.RecordValidationDuration(modelType, stopwatch.Elapsed.TotalMilliseconds);
             metricsCollector.RecordValidationErrors(modelType, validationResult.Errors.Count);
-            
+
             return new Validated<T>(model, validationResult);
         }
         catch

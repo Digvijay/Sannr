@@ -1,11 +1,6 @@
-using System.CommandLine;
-using System.CommandLine.Parsing;
-using Xunit;
-using System.IO;
-
 namespace Sannr.Cli.Tests;
 
-public class MigrationCliTests
+public partial class MigrationCliTests
 {
     [Fact]
     public async Task FluentValidationCommand_RequiresInputAndOutput()

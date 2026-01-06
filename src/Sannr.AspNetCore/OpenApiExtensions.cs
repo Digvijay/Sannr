@@ -22,12 +22,9 @@
 // SOFTWARE.
 // ----------------------------------------------------------------------------------
 
-using Microsoft.OpenApi.Models;
-using Sannr;
-using Swashbuckle.AspNetCore.SwaggerGen;
 using System;
-using System.Collections.Generic;
-using System.Linq;
+using Microsoft.OpenApi.Models;
+using Swashbuckle.AspNetCore.SwaggerGen;
 
 namespace Sannr.OpenApi;
 
@@ -37,19 +34,32 @@ namespace Sannr.OpenApi;
 public static class SannrOpenApiExtensions
 {
     /// <summary>
-    /// Adds Sannr OpenAPI schema generation to SwaggerGen options.
+    /// NOTE: This extension is a placeholder for discoverability.
+    /// To use Sannr's compile-time OpenAPI integration (AoT compatible), add this in your Program.cs:
+    /// 
+    /// <code>
+    /// builder.Services.AddSwaggerGen(options => {
+    ///     options.SchemaFilter&lt;Sannr.OpenApi.SannrGeneratedSchemaFilter&gt;();
+    /// });
+    /// </code>
+    /// 
+    /// The SannrGeneratedSchemaFilter is automatically generated at compile-time for all your validated models,
+    /// without any runtime reflection or IL suppression. It's fully AoT compatible!
     /// </summary>
+    [Obsolete("Don't call this method. Instead, add options.SchemaFilter<Sannr.OpenApi.SannrGeneratedSchemaFilter>() directly in your AddSwaggerGen configuration. See XML documentation for details.")]
     public static void AddSannrValidationSchemas(this SwaggerGenOptions options)
     {
-        // TODO: Add the schema filter once the correct API is determined
-        // For now, users should manually add: options.SchemaFilter<SannrValidationSchemaFilter>();
-        // or options.Filters.Add(new SchemaFilterDescriptor(typeof(SannrValidationSchemaFilter), null));
+        throw new NotSupportedException(
+            "This method is a placeholder. Add options.SchemaFilter<Sannr.OpenApi.SannrGeneratedSchemaFilter>() " +
+            "directly in your AddSwaggerGen configuration instead. The filter is auto-generated at compile-time.");
     }
 }
 
 /// <summary>
-/// Schema filter that enhances OpenAPI schemas with Sannr validation attributes.
+/// DEPRECATED: Use AddSannrValidationSchemas() instead, which uses the compile-time generated SannrGeneratedSchemaFilter.
+/// This reflection-based filter is kept for backwards compatibility but should not be used in AoT scenarios.
 /// </summary>
+[Obsolete("Use AddSannrValidationSchemas() extension method instead. This reflection-based approach is not AoT compatible.")]
 public class SannrValidationSchemaFilter : ISchemaFilter
 {
     public void Apply(OpenApiSchema schema, SchemaFilterContext context)

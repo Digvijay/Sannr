@@ -1,6 +1,4 @@
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.DependencyInjection.Extensions;
-using Sannr.Core;
 
 namespace Sannr.AspNetCore;
 
@@ -23,7 +21,7 @@ public static partial class ServiceCollectionExtensions
     public static IServiceCollection TryAddSannrServices(this IServiceCollection services)
     {
         // Example: Register validation services idempotently
-        services.TryAddEnumerable(ServiceDescriptor.Singleton<IValidationService, DefaultValidationService>()); // Idempotent DI registration
+        // services.TryAddEnumerable(ServiceDescriptor.Singleton<IValidationService, DefaultValidationService>()); // Idempotent DI registration
         // Ensure DummyForOpenApi is compiled
         _ = typeof(DummyForOpenApi);
         return services;
@@ -39,25 +37,5 @@ public static partial class ServiceCollectionExtensions
         // Register all generated validators
         RegisterGeneratedValidators(services);
         return services;
-    }
-}
-
-/// <summary>
-/// Placeholder interface for validation services.
-/// </summary>
-public interface IValidationService
-{
-    void Validate(object instance);
-}
-
-/// <summary>
-/// Default implementation of validation service.
-/// </summary>
-public class DefaultValidationService : IValidationService
-{
-    public void Validate(object instance)
-    {
-        // Validation logic here, integrated with metrics
-        Metrics.ValidationEvents.Add(1);
     }
 }

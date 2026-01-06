@@ -15,8 +15,11 @@ All attributes are located in the `Sannr` namespace.
   - [Url](#url)
   - [Phone](#phone)
   - [FileExtensions](#fileextensions)
+  - [FutureDate](#futuredate)
 - [Advanced Logic](#advanced-logic)
   - [RequiredIf](#requiredif)
+  - [AllowedValues](#allowedvalues)
+  - [ConditionalRange](#conditionalrange)
   - [CustomValidator](#customvalidator)
 - [Data Sanitization](#data-sanitization)
   - [Sanitize](#sanitize)
@@ -148,6 +151,17 @@ public string ResumeFileName { get; set; }
 
 ---
 
+### `[FutureDate]`
+Validates that the property (DateTime or DateTimeOffset) is in the future.
+
+**Example:**
+```csharp
+[FutureDate]
+public DateTime DeliveryDate { get; set; }
+```
+
+---
+
 ## Advanced Logic
 
 ### `[RequiredIf]`
@@ -165,6 +179,41 @@ public string Country { get; set; }
 // State is strictly required only when Country is "USA"
 [RequiredIf(nameof(Country), "USA")]
 public string State { get; set; }
+```
+
+---
+
+### `[AllowedValues]`
+Restricts a property to a predefined set of values.
+
+| Parameter | Type | Description |
+| :--- | :--- | :--- |
+| `Values` | `string[]` | **(Constructor)** Array of allowed string values. |
+
+**Example:**
+```csharp
+[AllowedValues("active", "inactive", "pending")]
+public string Status { get; set; }
+```
+
+---
+
+### `[ConditionalRange]`
+Applies numeric range validation only when another property matches a specific value.
+
+| Parameter | Type | Description |
+| :--- | :--- | :--- |
+| `OtherProperty` | `string` | **(Constructor)** Name of the property to check against. |
+| `TargetValue` | `object` | **(Constructor)** The value that triggers the range check. |
+| `Minimum` | `double` | **(Constructor)** The minimum allowed value. |
+| `Maximum` | `double` | **(Constructor)** The maximum allowed value. |
+
+**Example:**
+```csharp
+public string Currency { get; set; }
+
+[ConditionalRange("Currency", "USD", 1, 1000)]
+public decimal Amount { get; set; }
 ```
 
 ---

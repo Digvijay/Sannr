@@ -22,7 +22,6 @@
 // SOFTWARE.
 // ----------------------------------------------------------------------------------
 
-using Sannr;
 using System.Linq;
 using Sannr.Tests.Models;
 using Xunit;
@@ -33,7 +32,7 @@ namespace Sannr.Tests;
 /// Test models for client-side validation generation.
 /// </summary>
 [GenerateClientValidators]
-public class UserRegistrationForm
+public partial class UserRegistrationForm
 {
     [Required]
     public string? Username { get; set; }
@@ -44,7 +43,7 @@ public class UserRegistrationForm
     [Required, StringLength(100, MinimumLength = 8)]
     public string? Password { get; set; }
 
-[Required]
+    [Required]
     public int Age { get; set; }
 
     [Url]
@@ -58,7 +57,7 @@ public class UserRegistrationForm
 }
 
 [GenerateClientValidators]
-public class ProductForm
+public partial class ProductForm
 {
     [Required, StringLength(200)]
     public string? Name { get; set; }
@@ -77,7 +76,7 @@ public class ProductForm
 }
 
 [GenerateClientValidators]
-public class AddressForm
+public partial class AddressForm
 {
     [Required, StringLength(100)]
     public string? Street { get; set; }
@@ -93,7 +92,7 @@ public class AddressForm
 }
 
 [GenerateClientValidators]
-public class ContactForm
+public partial class ContactForm
 {
     [Required]
     public string? Name { get; set; }
@@ -110,7 +109,7 @@ public class ContactForm
 /// Tests verify that TypeScript/JavaScript validation code is correctly generated
 /// from Sannr validation attributes.
 /// </summary>
-public class ClientSideValidationTests
+public partial class ClientSideValidationTests
 {
     [Fact]
     public void UserRegistrationForm_ShouldHaveGenerateClientValidatorsAttribute()

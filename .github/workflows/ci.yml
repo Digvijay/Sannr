@@ -19,6 +19,9 @@ jobs:
       with:
         dotnet-version: 8.0.x
 
+    - name: Check Formatting
+      run: dotnet format --verify-no-changes Sannr.sln
+
     - name: Restore dependencies
       run: dotnet restore Sannr.sln
 
@@ -26,7 +29,15 @@ jobs:
       run: dotnet build Sannr.sln --no-restore --configuration Release
 
     - name: Test
-      run: dotnet test Sannr.sln --no-build --configuration Release --verbosity normal
+      run: |
+        dotnet test Sannr.sln --no-build --configuration Release --verbosity normal --collect:"XPlat Code Coverage" --results-directory ./coverage
+        # Consolidate coverage results if needed. Using a standard report generator is recommended in real projects.
+
+    - name: Upload Coverage
+      uses: actions/upload-artifact@v4
+      with:
+        name: code-coverage
+        path: ./coverage/**/coverage.cobertura.xml
 
     - name: Pack
       run: |

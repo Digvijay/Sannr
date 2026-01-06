@@ -22,13 +22,11 @@
 // SOFTWARE.
 // ----------------------------------------------------------------------------------
 
-using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.DependencyInjection;
-using Sannr;
-using Sannr.AspNetCore;
 using System;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.DependencyInjection;
+using Sannr.AspNetCore;
 using Xunit;
 
 namespace Sannr.Tests;
@@ -36,7 +34,7 @@ namespace Sannr.Tests;
 /// <summary>
 /// Test models for Minimal API integration testing.
 /// </summary>
-public class MinimalApiTestModel
+public partial class MinimalApiTestModel
 {
     [Required, EmailAddress]
     public string? Email { get; set; }
@@ -48,7 +46,7 @@ public class MinimalApiTestModel
     public int Age { get; set; }
 }
 
-public class SimpleTestModel
+public partial class SimpleTestModel
 {
     [Required]
     public string? Value { get; set; }
@@ -58,7 +56,7 @@ public class SimpleTestModel
 /// Comprehensive test suite for Minimal API integration with Validated<T> wrapper.
 /// Tests verify automatic validation, error handling, and HTTP response generation.
 /// </summary>
-public class MinimalApiIntegrationTests
+public partial class MinimalApiIntegrationTests
 {
     private readonly IServiceProvider _serviceProvider;
 

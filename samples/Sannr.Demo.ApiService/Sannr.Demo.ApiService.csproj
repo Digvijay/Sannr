@@ -1,0 +1,21 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Sannr.Demo.ServiceDefaults\Sannr.Demo.ServiceDefaults.csproj" />
+    <!-- Using local project references for development -->
+    <ProjectReference Include="..\..\src\Sannr.Core\Sannr.Core.csproj" />
+    <ProjectReference Include="..\..\src\Sannr.AspNetCore\Sannr.AspNetCore.csproj" />
+    <ProjectReference Include="..\..\src\Sannr.Gen\Sannr.Gen.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="10.0.1" /> -->
+  </ItemGroup>
+
+</Project>

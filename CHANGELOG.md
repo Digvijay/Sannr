@@ -15,6 +15,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Enhanced Dependency Injection**: Idempotent service registration patterns and improved DI integration
 - **Client-Side Validation Generation**: Source-generated JavaScript validators for seamless client-side validation
 - **Advanced Error Handling**: Enhanced problem details with validation rule extraction and improved error responses
+- **Repository Hygiene & Security**:
+  - Added Central Package Management (CPM) via `Directory.Packages.props`
+  - Added centralized build configuration via `Directory.Build.props`
+  - Implemented GitHub CodeQL static analysis workflow
+  - Added `.editorconfig` for project-wide coding standards
+  - Improved CI pipeline with automated formatting checks and code coverage collection
+  - Added community health files: `CODE_OF_CONDUCT.md`, PR templates, and issue templates
+  - Locked .NET SDK version via `global.json`
 
 ### Changed
 - **AOT Compatibility**: Full Native AOT support with zero reflection in production code paths

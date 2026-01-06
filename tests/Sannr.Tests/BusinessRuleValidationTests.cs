@@ -23,7 +23,6 @@
 // ----------------------------------------------------------------------------------
 
 using System;
-using Sannr;
 using Xunit;
 
 namespace Sannr.Tests;
@@ -31,7 +30,7 @@ namespace Sannr.Tests;
 /// <summary>
 /// Test models for business rule validators.
 /// </summary>
-public class OrderModel
+public partial class OrderModel
 {
     [Required]
     public string? CustomerId { get; set; }
@@ -46,7 +45,7 @@ public class OrderModel
     public decimal Amount { get; set; }
 }
 
-public class ProductModel
+public partial class ProductModel
 {
     [Required]
     public string? Name { get; set; }
@@ -61,7 +60,7 @@ public class ProductModel
     public decimal? Price { get; set; }
 }
 
-public class AppointmentModel
+public partial class AppointmentModel
 {
     [Required]
     public string? CustomerName { get; set; }
@@ -79,7 +78,7 @@ public class AppointmentModel
 /// <summary>
 /// Tests for built-in business rule validators.
 /// </summary>
-public class BusinessRuleValidationTests
+public partial class BusinessRuleValidationTests
 {
     [Fact]
     public void FutureDateAttribute_ShouldBeDefined()

@@ -31,7 +31,7 @@ namespace Sannr.Tests.Resources;
 /// Strongly-typed resource class for validation messages.
 /// This would normally be auto-generated from ValidationMessages.resx
 /// </summary>
-public class ValidationMessages
+public partial class ValidationMessages
 {
     private static readonly ResourceManager ResourceManager =
         new ResourceManager("Sannr.Tests.Resources.ValidationMessages",

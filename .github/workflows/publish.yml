@@ -34,8 +34,11 @@ jobs:
         
         echo "📦 Packing Version: $VERSION"
         
-        # ONLY pack the main project now. It handles bundling Core and Gen automatically.
+        # Pack the main library
         dotnet pack src/Sannr.AspNetCore/Sannr.AspNetCore.csproj -c Release -o out /p:Version=$VERSION
+        
+        # Pack the CLI tool
+        dotnet pack src/Sannr.Cli/Sannr.Cli.csproj -c Release -o out /p:Version=$VERSION
 
     - name: Push to NuGet
       run: dotnet nuget push "./out/*.nupkg" --source https://api.nuget.org/v3/index.json --api-key ${{ secrets.NUGET_API_KEY }} --skip-duplicate

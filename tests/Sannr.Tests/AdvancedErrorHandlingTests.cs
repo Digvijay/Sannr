@@ -22,18 +22,12 @@
 // SOFTWARE.
 // ----------------------------------------------------------------------------------
 
-using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc.Infrastructure;
-using Microsoft.AspNetCore.Mvc.ModelBinding;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Options;
-using Sannr.AspNetCore;
-using Sannr.Tests.Models;
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.Infrastructure;
+using Microsoft.Extensions.DependencyInjection;
+using Sannr.AspNetCore;
 using Xunit;
 
 namespace Sannr.Tests;
@@ -41,7 +35,7 @@ namespace Sannr.Tests;
 /// <summary>
 /// Tests for Advanced Error Handling features.
 /// </summary>
-public class AdvancedErrorHandlingTests
+public partial class AdvancedErrorHandlingTests
 {
     [Fact]
     public void SannrValidationProblemDetails_Should_Initialize_With_Errors()
@@ -243,7 +237,7 @@ public class AdvancedErrorHandlingTests
 /// <summary>
 /// Simple test model for validation testing.
 /// </summary>
-public class ErrorHandlingTestModel
+public partial class ErrorHandlingTestModel
 {
     public string? Name { get; set; }
     public string? Email { get; set; }

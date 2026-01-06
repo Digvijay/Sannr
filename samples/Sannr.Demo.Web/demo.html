@@ -1,0 +1,1025 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sannr Validation Framework Demo</title>
+    <style>
+        /* Sannr Validation Demo Styles */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 30px;
+            color: white;
+        }
+
+        header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+        }
+
+        header p {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+
+        /* Tabs */
+        .tabs {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 5px;
+            margin-bottom: 20px;
+            background: white;
+            border-radius: 10px;
+            padding: 5px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+
+        .tab-button {
+            flex: 1;
+            min-width: 150px;
+            padding: 12px 20px;
+            border: none;
+            background: transparent;
+            color: #666;
+            font-size: 0.9rem;
+            font-weight: 500;
+            cursor: pointer;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+        }
+
+        .tab-button:hover {
+            background: #f5f5f5;
+            color: #333;
+        }
+
+        .tab-button.active {
+            background: #667eea;
+            color: white;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+
+        /* Sub-tabs */
+        .sub-tabs {
+            display: flex;
+            gap: 5px;
+            margin-bottom: 20px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 5px;
+        }
+
+        .sub-tab-button {
+            flex: 1;
+            padding: 10px 15px;
+            border: none;
+            background: transparent;
+            color: #666;
+            font-size: 0.85rem;
+            font-weight: 500;
+            cursor: pointer;
+            border-radius: 6px;
+            transition: all 0.3s ease;
+        }
+
+        .sub-tab-button:hover {
+            background: #e9ecef;
+            color: #333;
+        }
+
+        .sub-tab-button.active {
+            background: #667eea;
+            color: white;
+        }
+
+        /* Tab Content */
+        .tab-content {
+            display: none;
+            background: white;
+            border-radius: 10px;
+            padding: 30px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .tab-content h2 {
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 1.8rem;
+        }
+
+        .tab-content p {
+            color: #666;
+            margin-bottom: 25px;
+            font-size: 1rem;
+        }
+
+        .sub-tab-content {
+            display: none;
+        }
+
+        .sub-tab-content.active {
+            display: block;
+        }
+
+        .sub-tab-content h3 {
+            color: #444;
+            margin-bottom: 15px;
+            font-size: 1.4rem;
+        }
+
+        /* Forms */
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin-bottom: 25px;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .form-group label {
+            font-weight: 600;
+            margin-bottom: 5px;
+            color: #333;
+            font-size: 0.9rem;
+        }
+
+        .form-group input,
+        .form-group select {
+            padding: 10px 12px;
+            border: 2px solid #e1e5e9;
+            border-radius: 6px;
+            font-size: 0.95rem;
+            transition: border-color 0.3s ease;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .form-group small {
+            color: #666;
+            font-size: 0.8rem;
+            margin-top: 3px;
+        }
+
+        .submit-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+
+        .submit-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(0,0,0,0.15);
+        }
+
+        .submit-btn:active {
+            transform: translateY(0);
+        }
+
+        /* Results */
+        .result-container {
+            margin-top: 25px;
+            padding: 20px;
+            border-radius: 8px;
+            border-left: 4px solid #667eea;
+            background: #f8f9fa;
+        }
+
+        .result-container.success {
+            border-left-color: #28a745;
+            background: #d4edda;
+        }
+
+        .result-container.error {
+            border-left-color: #dc3545;
+            background: #f8d7da;
+        }
+
+        .result-container h3 {
+            margin-bottom: 10px;
+            font-size: 1.1rem;
+        }
+
+        .result-container pre {
+            background: rgba(255,255,255,0.7);
+            padding: 15px;
+            border-radius: 6px;
+            overflow-x: auto;
+            font-size: 0.85rem;
+            line-height: 1.4;
+            border: 1px solid rgba(0,0,0,0.1);
+        }
+
+        .result-container .error-list {
+            margin-top: 10px;
+        }
+
+        .error-item {
+            padding: 8px 12px;
+            margin: 5px 0;
+            border-radius: 4px;
+            background: rgba(255,255,255,0.8);
+            border-left: 3px solid #dc3545;
+        }
+
+        .error-item.warning {
+            border-left-color: #ffc107;
+            background: rgba(255,235,59,0.1);
+        }
+
+        .error-item.info {
+            border-left-color: #17a2b8;
+            background: rgba(23,162,184,0.1);
+        }
+
+        .error-field {
+            font-weight: bold;
+            color: #333;
+        }
+
+        .error-message {
+            color: #666;
+            font-size: 0.9rem;
+        }
+
+        .error-severity {
+            font-size: 0.8rem;
+            color: #999;
+            font-style: italic;
+        }
+
+        /* Loading */
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-right: 10px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .container {
+                padding: 15px;
+            }
+
+            header h1 {
+                font-size: 2rem;
+            }
+
+            .tabs {
+                flex-direction: column;
+            }
+
+            .tab-button {
+                min-width: auto;
+            }
+
+            .form-grid {
+                grid-template-columns: 1fr;
+                gap: 15px;
+            }
+
+            .tab-content {
+                padding: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🔍 Sannr Validation Framework Demo</h1>
+            <p>Interactive web interface for testing all Sannr validation features</p>
+            <div style="background: rgba(255,255,255,0.9); padding: 15px; border-radius: 8px; margin-top: 20px; text-align: left;">
+                <h3 style="color: #333; margin-bottom: 10px;">🚀 How to Use:</h3>
+                <ol style="color: #555;">
+                    <li>Make sure the API service is running on <code style="background: #f0f0f0; padding: 2px 4px; border-radius: 3px;">http://localhost:59808</code></li>
+                    <li>Fill out the forms below and click the validation buttons</li>
+                    <li>See real-time validation results with detailed error messages</li>
+                    <li>Test different scenarios by changing the input values</li>
+                </ol>
+            </div>
+        </header>
+
+        <div class="tabs">
+            <button class="tab-button active" onclick="showTab('comprehensive')">Comprehensive Validation</button>
+            <button class="tab-button" onclick="showTab('user-profile')">User Profile</button>
+            <button class="tab-button" onclick="showTab('advanced')">Advanced Validation</button>
+            <button class="tab-button" onclick="showTab('business-rules')">Business Rules</button>
+            <button class="tab-button" onclick="showTab('client-validation')">Client Validation</button>
+        </div>
+
+        <div id="comprehensive" class="tab-content active">
+            <h2>Comprehensive Validation Test</h2>
+            <p>Test all major validation attributes: Required, StringLength, Range, Email, URL, Phone, FileExtensions, RequiredIf, Sanitize</p>
+
+            <form id="comprehensive-form" onsubmit="submitForm(event, 'validation')">
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label for="comp-username">Username *</label>
+                        <input type="text" id="comp-username" name="username" placeholder="Required field">
+                        <small>Will be sanitized (trimmed + uppercase)</small>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="comp-displayname">Display Name</label>
+                        <input type="text" id="comp-displayname" name="displayName" placeholder="3-10 characters">
+                        <small>StringLength validation</small>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="comp-age">Age</label>
+                        <input type="number" id="comp-age" name="age" placeholder="18-99" min="1" max="120">
+                        <small>Range validation</small>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="comp-displayed-age">User's Age</label>
+                        <input type="number" id="comp-displayed-age" name="displayedAge" placeholder="18-99" min="1" max="120">
+                        <small>Display name validation</small>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="comp-price">Price</label>
+                        <input type="number" id="comp-price" name="price" step="0.01" placeholder="0.01-1000.00">
+                        <small>Decimal range validation</small>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="comp-email">Contact Email</label>
+                        <input type="email" id="comp-email" name="contactEmail" placeholder="valid@email.com">
+                        <small>Email format validation</small>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="comp-card">Payment Card</label>
+                        <input type="text" id="comp-card" name="paymentCard" placeholder="Credit card number">
+                        <small>Credit card validation</small>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="comp-url">Portfolio URL</label>
+                        <input type="url" id="comp-url" name="portfolioUrl" placeholder="https://example.com">
+                        <small>URL validation</small>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="comp-phone">Phone Number</label>
+                        <input type="tel" id="comp-phone" name="phoneNumber" placeholder="+1-555-123-4567">
+                        <small>Phone validation</small>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="comp-file">Resume File</label>
+                        <input type="text" id="comp-file" name="resumeFileName" placeholder="document.pdf">
+                        <small>File extension: pdf, docx, txt</small>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="comp-country">Country</label>
+                        <select id="comp-country" name="country">
+                            <option value="">Select country</option>
+                            <option value="USA">USA</option>
+                            <option value="Canada">Canada</option>
+                            <option value="UK">UK</option>
+                        </select>
+                        <small>RequiredIf validation</small>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="comp-state">State (USA only)</label>
+                        <input type="text" id="comp-state" name="state" placeholder="Required if USA">
+                        <small>Conditional validation</small>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="comp-userid">User ID</label>
+                        <input type="text" id="comp-userid" name="userId" placeholder="Will be sanitized">
+                        <small>Sanitization demo</small>
+                    </div>
+                </div>
+
+                <button type="submit" class="submit-btn">Validate Comprehensive Data</button>
+            </form>
+
+            <div id="validation-result" class="result-container"></div>
+        </div>
+
+        <div id="user-profile" class="tab-content">
+            <h2>User Profile Validation</h2>
+            <p>Test sanitization, conditional validation, and regex patterns</p>
+
+            <form id="user-profile-form" onsubmit="submitForm(event, 'user-profile')">
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label for="profile-username">Username *</label>
+                        <input type="text" id="profile-username" name="username" placeholder="Will be sanitized">
+                        <small>Trimmed and converted to uppercase</small>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="profile-email">Email *</label>
+                        <input type="email" id="profile-email" name="email" placeholder="valid@email.com">
+                        <small>Required field</small>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="profile-age">Years Old</label>
+                        <input type="number" id="profile-age" name="age" placeholder="18-100" min="1" max="120">
+                        <small>Display name validation</small>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="profile-country">Country</label>
+                        <select id="profile-country" name="country">
+                            <option value="">Select country</option>
+                            <option value="USA">USA</option>
+                            <option value="Canada">Canada</option>
+                            <option value="UK">UK</option>
+                        </select>
+                        <small>Triggers conditional validation</small>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="profile-zipcode">Zip Code (USA only)</label>
+                        <input type="text" id="profile-zipcode" name="zipCode" placeholder="12345 or 12345-6789">
+                        <small>US zip code format validation</small>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="profile-referral">Referral Code</label>
+                        <input type="text" id="profile-referral" name="referralCode" placeholder="Optional">
+                        <small>Required in 'Reg' validation group</small>
+                    </div>
+                </div>
+
+                <button type="submit" class="submit-btn">Create User Profile</button>
+            </form>
+
+            <div id="user-profile-result" class="result-container"></div>
+        </div>
+
+        <div id="advanced" class="tab-content">
+            <h2>Advanced Validation</h2>
+            <p>Test custom validators, password strength, and severity levels</p>
+
+            <form id="advanced-form" onsubmit="submitForm(event, 'advanced')">
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label for="adv-username">Username *</label>
+                        <input type="text" id="adv-username" name="username" placeholder="3-50 characters">
+                        <small>Length validation</small>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="adv-email">Email *</label>
+                        <input type="email" id="adv-email" name="email" placeholder="valid@email.com">
+                        <small>Email format</small>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="adv-password">Password *</label>
+                        <input type="password" id="adv-password" name="password" placeholder="Strong password">
+                        <small>8+ chars, uppercase, lowercase, number</small>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="adv-security-code">Security Code</label>
+                        <input type="number" id="adv-security-code" name="securityCode" placeholder="1234" min="1000" max="9999">
+                        <small>4-digit code</small>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="adv-credit-card">Credit Card</label>
+                        <input type="text" id="adv-credit-card" name="creditCardNumber" placeholder="Valid card number">
+                        <small>Credit card validation</small>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="adv-website">Website</label>
+                        <input type="url" id="adv-website" name="website" placeholder="https://example.com">
+                        <small>URL validation</small>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="adv-phone">Phone Number</label>
+                        <input type="tel" id="adv-phone" name="phoneNumber" placeholder="+1-555-123-4567">
+                        <small>Phone format</small>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="adv-document">Document Path</label>
+                        <input type="text" id="adv-document" name="documentPath" placeholder="document.pdf">
+                        <small>Extensions: pdf, doc, docx</small>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="adv-country">Country</label>
+                        <select id="adv-country" name="country">
+                            <option value="">Select country</option>
+                            <option value="US">United States</option>
+                            <option value="CA">Canada</option>
+                            <option value="UK">United Kingdom</option>
+                        </select>
+                        <small>Triggers conditional validation</small>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="adv-zipcode">Zip Code (US only)</label>
+                        <input type="text" id="adv-zipcode" name="zipCode" placeholder="Required for US">
+                        <small>Conditional validation</small>
+                    </div>
+                </div>
+
+                <button type="submit" class="submit-btn">Validate Advanced Data</button>
+            </form>
+
+            <div id="advanced-result" class="result-container"></div>
+        </div>
+
+        <div id="business-rules" class="tab-content">
+            <h2>Business Rules Validation</h2>
+            <p>Test domain-specific validation: future dates, allowed values, conditional ranges</p>
+
+            <div class="sub-tabs">
+                <button class="sub-tab-button active" onclick="showSubTab('order')">Order Validation</button>
+                <button class="sub-tab-button" onclick="showSubTab('product')">Product Validation</button>
+                <button class="sub-tab-button" onclick="showSubTab('appointment')">Appointment Validation</button>
+            </div>
+
+            <div id="order" class="sub-tab-content active">
+                <h3>Order Validation</h3>
+                <form id="order-form" onsubmit="submitForm(event, 'order')">
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label for="order-customer-id">Customer ID *</label>
+                            <input type="text" id="order-customer-id" name="customerId" placeholder="Required">
+                            <small>Customer identifier</small>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="order-delivery-date">Delivery Date *</label>
+                            <input type="datetime-local" id="order-delivery-date" name="deliveryDate">
+                            <small>Must be in the future</small>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="order-currency">Currency</label>
+                            <select id="order-currency" name="currency">
+                                <option value="">Select currency</option>
+                                <option value="USD">USD</option>
+                                <option value="EUR">EUR</option>
+                                <option value="GBP">GBP</option>
+                                <option value="INVALID">Invalid Currency</option>
+                            </select>
+                            <small>Allowed: USD, EUR, GBP</small>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="order-amount">Amount</label>
+                            <input type="number" id="order-amount" name="amount" step="0.01" placeholder="Order amount">
+                            <small>USD: $1-1000, others: no limit</small>
+                        </div>
+                    </div>
+
+                    <button type="submit" class="submit-btn">Validate Order</button>
+                </form>
+            </div>
+
+            <div id="product" class="sub-tab-content">
+                <h3>Product Validation</h3>
+                <form id="product-form" onsubmit="submitForm(event, 'product')">
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label for="product-name">Product Name *</label>
+                            <input type="text" id="product-name" name="name" placeholder="Required">
+                            <small>Product name</small>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="product-status">Status</label>
+                            <select id="product-status" name="status">
+                                <option value="">Select status</option>
+                                <option value="active">Active</option>
+                                <option value="inactive">Inactive</option>
+                                <option value="discontinued">Discontinued</option>
+                                <option value="pending">Pending</option>
+                                <option value="invalid">Invalid Status</option>
+                            </select>
+                            <small>Product status</small>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="product-release-date">Release Date</label>
+                            <input type="datetime-local" id="product-release-date" name="releaseDate">
+                            <small>Future date for new products</small>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="product-price">Price (Active products)</label>
+                            <input type="number" id="product-price" name="price" step="0.01" placeholder="$0.01 - $999,999.99">
+                            <small>Price range for active products</small>
+                        </div>
+                    </div>
+
+                    <button type="submit" class="submit-btn">Validate Product</button>
+                </form>
+            </div>
+
+            <div id="appointment" class="sub-tab-content">
+                <h3>Appointment Validation</h3>
+                <form id="appointment-form" onsubmit="submitForm(event, 'appointment')">
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label for="appt-customer-name">Customer Name *</label>
+                            <input type="text" id="appt-customer-name" name="customerName" placeholder="Required">
+                            <small>Customer name</small>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="appt-date">Appointment Date *</label>
+                            <input type="datetime-local" id="appt-date" name="appointmentDate">
+                            <small>Must be in the future</small>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="appt-status">Status</label>
+                            <select id="appt-status" name="status">
+                                <option value="">Select status</option>
+                                <option value="pending">Pending</option>
+                                <option value="confirmed">Confirmed</option>
+                                <option value="cancelled">Cancelled</option>
+                                <option value="completed">Completed</option>
+                                <option value="invalid">Invalid Status</option>
+                            </select>
+                            <small>Appointment status</small>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="appt-duration">Duration (minutes)</label>
+                            <input type="number" id="appt-duration" name="durationMinutes" placeholder="30-480" min="1" max="1000">
+                            <small>30 min - 8 hours for confirmed</small>
+                        </div>
+                    </div>
+
+                    <button type="submit" class="submit-btn">Validate Appointment</button>
+                </form>
+            </div>
+
+            <div id="business-rules-result" class="result-container"></div>
+        </div>
+
+        <div id="client-validation" class="tab-content">
+            <h2>Client-Side Validation</h2>
+            <p>Test frontend-ready validation for client-side integration</p>
+
+            <form id="client-validation-form" onsubmit="submitForm(event, 'client-validation')">
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label for="client-name">Name *</label>
+                        <input type="text" id="client-name" name="name" placeholder="Required, max 100 chars">
+                        <small>Required field</small>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="client-email">Email *</label>
+                        <input type="email" id="client-email" name="email" placeholder="valid@email.com">
+                        <small>Email format validation</small>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="client-age">Age</label>
+                        <input type="number" id="client-age" name="age" placeholder="18-120" min="1" max="150">
+                        <small>Age range validation</small>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="client-has-address">Has Address</label>
+                        <input type="checkbox" id="client-has-address" name="hasAddress">
+                        <small>Triggers conditional validation</small>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="client-street-address">Street Address</label>
+                        <input type="text" id="client-street-address" name="streetAddress" placeholder="Required if address checked">
+                        <small>Conditional validation</small>
+                    </div>
+                </div>
+
+                <button type="submit" class="submit-btn">Validate Client Data</button>
+            </form>
+
+            <div id="client-validation-result" class="result-container"></div>
+        </div>
+    </div>
+
+    <script>
+        // Sannr Validation Demo JavaScript
+
+        // Tab switching functionality
+        function showTab(tabName) {
+            // Hide all tabs
+            const tabs = document.querySelectorAll('.tab-content');
+            tabs.forEach(tab => tab.classList.remove('active'));
+
+            // Remove active class from all buttons
+            const buttons = document.querySelectorAll('.tab-button');
+            buttons.forEach(button => button.classList.remove('active'));
+
+            // Show selected tab
+            document.getElementById(tabName).classList.add('active');
+
+            // Add active class to clicked button
+            event.target.classList.add('active');
+        }
+
+        function showSubTab(subTabName) {
+            // Hide all sub-tabs
+            const subTabs = document.querySelectorAll('.sub-tab-content');
+            subTabs.forEach(tab => tab.classList.remove('active'));
+
+            // Remove active class from all sub-buttons
+            const buttons = document.querySelectorAll('.sub-tab-button');
+            buttons.forEach(button => button.classList.remove('active'));
+
+            // Show selected sub-tab
+            document.getElementById(subTabName).classList.add('active');
+
+            // Add active class to clicked button
+            event.target.classList.add('active');
+        }
+
+        // API endpoint configuration
+        const endpointMap = {
+            'validation': '/api/test/validation',
+            'user-profile': '/api/test/user-profile',
+            'advanced': '/api/test/advanced',
+            'order': '/api/test/order',
+            'product': '/api/test/product',
+            'appointment': '/api/test/appointment',
+            'client-validation': '/api/test/client-validation'
+        };
+
+        // Auto-detect API URL (for Aspire or standalone)
+        function getApiUrl() {
+            // Always use empty base URL to route through the Web proxy
+            // The Web project forwards all /api/* requests to the ApiService
+            return '';
+        }
+
+        // Form submission handling
+        async function submitForm(event, endpoint) {
+            event.preventDefault();
+
+            const form = event.target;
+            const formData = new FormData(form);
+            const data = {};
+
+            // Convert FormData to object
+            for (let [key, value] of formData.entries()) {
+                // Handle checkboxes
+                if (form.elements[key].type === 'checkbox') {
+                    data[key] = form.elements[key].checked;
+                } else if (form.elements[key].type === 'number') {
+                    // Convert numbers
+                    data[key] = value === '' ? undefined : Number(value);
+                } else {
+                    data[key] = value;
+                }
+            }
+
+            // Handle datetime-local inputs
+            form.querySelectorAll('input[type="datetime-local"]').forEach(input => {
+                if (input.value) {
+                    data[input.name] = input.value;
+                }
+            });
+
+            const resultContainer = document.getElementById(`${endpoint}-result`) || document.getElementById('business-rules-result');
+            resultContainer.innerHTML = '<div class="loading"></div>Submitting...';
+
+            try {
+                const apiUrl = getApiUrl();
+                const apiEndpoint = endpointMap[endpoint] || `/api/test/${endpoint}`;
+                const fullUrl = `${apiUrl}${apiEndpoint}`;
+                console.log(fullUrl);
+                
+                const response = await fetch(fullUrl, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(data)
+                });
+
+                const result = await response.json();
+
+                if (response.ok) {
+                    displaySuccess(result, resultContainer, endpoint);
+                } else {
+                    displayErrors(result, resultContainer);
+                }
+            } catch (error) {
+                const apiUrl = getApiUrl();
+                resultContainer.innerHTML = `
+                    <h3>❌ Network Error</h3>
+                    <pre>${error.message}</pre>
+                    <p>Make sure the API service is running. Trying to connect to: ${apiUrl}</p>
+                    <p><small>Tip: The demo auto-detects Aspire endpoints or defaults to http://localhost:5000</small></p>
+                `;
+                resultContainer.className = 'result-container error';
+            }
+        }
+
+        function displaySuccess(result, container, endpoint) {
+            let content = `<h3>✅ ${result.message}</h3>`;
+
+            if (result.sanitizedData) {
+                content += `
+                    <h4>Sanitized Data:</h4>
+                    <pre>${JSON.stringify(result.sanitizedData, null, 2)}</pre>
+                `;
+            }
+
+            if (result.profile) {
+                content += `
+                    <h4>User Profile:</h4>
+                    <pre>${JSON.stringify(result.profile, null, 2)}</pre>
+                `;
+            }
+
+            if (result.order) {
+                content += `
+                    <h4>Order Details:</h4>
+                    <pre>${JSON.stringify(result.order, null, 2)}</pre>
+                `;
+            }
+
+            if (result.product) {
+                content += `
+                    <h4>Product Details:</h4>
+                    <pre>${JSON.stringify(result.product, null, 2)}</pre>
+                `;
+            }
+
+            if (result.appointment) {
+                content += `
+                    <h4>Appointment Details:</h4>
+                    <pre>${JSON.stringify(result.appointment, null, 2)}</pre>
+                `;
+            }
+
+            if (result.data) {
+                content += `
+                    <h4>Validated Data:</h4>
+                    <pre>${JSON.stringify(result.data, null, 2)}</pre>
+                `;
+            }
+
+            if (result.securityCode !== undefined) {
+                content += `<p><strong>Security Code:</strong> ${result.securityCode}</p>`;
+            }
+
+            if (result.hasValidPassword !== undefined) {
+                content += `<p><strong>Password Valid:</strong> ${result.hasValidPassword ? '✅' : '❌'}</p>`;
+            }
+
+            container.innerHTML = content;
+            container.className = 'result-container success';
+        }
+
+        function displayErrors(result, container) {
+            let content = `<h3>❌ ${result.message}</h3>`;
+
+            if (result.errors && result.errors.length > 0) {
+                content += '<div class="error-list">';
+
+                result.errors.forEach(error => {
+                    const severityClass = error.severity ? error.severity.toLowerCase() : 'error';
+                    content += `
+                        <div class="error-item ${severityClass}">
+                            <div class="error-field">${error.field}</div>
+                            <div class="error-message">${error.message}</div>
+                            ${error.severity ? `<div class="error-severity">${error.severity}</div>` : ''}
+                        </div>
+                    `;
+                });
+
+                content += '</div>';
+            }
+
+            container.innerHTML = content;
+            container.className = 'result-container error';
+        }
+
+        // Initialize the page
+        document.addEventListener('DOMContentLoaded', function() {
+            // Set default dates for datetime inputs
+            const now = new Date();
+            const futureDate = new Date(now.getTime() + (24 * 60 * 60 * 1000)); // Tomorrow
+            const dateString = futureDate.toISOString().slice(0, 16); // Format for datetime-local
+
+            // Set default future dates
+            const dateInputs = document.querySelectorAll('input[type="datetime-local"]');
+            dateInputs.forEach(input => {
+                if (!input.value) {
+                    input.value = dateString;
+                }
+            });
+
+            // Pre-fill some test data for demonstration
+            setTimeout(() => {
+                // Comprehensive tab
+                document.getElementById('comp-username').value = 'testuser';
+                document.getElementById('comp-displayname').value = 'ValidName';
+                document.getElementById('comp-age').value = '25';
+                document.getElementById('comp-displayed-age').value = '25';
+                document.getElementById('comp-price').value = '99.99';
+                document.getElementById('comp-email').value = 'test@example.com';
+                document.getElementById('comp-userid').value = '  john_doe  ';
+
+                // User profile tab
+                document.getElementById('profile-username').value = '  jane_smith  ';
+                document.getElementById('profile-email').value = 'jane@example.com';
+                document.getElementById('profile-age').value = '30';
+
+                // Advanced tab
+                document.getElementById('adv-username').value = 'advanceduser';
+                document.getElementById('adv-email').value = 'advanced@example.com';
+                document.getElementById('adv-password').value = 'StrongPass123';
+                document.getElementById('adv-security-code').value = '1234';
+
+                // Business rules - Order
+                document.getElementById('order-customer-id').value = 'CUST-12345';
+                document.getElementById('order-currency').value = 'USD';
+                document.getElementById('order-amount').value = '500';
+
+                // Business rules - Product
+                document.getElementById('product-name').value = 'New Product';
+                document.getElementById('product-status').value = 'active';
+                document.getElementById('product-price').value = '199.99';
+
+                // Business rules - Appointment
+                document.getElementById('appt-customer-name').value = 'John Doe';
+                document.getElementById('appt-status').value = 'confirmed';
+                document.getElementById('appt-duration').value = '120';
+
+                // Client validation
+                document.getElementById('client-name').value = 'Client User';
+                document.getElementById('client-email').value = 'client@example.com';
+                document.getElementById('client-age').value = '28';
+            }, 100);
+        });
+    </script>
+</body>
+</html>

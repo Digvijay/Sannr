@@ -1,7 +1,6 @@
 using Microsoft.Extensions.DependencyInjection;
-using Sannr.Core;
 using Sannr.AspNetCore;
-using System.Diagnostics.Metrics;
+using Sannr.Core;
 
 var services = new ServiceCollection();
 services.TryAddSannrServices(); // Demonstrate DI integration with TryAddEnumerable for idempotency
