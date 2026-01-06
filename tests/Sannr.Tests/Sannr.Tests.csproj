@@ -13,6 +13,8 @@
     <PackageReference Include="Swashbuckle.AspNetCore" />
   </ItemGroup>
   <ItemGroup>
+    <PackageReference Include="System.Net.Http" />
+    <PackageReference Include="System.Text.RegularExpressions" />
     <ProjectReference Include="..\..\src\Sannr.Core\Sannr.Core.csproj" />
     <ProjectReference Include="..\..\src\Sannr.AspNetCore\Sannr.AspNetCore.csproj" />
     <ProjectReference Include="..\..\src\Sannr.Gen\Sannr.Gen.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
