@@ -23,12 +23,12 @@ jobs:
 
     # We rebuild to ensure the exact commit matches the tag
     - name: Install CycloneDX
-      uses: CycloneDX/gh-dotnet-extension-action@v1
-      with:
-        version: 1
+      run: |
+        dotnet tool install --global CycloneDX
+        echo "$HOME/.dotnet/tools" >> $GITHUB_PATH
 
     - name: Generate SBOM
-      run: dotnet cyclonedx Sannr.sln -o out -j
+      run: /home/runner/.dotnet/tools/dotnet-CycloneDX Sannr.sln -o out -j
 
     - name: Pack
       run: |
