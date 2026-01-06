@@ -31,6 +31,8 @@ jobs:
       uses: github/codeql-action/init@v3
       with:
         languages: ${{ matrix.language }}
+        config-file: ./.github/codeql/codeql-config.yml
+
 
     - name: Setup .NET
       uses: actions/setup-dotnet@v4

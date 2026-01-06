@@ -252,7 +252,7 @@ public class FluentValidationMigrationService
             var line = lines[i];
 
             // Add comments for RuleFor calls
-            if (line.Trim().StartsWith("RuleFor("))
+            if (line.Trim().StartsWith("RuleFor(", StringComparison.Ordinal))
             {
                 result.Add($"            // TODO: Convert to Sannr fluent rules if necessary, or move to attributes");
                 result.Add($"            // Original FluentValidation: {line.Trim()}");

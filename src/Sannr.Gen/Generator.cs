@@ -491,7 +491,7 @@ public class SannrGenerator : IIncrementalGenerator
                     var min = attr.ConstructorArguments[0].Value;
                     var max = attr.ConstructorArguments[1].Value;
                     var msg = GetFormattedError(attr, "The field {0} must be between {1} and {2}.", nameVar, min?.ToString() ?? "0", max?.ToString() ?? "0");
-                    
+
                     var isDecimal = member.Type.SpecialType == SpecialType.System_Decimal ||
                                    (member.Type.OriginalDefinition.SpecialType == SpecialType.System_Nullable_T &&
                                     (member.Type as INamedTypeSymbol)?.TypeArguments.FirstOrDefault()?.SpecialType == SpecialType.System_Decimal);
@@ -592,7 +592,7 @@ public class SannrGenerator : IIncrementalGenerator
                     string targetValStr = targetVal is string ? $"\"{targetVal}\"" : (targetVal?.ToString()?.ToLower(System.Globalization.CultureInfo.InvariantCulture) ?? "null");
                     var targetValDisplay = targetVal?.ToString() ?? "null";
                     var msg = GetFormattedError(attr, "The field {0} must be between {1} and {2} when {3} is {4}.", nameVar, min?.ToString() ?? "0", max?.ToString() ?? "0", $"\"{other}\"", $"\"{targetValDisplay}\"");
-                    
+
                     var isDecimal = member.Type.SpecialType == SpecialType.System_Decimal ||
                                    (member.Type.OriginalDefinition.SpecialType == SpecialType.System_Nullable_T &&
                                     (member.Type as INamedTypeSymbol)?.TypeArguments.FirstOrDefault()?.SpecialType == SpecialType.System_Decimal);
