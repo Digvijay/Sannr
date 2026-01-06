@@ -100,8 +100,10 @@ public partial class BusinessRuleValidationTests
         // Act & Assert
         Assert.IsType<AllowedValuesAttribute>(attribute);
         Assert.IsAssignableFrom<SannrValidationAttribute>(attribute);
-        Assert.Equal(new[] { "test1", "test2" }, attribute.Values);
+        Assert.Equal(ExpectedTestValues, attribute.Values);
     }
+
+    private static readonly string[] ExpectedTestValues = { "test1", "test2" };
 
     [Fact]
     public void ConditionalRangeAttribute_ShouldBeDefined()
@@ -233,8 +235,10 @@ public partial class BusinessRuleValidationTests
         var attribute = new AllowedValuesAttribute("USD", "EUR", "GBP", "JPY");
 
         // Act & Assert
-        Assert.Equal(new[] { "USD", "EUR", "GBP", "JPY" }, attribute.Values);
+        Assert.Equal(ExpectedCurrencyValues, attribute.Values);
     }
+
+    private static readonly string[] ExpectedCurrencyValues = { "USD", "EUR", "GBP", "JPY" };
 
     [Fact]
     public void ConditionalRangeAttribute_ShouldStorePropertiesCorrectly()

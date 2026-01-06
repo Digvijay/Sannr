@@ -5,6 +5,20 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.0] - 2026-01-06
+
+### Added
+- **Security Hardening**: Automated SBOM (Software Bill of Materials) generation in release pipeline using CycloneDX
+- **Documentation**: New "Common Pitfalls & Troubleshooting" section in README to assist with Source Generator adoption
+- **Feature Verification**: Independent verification of 100% Native AOT compatibility
+- **Aspire Integration**: Verified metrics and diagnostics integration with Aspire Dashboard
+
+### Fixed
+- **AOT Compatibility**: Removed `dynamic` keyword usage in Source Generator (`Generator.cs`) to ensure strict Native AOT compatibility (`IL3053` resolved)
+- **Generated Code**: Fixed `CS0108` (member hiding) and `CS1998` (async/await) warnings in generated validators
+- **Code Quality**: Resolved numerous CodeQL warnings including `CA1861` (prefer static readonly), `CA1860` (prefer Length > 0), and `CA13xx` (culture-insensitive string operations)
+- **Developer Experience**: Addressed namespace collisions and partial class requirements in documentation
+
 ## [1.1.0] - 2025-12-31
 
 ### Added

@@ -240,6 +240,36 @@ graph LR
 
 ---
 
+## ⚠️ Common Pitfalls & Troubleshooting
+
+### 1. The `partial` Keyword is Mandatory
+Sannr is a **Source Generator**. It needs to generate code *inside* your class to add validation methods.
+**Incorrect:**
+```csharp
+public class UserDto { } // ❌ Compiler error or no validation generated
+```
+**Correct:**
+```csharp
+public partial class UserDto { } // ✅
+```
+
+### 2. Namespace Collisions
+Sannr uses attribute names similar to `System.ComponentModel.DataAnnotations` (e.g., `[Required]`).
+**Avoid using both namespaces in the same file.** If you must, rely on full qualification or alias the namespace.
+
+### 3. "Validation Not Working"
+If validation seems to be ignored:
+1. Ensure your model is `partial`.
+2. Ensure you called `builder.Services.AddSannr()` in `Program.cs`.
+3. Ensure you used `.WithSannrValidation()` on your route group.
+
+### 4. Client-Side Rules Empty?
+Accessing `ValidationRulesJson` returns an empty string?
+- Ensure you added `[GenerateClientValidators]` to the class.
+- Rebuild the solution (Source Generators run at compile time).
+
+---
+
 ## 📦 Installation
 
 ```bash

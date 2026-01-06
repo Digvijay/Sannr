@@ -300,18 +300,18 @@ public class SannrGenerator : IIncrementalGenerator
         return classSymbol.GetMembers()
             .OfType<IPropertySymbol>()
             .Any(prop => prop.GetAttributes().Any(attr =>
-                attr.AttributeClass?.Name.EndsWith("Attribute") == true &&
-                (attr.AttributeClass.Name.Contains("Required") ||
-                 attr.AttributeClass.Name.Contains("StringLength") ||
-                 attr.AttributeClass.Name.Contains("Range") ||
-                 attr.AttributeClass.Name.Contains("EmailAddress") ||
-                 attr.AttributeClass.Name.Contains("CreditCard") ||
-                 attr.AttributeClass.Name.Contains("Url") ||
-                 attr.AttributeClass.Name.Contains("Phone") ||
-                 attr.AttributeClass.Name.Contains("FileExtensions") ||
-                 attr.AttributeClass.Name.Contains("CustomValidator") ||
-                 attr.AttributeClass.Name.Contains("RequiredIf") ||
-                 attr.AttributeClass.Name.Contains("Sanitize"))));
+                attr.AttributeClass?.Name.EndsWith("Attribute", System.StringComparison.Ordinal) == true &&
+                (attr.AttributeClass.Name.Contains("Required", System.StringComparison.Ordinal) ||
+                 attr.AttributeClass.Name.Contains("StringLength", System.StringComparison.Ordinal) ||
+                 attr.AttributeClass.Name.Contains("Range", System.StringComparison.Ordinal) ||
+                 attr.AttributeClass.Name.Contains("EmailAddress", System.StringComparison.Ordinal) ||
+                 attr.AttributeClass.Name.Contains("CreditCard", System.StringComparison.Ordinal) ||
+                 attr.AttributeClass.Name.Contains("Url", System.StringComparison.Ordinal) ||
+                 attr.AttributeClass.Name.Contains("Phone", System.StringComparison.Ordinal) ||
+                 attr.AttributeClass.Name.Contains("FileExtensions", System.StringComparison.Ordinal) ||
+                 attr.AttributeClass.Name.Contains("CustomValidator", System.StringComparison.Ordinal) ||
+                 attr.AttributeClass.Name.Contains("RequiredIf", System.StringComparison.Ordinal) ||
+                 attr.AttributeClass.Name.Contains("Sanitize", System.StringComparison.Ordinal))));
     }
 
     /// <summary>
@@ -415,7 +415,8 @@ public class SannrGenerator : IIncrementalGenerator
                         var model = ({{className}})context.ObjectInstance;
                         var result = new ValidationResult();
                         var activeGroup = context.ActiveGroup;
-                        Metrics.ValidationEvents.Add(1); // Track validation events for observability
+                        Observability.ValidationEvents.Add(1); // Track validation events for observability
+                        await Task.CompletedTask; // Suppress CS1998 for synchronous paths
             """);
 
         foreach (var member in classSymbol.GetMembers().OfType<IPropertySymbol>())
@@ -490,7 +491,13 @@ public class SannrGenerator : IIncrementalGenerator
                     var min = attr.ConstructorArguments[0].Value;
                     var max = attr.ConstructorArguments[1].Value;
                     var msg = GetFormattedError(attr, "The field {0} must be between {1} and {2}.", nameVar, min?.ToString() ?? "0", max?.ToString() ?? "0");
-                    sb.AppendLine($$"""if (model.{{prop}} < (dynamic){{min}} || model.{{prop}} > (dynamic){{max}}) result.Add("{{prop}}", {{msg}}, {{severity}});""");
+                    
+                    var isDecimal = member.Type.SpecialType == SpecialType.System_Decimal ||
+                                   (member.Type.OriginalDefinition.SpecialType == SpecialType.System_Nullable_T &&
+                                    (member.Type as INamedTypeSymbol)?.TypeArguments.FirstOrDefault()?.SpecialType == SpecialType.System_Decimal);
+                    var cast = isDecimal ? "(decimal)" : "";
+
+                    sb.AppendLine($$"""if (model.{{prop}} < {{cast}}{{min}} || model.{{prop}} > {{cast}}{{max}}) result.Add("{{prop}}", {{msg}}, {{severity}});""");
                 }
                 else if (attrName == "EmailAddressAttribute")
                 {
@@ -515,7 +522,7 @@ public class SannrGenerator : IIncrementalGenerator
                 else if (attrName == "FileExtensionsAttribute")
                 {
                     var extensions = attr.NamedArguments.FirstOrDefault(k => k.Key == "Extensions").Value.Value as string ?? "png,jpg,jpeg,gif";
-                    var extArray = extensions.Split(',').Select(e => e.Trim().ToLower()).Where(e => !string.IsNullOrEmpty(e)).ToArray();
+                    var extArray = extensions.Split(',').Select(e => e.Trim().ToLower(System.Globalization.CultureInfo.InvariantCulture)).Where(e => !string.IsNullOrEmpty(e)).ToArray();
                     var extList = string.Join(", ", extArray.Select(e => "." + e));
                     // Build all parts as separate strings
                     var msgText = "The {0} field must have one of the following extensions: " + extList + ".";
@@ -523,7 +530,7 @@ public class SannrGenerator : IIncrementalGenerator
                     var condParts = new System.Collections.Generic.List<string>();
                     foreach (var ext in extArray)
                     {
-                        condParts.Add("!model." + prop + ".ToString().ToLower().EndsWith(\"." + ext + "\")");
+                        condParts.Add("!model." + prop + ".ToString().EndsWith(\"." + ext + "\", System.StringComparison.OrdinalIgnoreCase)");
                     }
                     var conditionStr = string.Join(" && ", condParts);
                     sb.AppendLine("if (model." + prop + " != null && (" + conditionStr + ")) result.Add(\"" + prop + "\", " + msgPart + ", " + severity + ");");
@@ -544,7 +551,7 @@ public class SannrGenerator : IIncrementalGenerator
                     else
                     {
                         valStr = val.ToString();
-                        if (val is bool) valStr = valStr.ToLower();
+                        if (val is bool) valStr = valStr.ToLower(System.Globalization.CultureInfo.InvariantCulture);
                     }
                     var msg = GetFormattedError(attr, "{0} is required.", nameVar);
 
@@ -581,12 +588,17 @@ public class SannrGenerator : IIncrementalGenerator
                     var targetVal = attr.ConstructorArguments[1].Value;
                     var min = attr.ConstructorArguments[2].Value;
                     var max = attr.ConstructorArguments[3].Value;
-                    
-                    string targetValStr = targetVal is string ? $"\"{targetVal}\"" : (targetVal?.ToString()?.ToLower() ?? "null");
+
+                    string targetValStr = targetVal is string ? $"\"{targetVal}\"" : (targetVal?.ToString()?.ToLower(System.Globalization.CultureInfo.InvariantCulture) ?? "null");
                     var targetValDisplay = targetVal?.ToString() ?? "null";
                     var msg = GetFormattedError(attr, "The field {0} must be between {1} and {2} when {3} is {4}.", nameVar, min?.ToString() ?? "0", max?.ToString() ?? "0", $"\"{other}\"", $"\"{targetValDisplay}\"");
                     
-                    sb.AppendLine($$"""if (object.Equals(model.{{other}}, {{targetValStr}}) && (model.{{prop}} < (dynamic){{min}} || model.{{prop}} > (dynamic){{max}})) result.Add("{{prop}}", {{msg}}, {{severity}});""");
+                    var isDecimal = member.Type.SpecialType == SpecialType.System_Decimal ||
+                                   (member.Type.OriginalDefinition.SpecialType == SpecialType.System_Nullable_T &&
+                                    (member.Type as INamedTypeSymbol)?.TypeArguments.FirstOrDefault()?.SpecialType == SpecialType.System_Decimal);
+                    var cast = isDecimal ? "(decimal)" : "";
+
+                    sb.AppendLine($$"""if (object.Equals(model.{{other}}, {{targetValStr}}) && (model.{{prop}} < {{cast}}{{min}} || model.{{prop}} > {{cast}}{{max}})) result.Add("{{prop}}", {{msg}}, {{severity}});""");
                 }
                 else if (attrName == "CustomValidatorAttribute")
                 {
@@ -703,8 +715,8 @@ public class SannrGenerator : IIncrementalGenerator
                     case "RequiredIfAttribute" when attr.ConstructorArguments.Length >= 2:
                         var otherProp = attr.ConstructorArguments[0].Value?.ToString();
                         var targetValue = attr.ConstructorArguments[1].Value;
-                        var targetValueJs = targetValue is string ? $"'{targetValue}'" : (targetValue?.ToString()?.ToLower() ?? "null");
-                        rules.Add($"requiredIf: {{ otherProperty: '{ToCamelCase(otherProp)}', targetValue: {targetValueJs} }}");
+                        var targetValueJs = targetValue is string ? $"'{targetValue}'" : (targetValue?.ToString()?.ToLower(System.Globalization.CultureInfo.InvariantCulture) ?? "null");
+                        rules.Add($"requiredIf: {{ otherProperty: '{ToCamelCase(otherProp ?? "")}', targetValue: {targetValueJs} }}");
                         break;
                     case "AllowedValuesAttribute" when attr.ConstructorArguments.Length > 0:
                         var vals = attr.ConstructorArguments[0].Values.Select(v => $"'{v.Value}'").ToArray();
@@ -729,6 +741,7 @@ public class SannrGenerator : IIncrementalGenerator
         sb.AppendLine();
         sb.AppendLine($"namespace {ns}");
         sb.AppendLine("{");
+        sb.AppendLine($"#pragma warning disable CS0108 // Member hides inherited member; missing new keyword");
         sb.AppendLine($"    public partial class {className}");
         sb.AppendLine("    {");
 
@@ -914,12 +927,13 @@ public class SannrGenerator : IIncrementalGenerator
         var generateFunctions = (bool)(attribute.NamedArguments.FirstOrDefault(k => k.Key == "GenerateValidationFunctions").Value.Value ?? true);
         var customNamespace = attribute.NamedArguments.FirstOrDefault(k => k.Key == "Namespace").Value.Value as string;
 
-        var clientNamespace = customNamespace ?? ns.ToLower().Replace(".", "_");
+        var clientNamespace = customNamespace ?? ns.ToLower(System.Globalization.CultureInfo.InvariantCulture).Replace(".", "_");
 
         var sb = new StringBuilder();
 
         // Generate TypeScript interface
         sb.AppendLine($"// <auto-generated/>");
+        sb.AppendLine($"#pragma warning disable CS0108 // Member hides inherited member; missing new keyword");
         sb.AppendLine($"// Generated from {ns}.{className}");
         sb.AppendLine();
         sb.AppendLine($"export interface {className} {{");
@@ -1045,7 +1059,7 @@ public class SannrGenerator : IIncrementalGenerator
     private static string ToCamelCase(string name)
     {
         if (string.IsNullOrEmpty(name)) return name ?? "";
-        return char.ToLower(name[0]) + name.Substring(1);
+        return char.ToLower(name[0], System.Globalization.CultureInfo.InvariantCulture) + name.Substring(1);
     }
 
     /// <summary>
@@ -1060,7 +1074,7 @@ public class SannrGenerator : IIncrementalGenerator
             SpecialType.System_Decimal or SpecialType.System_Double or SpecialType.System_Single => "number",
             SpecialType.System_Boolean => "boolean",
             SpecialType.System_DateTime => "string", // ISO date string
-            _ => type.Name.ToLower()
+            _ => type.Name.ToLower(System.Globalization.CultureInfo.InvariantCulture)
         };
     }
 
@@ -1526,7 +1540,7 @@ public class SannrGenerator : IIncrementalGenerator
     /// <summary>
     /// Helper class for rule chain information.
     /// </summary>
-    private class RuleChainInfo
+    private sealed class RuleChainInfo
     {
         public List<string> Rules { get; } = new();
         public string Message { get; set; } = "";
@@ -1782,7 +1796,7 @@ public class SannrGenerator : IIncrementalGenerator
                     sb.AppendLine("            }");
                 }
             }
-            else if (rule.StartsWith("Length:"))
+            else if (rule.StartsWith("Length:", System.StringComparison.Ordinal))
             {
                 var parts = rule.Split(':');
                 if (parts.Length >= 3 && int.TryParse(parts[1], out var min) && int.TryParse(parts[2], out var max))
@@ -1800,7 +1814,7 @@ public class SannrGenerator : IIncrementalGenerator
                 sb.AppendLine($"                result.Errors.Add(new ValidationError(\"{propertyName}\", \"{message}\", Severity.Error));");
                 sb.AppendLine("            }");
             }
-            else if (rule.StartsWith("Range:"))
+            else if (rule.StartsWith("Range:", System.StringComparison.Ordinal))
             {
                 var parts = rule.Split(':');
                 if (parts.Length >= 3)
@@ -1842,13 +1856,13 @@ public class SannrGenerator : IIncrementalGenerator
         if (rules.Contains("NotEmpty"))
             return $"The {propertyName} field is required.";
 
-        if (rules.Any(r => r.StartsWith("Length:")))
+        if (rules.Any(r => r.StartsWith("Length:", System.StringComparison.Ordinal)))
             return $"The {propertyName} field has invalid length.";
 
         if (rules.Contains("Email"))
             return $"The {propertyName} field must be a valid email address.";
 
-        if (rules.Any(r => r.StartsWith("Range:")))
+        if (rules.Any(r => r.StartsWith("Range:", System.StringComparison.Ordinal)))
             return $"The {propertyName} field is outside the valid range.";
 
         return $"The {propertyName} field is invalid.";
@@ -1860,7 +1874,7 @@ public class SannrGenerator : IIncrementalGenerator
 /// <summary>
 /// Information about a fluent validator configuration.
 /// </summary>
-internal class FluentValidatorConfigInfo
+internal sealed class FluentValidatorConfigInfo
 {
     public INamedTypeSymbol ConfigClass { get; }
     public ITypeSymbol TargetType { get; }

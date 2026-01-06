@@ -40,8 +40,8 @@ public class Program
             var target = context.ParseResult.GetValueForOption(fluentValidationCommand.Options.OfType<Option<string>>().First(o => o.Name == "target"));
             var overwrite = context.ParseResult.GetValueForOption(fluentValidationCommand.Options.OfType<Option<bool>>().First(o => o.Name == "overwrite"));
             var dryRun = context.ParseResult.GetValueForOption(fluentValidationCommand.Options.OfType<Option<bool>>().First(o => o.Name == "dry-run"));
-            
-            var targetEnum = target?.ToLower() == "attribute" ? MigrationTarget.Attribute : MigrationTarget.Fluent;
+
+            var targetEnum = string.Equals(target, "attribute", StringComparison.OrdinalIgnoreCase) ? MigrationTarget.Attribute : MigrationTarget.Fluent;
             await MigrateFluentValidationAsync(input!, output!, targetEnum, overwrite, dryRun, context.Console);
         });
 
@@ -89,7 +89,7 @@ public class Program
             console.WriteLine($"🔄 Validators migrated: {result.ValidatorsMigrated}");
             console.WriteLine($"⚠️  Warnings: {result.Warnings.Count}");
 
-            if (result.Warnings.Any())
+            if (result.Warnings.Count > 0)
             {
                 console.WriteLine("\n⚠️  Warnings:");
                 foreach (var warning in result.Warnings)
@@ -121,7 +121,7 @@ public class Program
             console.WriteLine($"🔄 DataAnnotations migrated: {result.ValidatorsMigrated}");
             console.WriteLine($"⚠️  Warnings: {result.Warnings.Count}");
 
-            if (result.Warnings.Any())
+            if (result.Warnings.Count > 0)
             {
                 console.WriteLine("\n⚠️  Warnings:");
                 foreach (var warning in result.Warnings)
@@ -150,14 +150,14 @@ public class Program
             console.WriteLine($"📁 Files scanned: {result.TotalFiles}");
             console.WriteLine($"🏷️  Validation libraries detected: {string.Join(", ", result.DetectedLibraries)}");
 
-            if (result.FluentValidationRules.Any())
+            if (result.FluentValidationRules.Count > 0)
             {
                 console.WriteLine($"🔄 FluentValidation rules found: {result.FluentValidationRules.Count}");
                 console.WriteLine($"   - RuleFor calls: {result.FluentValidationRules.Count(r => r.Contains("RuleFor"))}");
                 console.WriteLine($"   - Must calls: {result.FluentValidationRules.Count(r => r.Contains(".Must("))}");
             }
 
-            if (result.DataAnnotationAttributes.Any())
+            if (result.DataAnnotationAttributes.Count > 0)
             {
                 console.WriteLine($"📝 DataAnnotations found: {result.DataAnnotationAttributes.Count}");
                 console.WriteLine($"   - [Required]: {result.DataAnnotationAttributes.Count(a => a.Contains("[Required"))}");
@@ -271,7 +271,7 @@ public class FluentValidationMigrationService
         var lines = content.Split('\n');
         var result = new List<string>();
         var propertyRules = new Dictionary<string, List<string>>();
-        
+
         // Basic detection of RuleFor(x => x.Prop).NotEmpty().Length(min, max)
         foreach (var line in lines)
         {
@@ -280,14 +280,14 @@ public class FluentValidationMigrationService
             {
                 var propName = match.Groups[1].Value;
                 var ruleChain = match.Groups[2].Value;
-                
+
                 if (!propertyRules.ContainsKey(propName))
                     propertyRules[propName] = new List<string>();
-                
+
                 // Parse the chain
                 if (ruleChain.Contains("NotEmpty")) propertyRules[propName].Add("[Required]");
                 if (ruleChain.Contains("Email")) propertyRules[propName].Add("[EmailAddress]");
-                
+
                 var lengthMatch = Regex.Match(ruleChain, @"Length\s*\(\s*(\d+)\s*,\s*(\d+)\s*\)");
                 if (lengthMatch.Success)
                 {
@@ -318,7 +318,7 @@ public class FluentValidationMigrationService
                     }
                 }
             }
-            
+
             // Skip the validator class itself in attribute mode if possible, 
             // but for safety we'll just keep everything and add attributes to the models detected.
             result.Add(line);

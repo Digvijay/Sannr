@@ -24,9 +24,11 @@
 
 using System;
 using System.Collections.Generic;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Infrastructure;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Options;
 using Sannr.AspNetCore;
 using Xunit;
 
@@ -37,6 +39,8 @@ namespace Sannr.Tests;
 /// </summary>
 public partial class AdvancedErrorHandlingTests
 {
+    private static readonly string[] ExpectedNameError = { "Name is required" };
+    private static readonly string[] ExpectedEmailError = { "Email format is invalid" };
     [Fact]
     public void SannrValidationProblemDetails_Should_Initialize_With_Errors()
     {
@@ -57,8 +61,8 @@ public partial class AdvancedErrorHandlingTests
         Assert.True(problemDetails.Timestamp <= DateTimeOffset.UtcNow);
         Assert.Contains("Name", problemDetails.Errors.Keys);
         Assert.Contains("Email", problemDetails.Errors.Keys);
-        Assert.Equal(new[] { "Name is required" }, problemDetails.Errors["Name"]);
-        Assert.Equal(new[] { "Email format is invalid" }, problemDetails.Errors["Email"]);
+        Assert.Equal(ExpectedNameError, problemDetails.Errors["Name"]);
+        Assert.Equal(ExpectedEmailError, problemDetails.Errors["Email"]);
     }
 
     [Fact]
@@ -122,25 +126,66 @@ public partial class AdvancedErrorHandlingTests
     [Fact]
     public void SannrProblemDetailsFactory_Should_Return_Enhanced_ProblemDetails_When_Enabled()
     {
-        // This test would require mocking the default factory
-        // For now, we'll test the core functionality separately
-        Assert.True(true); // Placeholder test
+        // Arrange
+        var options = new SannrValidationOptions { EnableEnhancedErrorResponses = true };
+        var factory = new SannrProblemDetailsFactory(Options.Create(options));
+        var httpContext = new DefaultHttpContext();
+
+        var errors = new List<ValidationError> { new ValidationError("Prop", "Error msg", Severity.Error) };
+        var enhancedResult = new EnhancedValidationResult("TestModel", errors, "correlation-id", 10.0);
+        httpContext.Items["SannrValidationResult"] = enhancedResult;
+
+        // Act
+        var result = factory.CreateProblemDetails(httpContext);
+
+        // Assert
+        Assert.IsType<SannrValidationProblemDetails>(result);
+        var sannrResult = (SannrValidationProblemDetails)result;
+        Assert.Equal("TestModel", sannrResult.ModelType);
+        Assert.Equal("correlation-id", sannrResult.CorrelationId);
+        Assert.Equal(10.0, sannrResult.ValidationDurationMs);
     }
 
     [Fact]
     public void SannrProblemDetailsFactory_Should_Return_Default_ProblemDetails_When_Disabled()
     {
-        // This test would require mocking the default factory
-        // For now, we'll test the core functionality separately
-        Assert.True(true); // Placeholder test
+        // Arrange
+        var options = new SannrValidationOptions { EnableEnhancedErrorResponses = false };
+        var factory = new SannrProblemDetailsFactory(Options.Create(options));
+        var httpContext = new DefaultHttpContext();
+
+        var errors = new List<ValidationError> { new ValidationError("Prop", "Error msg", Severity.Error) };
+        var enhancedResult = new EnhancedValidationResult("TestModel", errors, "correlation-id", 10.0);
+        httpContext.Items["SannrValidationResult"] = enhancedResult;
+
+        // Act
+        var result = factory.CreateProblemDetails(httpContext);
+
+        // Assert
+        Assert.IsNotType<SannrValidationProblemDetails>(result);
+        Assert.IsType<ProblemDetails>(result);
     }
 
     [Fact]
     public void SannrProblemDetailsFactory_Should_Return_Enhanced_ValidationProblemDetails()
     {
-        // This test would require mocking the default factory
-        // For now, we'll test the core functionality separately
-        Assert.True(true); // Placeholder test
+        // Arrange
+        var options = new SannrValidationOptions { EnableEnhancedErrorResponses = true };
+        var factory = new SannrProblemDetailsFactory(Options.Create(options));
+        var httpContext = new DefaultHttpContext();
+        var modelState = new Microsoft.AspNetCore.Mvc.ModelBinding.ModelStateDictionary();
+
+        var errors = new List<ValidationError> { new ValidationError("Prop", "Error msg", Severity.Error) };
+        var enhancedResult = new EnhancedValidationResult("TestModel", errors, "correlation-id", 10.0);
+        httpContext.Items["SannrValidationResult"] = enhancedResult;
+
+        // Act
+        var result = factory.CreateValidationProblemDetails(httpContext, modelState);
+
+        // Assert
+        Assert.IsType<SannrValidationProblemDetails>(result);
+        var sannrResult = (SannrValidationProblemDetails)result;
+        Assert.Contains("Prop", sannrResult.Errors.Keys);
     }
 
     [Fact]

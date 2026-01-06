@@ -29,6 +29,7 @@ TestResults/
 *.trx
 coverage.json
 *.coverlet.xml
+test_output.txt
 
 # --- Benchmarking ---
 BenchmarkDotNet.Artifacts/
@@ -51,3 +52,4 @@ docs/PUBLISHING.md
 docs/IMAGE_PROMPTS.md
 FEATURE_VERIFICATION.md
 HYGIENE_CHECK_REPORT.md
+AI_PROJECT_KICKOFF_PROMPT.md

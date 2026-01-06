@@ -1,9 +1,9 @@
-using Xunit;
-using Sannr.Cli;
-using System.IO;
-using System.Threading.Tasks;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
+using System.Threading.Tasks;
+using Sannr.Cli;
+using Xunit;
 
 namespace Sannr.Cli.Tests;
 
@@ -36,7 +36,7 @@ public partial class User
         Directory.CreateDirectory(tempDir);
         var inputFile = Path.Combine(tempDir, "User.cs");
         await File.WriteAllTextAsync(inputFile, content);
-        
+
         var outputDir = Path.Combine(tempDir, "Output");
 
         // Act
@@ -51,7 +51,7 @@ public partial class User
         Assert.Contains("[StringLength(50, MinimumLength = 2)]", outputContent);
         Assert.Contains("[EmailAddress]", outputContent);
         Assert.Contains("using Sannr;", outputContent);
-        
+
         // Clean up
         Directory.Delete(tempDir, true);
     }
@@ -75,7 +75,7 @@ public partial class UserValidator : AbstractValidator<User>
         Directory.CreateDirectory(tempDir);
         var inputFile = Path.Combine(tempDir, "UserValidator.cs");
         await File.WriteAllTextAsync(inputFile, content);
-        
+
         var outputDir = Path.Combine(tempDir, "Output");
 
         // Act
@@ -88,7 +88,7 @@ public partial class UserValidator : AbstractValidator<User>
 
         Assert.Contains("// TODO: Convert to Sannr fluent rules", outputContent);
         Assert.Contains("using Sannr;", outputContent);
-        
+
         // Clean up
         Directory.Delete(tempDir, true);
     }
@@ -114,7 +114,7 @@ public class User
         Directory.CreateDirectory(tempDir);
         var inputFile = Path.Combine(tempDir, "User.cs");
         await File.WriteAllTextAsync(inputFile, content);
-        
+
         var outputDir = Path.Combine(tempDir, "Output");
 
         // Act
@@ -129,7 +129,7 @@ public class User
         Assert.Contains("[StringLength(100, MinimumLength = 10)]", outputContent);
         Assert.Contains("[EmailAddress]", outputContent); // Note: I fixed this to match Sannr [EmailAddress] in previous step
         Assert.Contains("using Sannr;", outputContent);
-        
+
         // Clean up
         Directory.Delete(tempDir, true);
     }

@@ -138,10 +138,9 @@ public class SannrProblemDetailsFactory : ProblemDetailsFactory
                 if (entry.Value?.Errors.Count > 0)
                 {
                     var errors = entry.Value.Errors.Select(e => e.ErrorMessage).ToArray();
-                    if (problemDetails.Errors.ContainsKey(entry.Key))
+                    if (problemDetails.Errors.TryGetValue(entry.Key, out var existingErrors))
                     {
                         // Merge with existing errors
-                        var existingErrors = problemDetails.Errors[entry.Key];
                         problemDetails.Errors[entry.Key] = existingErrors.Concat(errors).ToArray();
                     }
                     else

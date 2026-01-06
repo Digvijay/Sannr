@@ -42,6 +42,9 @@ public partial class FullTestSuite
         RegisterTestValidators();
     }
 
+    private static readonly string[] AllowedDocumentExtensions = { "pdf", "doc", "docx" };
+    private static readonly string[] AllowedResumeExtensions = { "pdf", "docx", "txt" };
+
     internal static void RegisterTestValidators()
     {
         // Register validator for UserProfile
@@ -53,7 +56,7 @@ public partial class FullTestSuite
             // Apply sanitization to Username
             if (model.Username != null)
             {
-                model.Username = model.Username.Trim().ToUpper();
+                model.Username = model.Username.Trim().ToUpperInvariant();
             }
 
             // Username validation
@@ -63,7 +66,7 @@ public partial class FullTestSuite
             // Email validation
             if (string.IsNullOrEmpty(model.Email))
                 result.Add("Email", "Email is required");
-            else if (!model.Email.Contains("@"))
+            else if (!model.Email.Contains('@', StringComparison.Ordinal))
                 result.Add("Email", "Email must be valid");
 
             // ZipCode validation (RequiredIf)
@@ -105,7 +108,7 @@ public partial class FullTestSuite
             // Email validation (Required, EmailAddress)
             if (string.IsNullOrEmpty(model.Email))
                 result.Add("Email", "Email is required");
-            else if (!model.Email.Contains("@"))
+            else if (!model.Email.Contains('@', StringComparison.Ordinal))
                 result.Add("Email", "The Email field is not a valid e-mail address.");
 
             // CreditCardNumber validation (CreditCard)
@@ -120,7 +123,7 @@ public partial class FullTestSuite
             // Website validation (Url)
             if (!string.IsNullOrEmpty(model.Website))
             {
-                if (!model.Website.StartsWith("http://") && !model.Website.StartsWith("https://"))
+                if (!model.Website.StartsWith("http://", StringComparison.OrdinalIgnoreCase) && !model.Website.StartsWith("https://", StringComparison.OrdinalIgnoreCase))
                     result.Add("Website", "The Website field is not a valid URL.");
             }
 
@@ -129,6 +132,9 @@ public partial class FullTestSuite
             {
                 // Simple phone validation - should contain digits and common phone characters
                 var validChars = "0123456789()-+ .";
+                // Note: validChars.Contains(c) does not have an overload for char + StringComparison until newer .NET versions or via extension. 
+                // However, StringComparison.Ordinal is for string.Contains(string). For char search in string, it is ordinal by default.
+                // Reverting to LINQ Any/Contains checking against the string as a set of characters is implicitly ordinal.
                 if (!model.PhoneNumber.All(c => validChars.Contains(c)))
                     result.Add("PhoneNumber", "The PhoneNumber field is not a valid phone number.");
             }
@@ -136,8 +142,8 @@ public partial class FullTestSuite
             // DocumentPath validation (FileExtensions)
             if (!string.IsNullOrEmpty(model.DocumentPath))
             {
-                var extensions = new[] { "pdf", "doc", "docx" };
-                var valid = extensions.Any(ext => model.DocumentPath.EndsWith("." + ext, StringComparison.OrdinalIgnoreCase));
+                // Defined locally for now, replaced by static readonly to appease CA1861
+                var valid = AllowedDocumentExtensions.Any(ext => model.DocumentPath.EndsWith("." + ext, StringComparison.OrdinalIgnoreCase));
                 if (!valid)
                     result.Add("DocumentPath", "The DocumentPath field must have one of the following extensions: .pdf, .doc, .docx.");
             }
@@ -173,7 +179,7 @@ public partial class FullTestSuite
             // Sanitize UserId (Trim and ToUpper)
             if (model.UserId != null)
             {
-                model.UserId = model.UserId.Trim().ToUpper();
+                model.UserId = model.UserId.Trim().ToUpperInvariant();
             }
 
             // Username validation (Required with custom message)
@@ -200,7 +206,7 @@ public partial class FullTestSuite
             // ContactEmail validation (EmailAddress)
             if (!string.IsNullOrEmpty(model.ContactEmail))
             {
-                if (!model.ContactEmail.Contains("@"))
+                if (!model.ContactEmail.Contains('@', StringComparison.Ordinal))
                     result.Add("ContactEmail", "The ContactEmail field is not a valid e-mail address.");
             }
 
@@ -216,7 +222,7 @@ public partial class FullTestSuite
             // PortfolioUrl validation (Url)
             if (!string.IsNullOrEmpty(model.PortfolioUrl))
             {
-                if (!model.PortfolioUrl.StartsWith("http://") && !model.PortfolioUrl.StartsWith("https://"))
+                if (!model.PortfolioUrl.StartsWith("http://", StringComparison.OrdinalIgnoreCase) && !model.PortfolioUrl.StartsWith("https://", StringComparison.OrdinalIgnoreCase))
                     result.Add("PortfolioUrl", "The PortfolioUrl field is not a valid URL.");
             }
 
@@ -228,11 +234,11 @@ public partial class FullTestSuite
                     result.Add("PhoneNumber", "The PhoneNumber field is not a valid phone number.");
             }
 
+
             // ResumeFileName validation (FileExtensions)
             if (!string.IsNullOrEmpty(model.ResumeFileName))
             {
-                var extensions = new[] { "pdf", "docx", "txt" };
-                var valid = extensions.Any(ext => model.ResumeFileName.EndsWith("." + ext, StringComparison.OrdinalIgnoreCase));
+                var valid = AllowedResumeExtensions.Any(ext => model.ResumeFileName.EndsWith("." + ext, StringComparison.OrdinalIgnoreCase));
                 if (!valid)
                     result.Add("ResumeFileName", "The ResumeFileName field must have one of the following extensions: .pdf, .docx, .txt.");
             }

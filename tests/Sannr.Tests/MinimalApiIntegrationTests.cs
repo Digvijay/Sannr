@@ -317,4 +317,73 @@ public partial class MinimalApiIntegrationTests
         // Assert
         Assert.False(validated.IsValid);
     }
+    [Fact]
+    public async Task ValidatedT_TryGetValue_ReturnsTrueAndValueWhenValid()
+    {
+        // Arrange
+        var validModel = new MinimalApiTestModel
+        {
+            Email = "test@example.com",
+            Name = "Valid Name",
+            Age = 30
+        };
+        var validated = await Validated<MinimalApiTestModel>.CreateAsync(validModel, _serviceProvider);
+
+        // Act
+        var success = validated.TryGetValue(out var value);
+
+        // Assert
+        Assert.True(success);
+        Assert.NotNull(value);
+        Assert.Equal(validModel.Email, value.Email);
+    }
+
+    [Fact]
+    public async Task ValidatedT_TryGetValue_ReturnsFalseAndDefaultWhenInvalid()
+    {
+        // Arrange
+        var invalidModel = new MinimalApiTestModel { Email = "invalid" };
+        var validated = await Validated<MinimalApiTestModel>.CreateAsync(invalidModel, _serviceProvider);
+
+        // Act
+        var success = validated.TryGetValue(out var value);
+
+        // Assert
+        Assert.False(success);
+        Assert.Null(value);
+    }
+
+    [Fact]
+    public async Task ValidatedT_ImplicitConversion_ReturnsValueWhenValid()
+    {
+        // Arrange
+        var validModel = new MinimalApiTestModel
+        {
+            Email = "test@example.com",
+            Name = "Valid Name",
+            Age = 30
+        };
+        var validated = await Validated<MinimalApiTestModel>.CreateAsync(validModel, _serviceProvider);
+
+        // Act
+        MinimalApiTestModel value = validated;
+
+        // Assert
+        Assert.NotNull(value);
+        Assert.Equal(validModel.Email, value.Email);
+    }
+
+    [Fact]
+    public async Task ValidatedT_ImplicitConversion_ThrowsWhenInvalid()
+    {
+        // Arrange
+        var invalidModel = new MinimalApiTestModel { Email = "invalid" };
+        var validated = await Validated<MinimalApiTestModel>.CreateAsync(invalidModel, _serviceProvider);
+
+        // Act & Assert
+        Assert.Throws<InvalidOperationException>(() =>
+        {
+            MinimalApiTestModel value = validated;
+        });
+    }
 }

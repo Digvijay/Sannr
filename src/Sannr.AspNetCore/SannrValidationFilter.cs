@@ -1,4 +1,5 @@
 using System;
+using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Builder;
@@ -6,7 +7,6 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Routing;
 using Microsoft.Extensions.DependencyInjection;
 using Sannr.Core;
-using System.Diagnostics;
 
 namespace Sannr.AspNetCore;
 
@@ -17,6 +17,9 @@ public class SannrValidationFilter : IEndpointFilter
 {
     public async ValueTask<object?> InvokeAsync(EndpointFilterInvocationContext context, EndpointFilterDelegate next)
     {
+        ArgumentNullException.ThrowIfNull(context);
+        ArgumentNullException.ThrowIfNull(next);
+
         for (int i = 0; i < context.Arguments.Count; i++)
         {
             var argument = context.Arguments[i];
@@ -43,7 +46,7 @@ public class SannrValidationFilter : IEndpointFilter
 
                 activity?.SetTag("sannr.validation.is_valid", result.IsValid);
                 activity?.SetTag("sannr.validation.duration_ms", stopwatch.Elapsed.TotalMilliseconds);
-                
+
                 if (!result.IsValid)
                 {
                     activity?.SetTag("sannr.validation.error_count", result.Errors.Count);

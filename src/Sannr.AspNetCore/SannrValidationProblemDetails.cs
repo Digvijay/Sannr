@@ -105,12 +105,11 @@ public class SannrValidationProblemDetails : ValidationProblemDetails
         foreach (var error in errors)
         {
             var propertyName = error.MemberName ?? string.Empty;
-            if (!rules.ContainsKey(propertyName))
+            if (!rules.TryGetValue(propertyName, out var ruleInfo))
             {
-                rules[propertyName] = new ValidationRuleInfo();
+                ruleInfo = new ValidationRuleInfo();
+                rules[propertyName] = ruleInfo;
             }
-
-            var ruleInfo = rules[propertyName];
 
             // Extract rule information from error metadata
             // This would be enhanced based on the specific validation attributes used

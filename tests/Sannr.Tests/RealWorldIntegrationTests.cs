@@ -1890,9 +1890,11 @@ public partial class RealWorldIntegrationTests
         Assert.Equal(3, errorResult.Errors.Count); // Should have 3 specific errors
 
         // Each error should clearly indicate which property failed
+        // Each error should clearly indicate which property failed
+        var expectedMembers = new[] { "ShortString", "IntegerRange", "DoubleRange" };
         foreach (var error in errorResult.Errors)
         {
-            Assert.Contains(error.MemberName, new[] { "ShortString", "IntegerRange", "DoubleRange" });
+            Assert.Contains(error.MemberName, expectedMembers);
         }
 
         // Test 5: Easy to extend with custom validators

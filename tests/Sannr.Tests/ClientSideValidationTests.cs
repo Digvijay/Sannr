@@ -210,9 +210,9 @@ public partial class ClientSideValidationTests
         var cityProp = properties.First(p => p.Name == "City");
         var countryProp = properties.First(p => p.Name == "Country");
 
-        Assert.True(streetProp.GetCustomAttributes(typeof(RequiredAttribute), false).Any());
-        Assert.True(cityProp.GetCustomAttributes(typeof(RequiredAttribute), false).Any());
-        Assert.True(countryProp.GetCustomAttributes(typeof(RequiredAttribute), false).Any());
+        Assert.True(streetProp.GetCustomAttributes(typeof(RequiredAttribute), false).Length > 0);
+        Assert.True(cityProp.GetCustomAttributes(typeof(RequiredAttribute), false).Length > 0);
+        Assert.True(countryProp.GetCustomAttributes(typeof(RequiredAttribute), false).Length > 0);
     }
 
     [Fact]
@@ -226,10 +226,10 @@ public partial class ClientSideValidationTests
         var emailProp = properties.First(p => p.Name == "Email");
         var messageProp = properties.First(p => p.Name == "Message");
 
-        Assert.True(nameProp.GetCustomAttributes(typeof(RequiredAttribute), false).Any());
-        Assert.True(emailProp.GetCustomAttributes(typeof(RequiredAttribute), false).Any());
-        Assert.True(emailProp.GetCustomAttributes(typeof(EmailAddressAttribute), false).Any());
-        Assert.True(messageProp.GetCustomAttributes(typeof(StringLengthAttribute), false).Any());
+        Assert.True(nameProp.GetCustomAttributes(typeof(RequiredAttribute), false).Length > 0);
+        Assert.True(emailProp.GetCustomAttributes(typeof(RequiredAttribute), false).Length > 0);
+        Assert.True(emailProp.GetCustomAttributes(typeof(EmailAddressAttribute), false).Length > 0);
+        Assert.True(messageProp.GetCustomAttributes(typeof(StringLengthAttribute), false).Length > 0);
     }
 
     [Fact]

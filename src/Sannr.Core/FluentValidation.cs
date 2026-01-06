@@ -107,6 +107,7 @@ public interface IRuleBuilder<T, TProperty>
     /// <summary>
     /// Applies this rule only when the condition is met.
     /// </summary>
+    [System.Diagnostics.CodeAnalysis.SuppressMessage("Naming", "CA1716:Identifiers should not match keywords", Justification = "Kept for consistency with FluentValidation API")]
     IRuleBuilder<T, TProperty> When(Func<T, bool> condition);
 
     /// <summary>
@@ -119,7 +120,7 @@ public interface IRuleBuilder<T, TProperty>
 /// Internal implementation of the rule builder.
 /// This class captures rule configurations for source generator analysis.
 /// </summary>
-internal class RuleBuilder<T, TProperty> : IRuleBuilder<T, TProperty>
+internal sealed class RuleBuilder<T, TProperty> : IRuleBuilder<T, TProperty>
 {
     public Expression<Func<T, TProperty>> PropertySelector { get; }
     public List<ValidationRule> Rules { get; } = new();
@@ -181,12 +182,12 @@ internal abstract class ValidationRule
 /// <summary>
 /// Rule for non-empty validation.
 /// </summary>
-internal class NotEmptyRule : ValidationRule { }
+internal sealed class NotEmptyRule : ValidationRule { }
 
 /// <summary>
 /// Rule for length validation.
 /// </summary>
-internal class LengthRule : ValidationRule
+internal sealed class LengthRule : ValidationRule
 {
     public int MinLength { get; }
     public int MaxLength { get; }
@@ -201,12 +202,12 @@ internal class LengthRule : ValidationRule
 /// <summary>
 /// Rule for email validation.
 /// </summary>
-internal class EmailRule : ValidationRule { }
+internal sealed class EmailRule : ValidationRule { }
 
 /// <summary>
 /// Rule for range validation.
 /// </summary>
-internal class RangeRule : ValidationRule
+internal sealed class RangeRule : ValidationRule
 {
     public object? Min { get; }
     public object? Max { get; }
@@ -221,7 +222,7 @@ internal class RangeRule : ValidationRule
 /// <summary>
 /// Rule for custom predicate validation.
 /// </summary>
-internal class PredicateRule : ValidationRule
+internal sealed class PredicateRule : ValidationRule
 {
     public Delegate Predicate { get; }
 
@@ -234,7 +235,7 @@ internal class PredicateRule : ValidationRule
 /// <summary>
 /// Rule for async custom predicate validation.
 /// </summary>
-internal class AsyncPredicateRule : ValidationRule
+internal sealed class AsyncPredicateRule : ValidationRule
 {
     public Delegate Predicate { get; }
 
@@ -247,7 +248,7 @@ internal class AsyncPredicateRule : ValidationRule
 /// <summary>
 /// Rule for conditional validation.
 /// </summary>
-internal class ConditionalRule : ValidationRule
+internal sealed class ConditionalRule : ValidationRule
 {
     public Delegate Condition { get; }
 
@@ -260,7 +261,7 @@ internal class ConditionalRule : ValidationRule
 /// <summary>
 /// Rule for conditional required validation.
 /// </summary>
-internal class RequiredIfRule : ValidationRule
+internal sealed class RequiredIfRule : ValidationRule
 {
     public Delegate Condition { get; }
 

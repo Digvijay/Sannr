@@ -60,6 +60,7 @@ public static class Extensions
                     .AddRuntimeInstrumentation()
                     // Add custom Sannr validation metrics
                     .AddMeter("Sannr")
+                    .AddMeter("sannr_validation") // Key: needed for Sannr.AspNetCore default metrics
                     .AddMeter("Sannr.Validation")
                     .AddMeter("Sannr.Performance");
             })
