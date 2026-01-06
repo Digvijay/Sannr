@@ -28,7 +28,9 @@ jobs:
         echo "$HOME/.dotnet/tools" >> $GITHUB_PATH
 
     - name: Generate SBOM
-      run: ~/.dotnet/tools/dotnet-cyclonedx Sannr.sln -o out -j
+      run: |
+        ls -la /home/runner/.dotnet/tools/
+        /home/runner/.dotnet/tools/dotnet-cyclonedx Sannr.sln -o out -j
 
     - name: Pack
       run: |
