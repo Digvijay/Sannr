@@ -5,7 +5,7 @@
     <IsAotCompatible Condition="$([MSBuild]::IsTargetFrameworkCompatible('$(TargetFramework)', 'net8.0'))">true</IsAotCompatible> <!-- Ensures AOT compatibility for performance and deployment -->
     
     <PackageId>Sannr</PackageId>
-    <Version>1.1.0</Version>
+    <Version>1.2.0</Version>
     <Authors>Digvijay Chauhan</Authors>
     <Description>The AOT-first validation engine for .NET. (Single Package)</Description>
     <PackageTags>validation;aot;aspnetcore;performance;enterprise</PackageTags>
@@ -17,7 +17,7 @@
     <RepositoryType>git</RepositoryType>
     <PackageIcon>icon.png</PackageIcon>
     <PackageReadmeFile>README.md</PackageReadmeFile>
-    <PackageReleaseNotes>v1.1.0 - Enhanced AOT compatibility with source-generated automatic validator registration. Added comprehensive OpenAPI schema generation, improved migration tools with better attribute handling, enhanced observability with metrics collection, and enterprise-grade dependency injection patterns. All features now fully AOT-compatible while maintaining the same developer experience.</PackageReleaseNotes>
+    <PackageReleaseNotes>v1.2.0 - Major migration tooling update: Added Sannr.Cli as a dotnet global tool with support for both attribute-based and fluent-style migrations from FluentValidation. Enhanced DataAnnotations migration with improved attribute mapping. Fixed source generator robustness for malformed attributes. Comprehensive documentation updates including Getting Started guide, migration strategies, and CLI usage examples.</PackageReleaseNotes>
     
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <IncludeBuildOutput>true</IncludeBuildOutput>
@@ -27,8 +27,8 @@
   <ItemGroup>
     <FrameworkReference Include="Microsoft.AspNetCore.App" />
     
-    <PackageReference Include="Swashbuckle.AspNetCore" Version="6.4.0" />
-    <PackageReference Include="System.Diagnostics.DiagnosticSource" Version="8.0.0" />
+    <PackageReference Include="Swashbuckle.AspNetCore" />
+    <PackageReference Include="System.Diagnostics.DiagnosticSource" />
     
     <ProjectReference Include="..\Sannr.Core\Sannr.Core.csproj" PrivateAssets="all" />
 

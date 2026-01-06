@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sannr | High-Performance .NET Validation</title>
+    <link rel="stylesheet" href="/styles.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;800&family=JetBrains+Mono&display=swap"
+        rel="stylesheet">
+    <link rel="icon" type="image/png" href="/icon.png">
+    <style>
+        body {
+            font-family: 'Outfit', sans-serif;
+            background: #ffffff;
+            color: #1a1a1a;
+        }
+
+        .hero {
+            padding: 100px 20px;
+            text-align: center;
+            background: radial-gradient(circle at 50% 50%, #f5f3ff 0%, #ffffff 100%);
+            border-bottom: 1px solid #f0f0f0;
+        }
+
+        .hero h1 {
+            font-size: 4rem;
+            font-weight: 800;
+            letter-spacing: -0.04em;
+            margin-bottom: 20px;
+            background: linear-gradient(135deg, #6366f1 0%, #a855f7 100%);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .hero p {
+            font-size: 1.5rem;
+            color: #4b5563;
+            max-width: 800px;
+            margin: 0 auto 40px;
+        }
+
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 30px;
+            margin-top: 60px;
+            max-width: 1200px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .feature-card {
+            padding: 30px;
+            background: #ffffff;
+            border: 1px solid #f0f0f0;
+            border-radius: 20px;
+            transition: all 0.3s;
+            text-align: left;
+        }
+
+        .feature-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.05);
+            border-color: #e0e7ff;
+        }
+
+        .feature-card h3 {
+            font-size: 1.5rem;
+            margin-bottom: 12px;
+            color: #1e1b4b;
+        }
+
+        .feature-card p {
+            color: #64748b;
+        }
+
+        .cta-container {
+            margin-top: 50px;
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+        }
+
+        .primary-btn {
+            background: #6366f1;
+            color: white;
+            padding: 16px 36px;
+            border-radius: 99px;
+            font-weight: 700;
+            text-decoration: none;
+            font-size: 1.125rem;
+            transition: all 0.2s;
+        }
+
+        .primary-btn:hover {
+            background: #4f46e5;
+            box-shadow: 0 10px 15px -3px rgba(99, 102, 241, 0.4);
+        }
+
+        .secondary-btn {
+            background: #f8fafc;
+            color: #475569;
+            padding: 16px 36px;
+            border-radius: 99px;
+            font-weight: 700;
+            text-decoration: none;
+            font-size: 1.125rem;
+            border: 1px solid #e2e8f0;
+            transition: all 0.2s;
+        }
+
+        .secondary-btn:hover {
+            background: #f1f5f9;
+        }
+
+        .code-preview {
+            background: #0f172a;
+            color: #e2e8f0;
+            padding: 30px;
+            border-radius: 20px;
+            margin-top: 80px;
+            text-align: left;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.9rem;
+            max-width: 800px;
+            margin-left: auto;
+            margin-right: auto;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+        }
+
+        .code-preview header {
+            margin-bottom: 15px;
+            display: flex;
+            gap: 6px;
+        }
+
+        .dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+        }
+
+        .red {
+            background: #ff5f56;
+        }
+
+        .yellow {
+            background: #ffbd2e;
+        }
+
+        .green {
+            background: #27c93f;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="hero">
+        <h1>Validation, Reimagined.</h1>
+        <p>Sannr is a ultra-fast, source-generated validation framework for .NET that empowers you to build robust APIs
+            with zero reflection.</p>
+
+        <div class="cta-container">
+            <a href="/demo" class="primary-btn">Launch Interactive Demo</a>
+            <a href="https://github.com/Sannr/Sannr" class="secondary-btn">View on GitHub</a>
+        </div>
+
+        <div class="code-preview">
+            <header>
+                <div class="dot red"></div>
+                <div class="dot yellow"></div>
+                <div class="dot green"></div>
+            </header>
+            <pre><code>[Required(ErrorMessage = "Username is required")]
+[StringLength(50, MinimumLength = 3)]
+[Sanitize(Trim = true, ToLower = true)]
+public partial class UserRegistrationRequest
+{
+    public string? Username { get; set; }
+}
+
+// Validation happens at compile-time!
+// 100% Native AOT compatible.</code></pre>
+        </div>
+
+        <div class="features-grid">
+            <div class="feature-card">
+                <h3>⚡ Zero Reflection</h3>
+                <p>Everything is generated at compile-time using Roslyn Source Generators. No dynamic overhead, just
+                    pure performance.</p>
+            </div>
+            <div class="feature-card">
+                <h3>📦 AOT Compatible</h3>
+                <p>Fully compatible with .NET Native AOT. Perfect for serverless, microservices, and
+                    performance-critical apps.</p>
+            </div>
+            <div class="feature-card">
+                <h3>🛡️ Automatic Sanitization</h3>
+                <p>Don't just validate—clean. Trim, transform, and normalize your data automatically during the
+                    validation pipeline.</p>
+            </div>
+            <div class="feature-card">
+                <h3>📊 Native Metrics</h3>
+                <p>Built-in performance monitoring lets you track exactly how long your validation takes in production.
+                </p>
+            </div>
+            <div class="feature-card">
+                <h3>🌐 Frontend Ready</h3>
+                <p>Generate TypeScript types and client-side validation logic from your C# models with a single click.
+                </p>
+            </div>
+            <div class="feature-card">
+                <h3>🧩 Fluent & Attribute</h3>
+                <p>Use attributes for simple cases or the powerful Fluent API for complex business rules. Mix and match
+                    easily.</p>
+            </div>
+        </div>
+    </div>
+</body>
+
+</html>

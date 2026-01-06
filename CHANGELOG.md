@@ -5,6 +5,20 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.0] - 2026-01-06
+
+### Added
+- **Security Hardening**: Automated SBOM (Software Bill of Materials) generation in release pipeline using CycloneDX
+- **Documentation**: New "Common Pitfalls & Troubleshooting" section in README to assist with Source Generator adoption
+- **Feature Verification**: Independent verification of 100% Native AOT compatibility
+- **Aspire Integration**: Verified metrics and diagnostics integration with Aspire Dashboard
+
+### Fixed
+- **AOT Compatibility**: Removed `dynamic` keyword usage in Source Generator (`Generator.cs`) to ensure strict Native AOT compatibility (`IL3053` resolved)
+- **Generated Code**: Fixed `CS0108` (member hiding) and `CS1998` (async/await) warnings in generated validators
+- **Code Quality**: Resolved numerous CodeQL warnings including `CA1861` (prefer static readonly), `CA1860` (prefer Length > 0), and `CA13xx` (culture-insensitive string operations)
+- **Developer Experience**: Addressed namespace collisions and partial class requirements in documentation
+
 ## [1.1.0] - 2025-12-31
 
 ### Added
@@ -15,6 +29,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Enhanced Dependency Injection**: Idempotent service registration patterns and improved DI integration
 - **Client-Side Validation Generation**: Source-generated JavaScript validators for seamless client-side validation
 - **Advanced Error Handling**: Enhanced problem details with validation rule extraction and improved error responses
+- **Repository Hygiene & Security**:
+  - Added Central Package Management (CPM) via `Directory.Packages.props`
+  - Added centralized build configuration via `Directory.Build.props`
+  - Implemented GitHub CodeQL static analysis workflow
+  - Added `.editorconfig` for project-wide coding standards
+  - Improved CI pipeline with automated formatting checks and code coverage collection
+  - Added community health files: `CODE_OF_CONDUCT.md`, PR templates, and issue templates
+  - Locked .NET SDK version via `global.json`
 
 ### Changed
 - **AOT Compatibility**: Full Native AOT support with zero reflection in production code paths

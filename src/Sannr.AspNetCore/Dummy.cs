@@ -22,15 +22,13 @@
 // SOFTWARE.
 // ----------------------------------------------------------------------------------
 
-using Sannr.Core;
-
 namespace Sannr.AspNetCore;
 
 /// <summary>
 /// Dummy class to trigger OpenAPI filter generation.
 /// </summary>
 [GenerateClientValidators]
-public class DummyForOpenApi
+public partial class DummyForOpenApi
 {
     public string? DummyProperty { get; set; }
 }

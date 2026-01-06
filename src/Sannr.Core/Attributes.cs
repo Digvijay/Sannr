@@ -22,15 +22,13 @@
 // SOFTWARE.
 // ----------------------------------------------------------------------------------
 
-using System;
-
 namespace Sannr;
 
 /// <summary>
 /// Base attribute for Sannr validation attributes.
 /// </summary>
 [AttributeUsage(AttributeTargets.Property)]
-public abstract class SannrValidationAttribute : Attribute 
+public abstract class SannrValidationAttribute : Attribute
 {
     /// <summary>
     /// The error message to use if validation fails.
@@ -51,7 +49,7 @@ public abstract class SannrValidationAttribute : Attribute
     /// <summary>
     /// The group to which this validation belongs.
     /// </summary>
-    public string? Group { get; set; } 
+    public string? Group { get; set; }
 }
 
 /// <summary>
@@ -62,7 +60,7 @@ public class RequiredAttribute : SannrValidationAttribute { }
 /// <summary>
 /// Specifies the minimum and maximum length of characters for a string property.
 /// </summary>
-public class StringLengthAttribute : SannrValidationAttribute 
+public class StringLengthAttribute : SannrValidationAttribute
 {
     /// <summary>
     /// Gets the maximum allowable length.
@@ -82,7 +80,7 @@ public class StringLengthAttribute : SannrValidationAttribute
 /// <summary>
 /// Specifies the minimum and maximum value for a numeric property.
 /// </summary>
-public class RangeAttribute : SannrValidationAttribute 
+public class RangeAttribute : SannrValidationAttribute
 {
     /// <summary>
     /// Gets the minimum allowable value.
@@ -187,38 +185,40 @@ public class ConditionalRangeAttribute : SannrValidationAttribute
     }
 }
 
-public class RequiredIfAttribute : SannrValidationAttribute 
+public class RequiredIfAttribute : SannrValidationAttribute
 {
     public string OtherProperty { get; }
     public object TargetValue { get; }
-    public RequiredIfAttribute(string otherProperty, object targetValue) 
+    public RequiredIfAttribute(string otherProperty, object targetValue)
     {
         OtherProperty = otherProperty;
         TargetValue = targetValue;
     }
 }
 
-public class SanitizeAttribute : Attribute 
-{ 
-    public bool Trim { get; set; } 
+[AttributeUsage(AttributeTargets.Property)]
+public class SanitizeAttribute : Attribute
+{
+    public bool Trim { get; set; }
     public bool ToUpper { get; set; }
     public bool ToLower { get; set; }
 }
 
-public class DisplayAttribute : Attribute 
-{ 
-    public string? Name { get; set; } 
+[AttributeUsage(AttributeTargets.Property | AttributeTargets.Field | AttributeTargets.Parameter, AllowMultiple = false)]
+public class DisplayAttribute : Attribute
+{
+    public string? Name { get; set; }
 }
 
 [AttributeUsage(AttributeTargets.Property)]
-public class CustomValidatorAttribute : Attribute 
+public class CustomValidatorAttribute : Attribute
 {
     public Type ValidatorType { get; }
     public string MethodName { get; }
     public bool IsAsync { get; set; }
-    public CustomValidatorAttribute(Type validatorType, string methodName = "Check", bool isAsync = false) 
-    { 
-        ValidatorType = validatorType; 
+    public CustomValidatorAttribute(Type validatorType, string methodName = "Check", bool isAsync = false)
+    {
+        ValidatorType = validatorType;
         MethodName = methodName;
         IsAsync = isAsync;
     }

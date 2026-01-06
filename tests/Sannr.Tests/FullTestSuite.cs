@@ -22,19 +22,19 @@
 // SOFTWARE.
 // ----------------------------------------------------------------------------------
 
-using Xunit;
-using Sannr.Tests.Models;
-using System.Threading.Tasks;
-using System.Collections.Generic;
 using System;
+using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
+using Sannr.Tests.Models;
+using Xunit;
 
 namespace Sannr.Tests;
 
 /// <summary>
 /// Full test suite for Sannr validation features.
 /// </summary>
-public class FullTestSuite
+public partial class FullTestSuite
 {
     public FullTestSuite()
     {
@@ -42,10 +42,13 @@ public class FullTestSuite
         RegisterTestValidators();
     }
 
+    private static readonly string[] AllowedDocumentExtensions = { "pdf", "doc", "docx" };
+    private static readonly string[] AllowedResumeExtensions = { "pdf", "docx", "txt" };
+
     internal static void RegisterTestValidators()
     {
         // Register validator for UserProfile
-        SannrValidatorRegistry.Register<UserProfile>(async (context) =>
+        SannrValidatorRegistry.Register<UserProfile>((context) =>
         {
             var result = new ValidationResult();
             var model = (UserProfile)context.ObjectInstance;
@@ -53,7 +56,7 @@ public class FullTestSuite
             // Apply sanitization to Username
             if (model.Username != null)
             {
-                model.Username = model.Username.Trim().ToUpper();
+                model.Username = model.Username.Trim().ToUpperInvariant();
             }
 
             // Username validation
@@ -63,7 +66,7 @@ public class FullTestSuite
             // Email validation
             if (string.IsNullOrEmpty(model.Email))
                 result.Add("Email", "Email is required");
-            else if (!model.Email.Contains("@"))
+            else if (!model.Email.Contains('@', StringComparison.Ordinal))
                 result.Add("Email", "Email must be valid");
 
             // ZipCode validation (RequiredIf)
@@ -83,11 +86,11 @@ public class FullTestSuite
             if (context.ActiveGroup == "Reg")
                 result.Add("ReferralCode", "ReferralCode is required.");
 
-            return result;
+            return Task.FromResult(result);
         });
 
         // Register validator for AdvancedValidationModel
-        SannrValidatorRegistry.Register<AdvancedValidationModel>(async (context) =>
+        SannrValidatorRegistry.Register<AdvancedValidationModel>((context) =>
         {
             var result = new ValidationResult();
             var model = (AdvancedValidationModel)context.ObjectInstance;
@@ -98,14 +101,14 @@ public class FullTestSuite
             else if (model.Username.Length < 3)
                 result.Add("Username", "Username must be at least 3 characters");
             else if (model.Username.Length > 50)
-                result.Add("Username", "Username must not exceed 50 characters");            
+                result.Add("Username", "Username must not exceed 50 characters");
             else if (!System.Text.RegularExpressions.Regex.IsMatch(model.Username, @"^[a-zA-Z0-9_-]+$"))
                 result.Add("Username", "Username contains invalid characters.");
 
             // Email validation (Required, EmailAddress)
             if (string.IsNullOrEmpty(model.Email))
                 result.Add("Email", "Email is required");
-            else if (!model.Email.Contains("@"))
+            else if (!model.Email.Contains('@', StringComparison.Ordinal))
                 result.Add("Email", "The Email field is not a valid e-mail address.");
 
             // CreditCardNumber validation (CreditCard)
@@ -120,7 +123,7 @@ public class FullTestSuite
             // Website validation (Url)
             if (!string.IsNullOrEmpty(model.Website))
             {
-                if (!model.Website.StartsWith("http://") && !model.Website.StartsWith("https://"))
+                if (!model.Website.StartsWith("http://", StringComparison.OrdinalIgnoreCase) && !model.Website.StartsWith("https://", StringComparison.OrdinalIgnoreCase))
                     result.Add("Website", "The Website field is not a valid URL.");
             }
 
@@ -129,6 +132,9 @@ public class FullTestSuite
             {
                 // Simple phone validation - should contain digits and common phone characters
                 var validChars = "0123456789()-+ .";
+                // Note: validChars.Contains(c) does not have an overload for char + StringComparison until newer .NET versions or via extension. 
+                // However, StringComparison.Ordinal is for string.Contains(string). For char search in string, it is ordinal by default.
+                // Reverting to LINQ Any/Contains checking against the string as a set of characters is implicitly ordinal.
                 if (!model.PhoneNumber.All(c => validChars.Contains(c)))
                     result.Add("PhoneNumber", "The PhoneNumber field is not a valid phone number.");
             }
@@ -136,8 +142,8 @@ public class FullTestSuite
             // DocumentPath validation (FileExtensions)
             if (!string.IsNullOrEmpty(model.DocumentPath))
             {
-                var extensions = new[] { "pdf", "doc", "docx" };
-                var valid = extensions.Any(ext => model.DocumentPath.EndsWith("." + ext, StringComparison.OrdinalIgnoreCase));
+                // Defined locally for now, replaced by static readonly to appease CA1861
+                var valid = AllowedDocumentExtensions.Any(ext => model.DocumentPath.EndsWith("." + ext, StringComparison.OrdinalIgnoreCase));
                 if (!valid)
                     result.Add("DocumentPath", "The DocumentPath field must have one of the following extensions: .pdf, .doc, .docx.");
             }
@@ -161,11 +167,11 @@ public class FullTestSuite
             if (model.Country == "US" && string.IsNullOrEmpty(model.ZipCode))
                 result.Add("ZipCode", "ZipCode is required.");
 
-            return result;
+            return Task.FromResult(result);
         });
 
         // Register validator for TestModel (used in AttributeValidationTests)
-        SannrValidatorRegistry.Register<Sannr.Tests.TestModel>(async (context) =>
+        SannrValidatorRegistry.Register<Sannr.Tests.TestModel>((context) =>
         {
             var result = new ValidationResult();
             var model = (Sannr.Tests.TestModel)context.ObjectInstance;
@@ -173,7 +179,7 @@ public class FullTestSuite
             // Sanitize UserId (Trim and ToUpper)
             if (model.UserId != null)
             {
-                model.UserId = model.UserId.Trim().ToUpper();
+                model.UserId = model.UserId.Trim().ToUpperInvariant();
             }
 
             // Username validation (Required with custom message)
@@ -200,7 +206,7 @@ public class FullTestSuite
             // ContactEmail validation (EmailAddress)
             if (!string.IsNullOrEmpty(model.ContactEmail))
             {
-                if (!model.ContactEmail.Contains("@"))
+                if (!model.ContactEmail.Contains('@', StringComparison.Ordinal))
                     result.Add("ContactEmail", "The ContactEmail field is not a valid e-mail address.");
             }
 
@@ -216,7 +222,7 @@ public class FullTestSuite
             // PortfolioUrl validation (Url)
             if (!string.IsNullOrEmpty(model.PortfolioUrl))
             {
-                if (!model.PortfolioUrl.StartsWith("http://") && !model.PortfolioUrl.StartsWith("https://"))
+                if (!model.PortfolioUrl.StartsWith("http://", StringComparison.OrdinalIgnoreCase) && !model.PortfolioUrl.StartsWith("https://", StringComparison.OrdinalIgnoreCase))
                     result.Add("PortfolioUrl", "The PortfolioUrl field is not a valid URL.");
             }
 
@@ -228,11 +234,11 @@ public class FullTestSuite
                     result.Add("PhoneNumber", "The PhoneNumber field is not a valid phone number.");
             }
 
+
             // ResumeFileName validation (FileExtensions)
             if (!string.IsNullOrEmpty(model.ResumeFileName))
             {
-                var extensions = new[] { "pdf", "docx", "txt" };
-                var valid = extensions.Any(ext => model.ResumeFileName.EndsWith("." + ext, StringComparison.OrdinalIgnoreCase));
+                var valid = AllowedResumeExtensions.Any(ext => model.ResumeFileName.EndsWith("." + ext, StringComparison.OrdinalIgnoreCase));
                 if (!valid)
                     result.Add("ResumeFileName", "The ResumeFileName field must have one of the following extensions: .pdf, .docx, .txt.");
             }
@@ -245,12 +251,12 @@ public class FullTestSuite
             if (model.DisplayedAge < 18 || model.DisplayedAge > 99)
                 result.Add("DisplayedAge", "The field User's Age must be between 18 and 99.");
 
-            return result;
+            return Task.FromResult(result);
         });
 
         // Register validators for RealWorldIntegrationTests models
         // ComplexModel validator
-        SannrValidatorRegistry.Register<ComplexModel>(async (context) =>
+        SannrValidatorRegistry.Register<ComplexModel>((context) =>
         {
             var model = (ComplexModel)context.ObjectInstance;
             var result = new ValidationResult();
@@ -276,17 +282,17 @@ public class FullTestSuite
                 result.Add("Salary", "The field Salary must be between 0 and 1000000.");
 
             // Phone: Phone
-        if (!string.IsNullOrEmpty(model.Phone) && !System.Text.RegularExpressions.Regex.IsMatch(model.Phone, @"^[\+]?[1-9][\d\s\-\(\)]{7,14}$"))
+            if (!string.IsNullOrEmpty(model.Phone) && !System.Text.RegularExpressions.Regex.IsMatch(model.Phone, @"^[\+]?[1-9][\d\s\-\(\)]{7,14}$"))
 
-            // Website: Url
-            if (!string.IsNullOrEmpty(model.Website) && !Uri.TryCreate(model.Website, UriKind.Absolute, out _))
-                result.Add("Website", "The Website field is not a valid fully-qualified http, https, or ftp URL.");
+                // Website: Url
+                if (!string.IsNullOrEmpty(model.Website) && !Uri.TryCreate(model.Website, UriKind.Absolute, out _))
+                    result.Add("Website", "The Website field is not a valid fully-qualified http, https, or ftp URL.");
 
-            return result;
+            return Task.FromResult(result);
         });
 
         // LargeModel validator (all props Required)
-        SannrValidatorRegistry.Register<LargeModel>(async (context) =>
+        SannrValidatorRegistry.Register<LargeModel>((context) =>
         {
             var model = (LargeModel)context.ObjectInstance;
             var result = new ValidationResult();
@@ -325,11 +331,11 @@ public class FullTestSuite
             if (string.IsNullOrWhiteSpace(model.Prop32)) result.Add("Prop32", "The Prop32 field is required.");
             if (string.IsNullOrWhiteSpace(model.Prop33)) result.Add("Prop33", "The Prop33 field is required.");
 
-            return result;
+            return Task.FromResult(result);
         });
 
         // Register validator for RealWorldAdvancedValidationModel
-        SannrValidatorRegistry.Register<RealWorldAdvancedValidationModel>(async (context) =>
+        SannrValidatorRegistry.Register<RealWorldAdvancedValidationModel>((context) =>
         {
             var model = (RealWorldAdvancedValidationModel)context.ObjectInstance;
             var result = new ValidationResult();
@@ -378,11 +384,11 @@ public class FullTestSuite
             if (model.Score < 0 || model.Score > 100)
                 result.Add("Score", "The field Score must be between 0 and 100.");
 
-            return result;
+            return Task.FromResult(result);
         });
 
         // Register validator for NestedModel
-        SannrValidatorRegistry.Register<NestedModel>(async (context) =>
+        SannrValidatorRegistry.Register<NestedModel>((context) =>
         {
             var model = (NestedModel)context.ObjectInstance;
             var result = new ValidationResult();
@@ -391,11 +397,11 @@ public class FullTestSuite
             if (string.IsNullOrWhiteSpace(model.Name))
                 result.Add("Name", "The Name field is required.");
 
-            return result;
+            return Task.FromResult(result);
         });
 
         // Register validator for CircularModel
-        SannrValidatorRegistry.Register<CircularModel>(async (context) =>
+        SannrValidatorRegistry.Register<CircularModel>((context) =>
         {
             var model = (CircularModel)context.ObjectInstance;
             var result = new ValidationResult();
@@ -404,11 +410,11 @@ public class FullTestSuite
             if (string.IsNullOrWhiteSpace(model.Name))
                 result.Add("Name", "The Name field is required.");
 
-            return result;
+            return Task.FromResult(result);
         });
 
         // Register validator for BaseModel
-        SannrValidatorRegistry.Register<BaseModel>(async (context) =>
+        SannrValidatorRegistry.Register<BaseModel>((context) =>
         {
             var model = (BaseModel)context.ObjectInstance;
             var result = new ValidationResult();
@@ -417,11 +423,11 @@ public class FullTestSuite
             if (string.IsNullOrWhiteSpace(model.BaseProperty))
                 result.Add("BaseProperty", "The BaseProperty field is required.");
 
-            return result;
+            return Task.FromResult(result);
         });
 
         // Register validator for DerivedModel
-        SannrValidatorRegistry.Register<DerivedModel>(async (context) =>
+        SannrValidatorRegistry.Register<DerivedModel>((context) =>
         {
             var model = (DerivedModel)context.ObjectInstance;
             var result = new ValidationResult();
@@ -446,11 +452,11 @@ public class FullTestSuite
             if (model.Age < 0 || model.Age > 150)
                 result.Add("Age", "The field Age must be between 0 and 150.");
 
-            return result;
+            return Task.FromResult(result);
         });
 
         // Register validator for ConditionalModel (implements IValidatableObject)
-        SannrValidatorRegistry.Register<ConditionalModel>(async (context) =>
+        SannrValidatorRegistry.Register<ConditionalModel>((context) =>
         {
             var model = (ConditionalModel)context.ObjectInstance;
             var result = new ValidationResult();
@@ -487,11 +493,11 @@ public class FullTestSuite
                 result.Add(vr.MemberName ?? "", vr.Message, vr.Severity);
             }
 
-            return result;
+            return Task.FromResult(result);
         });
 
         // Register validator for ModelLevelValidationModel (implements IValidatableObject)
-        SannrValidatorRegistry.Register<ModelLevelValidationModel>(async (context) =>
+        SannrValidatorRegistry.Register<ModelLevelValidationModel>((context) =>
         {
             var model = (ModelLevelValidationModel)context.ObjectInstance;
             var result = new ValidationResult();
@@ -519,11 +525,11 @@ public class FullTestSuite
                 result.Add(vr.MemberName ?? "", vr.Message, vr.Severity);
             }
 
-            return result;
+            return Task.FromResult(result);
         });
 
         // Register validator for CollectionModel
-        SannrValidatorRegistry.Register<CollectionModel>(async (context) =>
+        SannrValidatorRegistry.Register<CollectionModel>((context) =>
         {
             var model = (CollectionModel)context.ObjectInstance;
             var result = new ValidationResult();
@@ -532,11 +538,11 @@ public class FullTestSuite
             if (string.IsNullOrWhiteSpace(model.Name))
                 result.Add("Name", "The Name field is required.");
 
-            return result;
+            return Task.FromResult(result);
         });
 
         // Register validator for BoundaryTestModel
-        SannrValidatorRegistry.Register<BoundaryTestModel>(async (context) =>
+        SannrValidatorRegistry.Register<BoundaryTestModel>((context) =>
         {
             var model = (BoundaryTestModel)context.ObjectInstance;
             var result = new ValidationResult();
@@ -557,11 +563,11 @@ public class FullTestSuite
             if (model.DoubleRange < 0.0 || model.DoubleRange > 1.0)
                 result.Add("DoubleRange", "The field DoubleRange must be between 0 and 1.");
 
-            return result;
+            return Task.FromResult(result);
         });
 
         // Register validator for CultureTestModel
-        SannrValidatorRegistry.Register<CultureTestModel>(async (context) =>
+        SannrValidatorRegistry.Register<CultureTestModel>((context) =>
         {
             var model = (CultureTestModel)context.ObjectInstance;
             var result = new ValidationResult();
@@ -570,11 +576,11 @@ public class FullTestSuite
             if (string.IsNullOrWhiteSpace(model.Name))
                 result.Add("Name", "The Name field is required.");
 
-            return result;
+            return Task.FromResult(result);
         });
 
         // Register validator for LocalizedValidationModel
-        SannrValidatorRegistry.Register<LocalizedValidationModel>(async (context) =>
+        SannrValidatorRegistry.Register<LocalizedValidationModel>((context) =>
         {
             var model = (LocalizedValidationModel)context.ObjectInstance;
             var result = new ValidationResult();
@@ -602,11 +608,11 @@ public class FullTestSuite
                 result.Add("AgeField", message);
             }
 
-            return result;
+            return Task.FromResult(result);
         });
 
         // Register validator for ClientValidationModel
-        SannrValidatorRegistry.Register<ClientValidationModel>(async (context) =>
+        SannrValidatorRegistry.Register<ClientValidationModel>((context) =>
         {
             var model = (ClientValidationModel)context.ObjectInstance;
             var result = new ValidationResult();
@@ -631,11 +637,11 @@ public class FullTestSuite
             if (model.HasAddress && string.IsNullOrWhiteSpace(model.StreetAddress))
                 result.Add("StreetAddress", "The StreetAddress field is required.");
 
-            return result;
+            return Task.FromResult(result);
         });
 
         // Register validator for MinimalApiTestModel
-        SannrValidatorRegistry.Register<MinimalApiTestModel>(async (context) =>
+        SannrValidatorRegistry.Register<MinimalApiTestModel>((context) =>
         {
             var model = (MinimalApiTestModel)context.ObjectInstance;
             var result = new ValidationResult();
@@ -658,11 +664,11 @@ public class FullTestSuite
             if (model.Age < 18 || model.Age > 120)
                 result.Add("Age", "The field Age must be between 18 and 120.");
 
-            return result;
+            return Task.FromResult(result);
         });
 
         // Register validator for SimpleTestModel
-        SannrValidatorRegistry.Register<SimpleTestModel>(async (context) =>
+        SannrValidatorRegistry.Register<SimpleTestModel>((context) =>
         {
             var model = (SimpleTestModel)context.ObjectInstance;
             var result = new ValidationResult();
@@ -671,11 +677,11 @@ public class FullTestSuite
             if (string.IsNullOrWhiteSpace(model.Value))
                 result.Add("Value", "The Value field is required.");
 
-            return result;
+            return Task.FromResult(result);
         });
 
         // Register validator for ComplexValidationModel
-        SannrValidatorRegistry.Register<ComplexValidationModel>(async (context) =>
+        SannrValidatorRegistry.Register<ComplexValidationModel>((context) =>
         {
             var model = (ComplexValidationModel)context.ObjectInstance;
             var result = new ValidationResult();
@@ -705,11 +711,11 @@ public class FullTestSuite
             if (model.FutureDate.HasValue && model.FutureDate.Value <= DateTime.Now)
                 result.Add("FutureDate", "The FutureDate field must be a date in the future.");
 
-            return result;
+            return Task.FromResult(result);
         });
 
         // Register validator for SimpleValidationModel
-        SannrValidatorRegistry.Register<SimpleValidationModel>(async (context) =>
+        SannrValidatorRegistry.Register<SimpleValidationModel>((context) =>
         {
             var model = (SimpleValidationModel)context.ObjectInstance;
             var result = new ValidationResult();
@@ -722,7 +728,7 @@ public class FullTestSuite
             if (!string.IsNullOrEmpty(model.Email) && !System.Text.RegularExpressions.Regex.IsMatch(model.Email, @"^[^@\s]+@[^@\s]+\.[^@\s]+$"))
                 result.Add("Email", "The Email field is not a valid e-mail address.");
 
-            return result;
+            return Task.FromResult(result);
         });
     }
 

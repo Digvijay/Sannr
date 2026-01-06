@@ -1,11 +1,11 @@
 using Sannr;
 using System.ComponentModel.DataAnnotations;
 
-public class TestModel
+public partial class TestModel
 {
     [Required]
     public string Name { get; set; }
 
-    [Email]
+    [EmailAddress]
     public string Email { get; set; }
 }

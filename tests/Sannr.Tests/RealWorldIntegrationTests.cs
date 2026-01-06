@@ -22,22 +22,21 @@
 // SOFTWARE.
 // ----------------------------------------------------------------------------------
 
-using Xunit;
-using Sannr;
-using System.Threading.Tasks;
+using System;
 using System.Collections.Concurrent;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using System.Threading.Tasks;
 using Sannr.Tests.Models;
-using System;
-using System.Collections.Generic;
+using Xunit;
 
 namespace Sannr.Tests;
 
 /// <summary>
 /// Complex model with multiple validation attributes for integration testing.
 /// </summary>
-public class ComplexModel
+public partial class ComplexModel
 {
     [Required]
     [StringLength(100)]
@@ -63,7 +62,7 @@ public class ComplexModel
 /// <summary>
 /// Large model with many properties to test performance and scalability.
 /// </summary>
-public class LargeModel
+public partial class LargeModel
 {
     [Required] public string? Prop1 { get; set; }
     [Required] public string? Prop2 { get; set; }
@@ -140,7 +139,7 @@ public class LargeModel
 /// <summary>
 /// Model with nested objects to test complex object graph validation.
 /// </summary>
-public class NestedModel
+public partial class NestedModel
 {
     [Required]
     public string? Name { get; set; }
@@ -151,7 +150,7 @@ public class NestedModel
 /// <summary>
 /// Model with circular references to test reference cycle handling.
 /// </summary>
-public class CircularModel
+public partial class CircularModel
 {
     [Required]
     public string? Name { get; set; }
@@ -163,7 +162,7 @@ public class CircularModel
 /// <summary>
 /// Base class for inheritance testing.
 /// </summary>
-public class BaseModel
+public partial class BaseModel
 {
     [Required]
     public string? BaseProperty { get; set; }
@@ -172,7 +171,7 @@ public class BaseModel
 /// <summary>
 /// Derived class to test inheritance scenarios.
 /// </summary>
-public class DerivedModel : BaseModel
+public partial class DerivedModel : BaseModel
 {
     [Required]
     public string? DerivedProperty { get; set; }
@@ -188,7 +187,7 @@ public class DerivedModel : BaseModel
     [Range(0, 150)]
     public int Age { get; set; }
 }
-public class ConditionalModel : Sannr.IValidatableObject
+public partial class ConditionalModel : Sannr.IValidatableObject
 {
     [Required]
     public string? Username { get; set; }
@@ -234,7 +233,7 @@ public class ConditionalModel : Sannr.IValidatableObject
 /// <summary>
 /// Model with custom validation attributes and complex rules.
 /// </summary>
-public class RealWorldAdvancedValidationModel
+public partial class RealWorldAdvancedValidationModel
 {
     [Required]
     [StringLength(50)]
@@ -269,7 +268,7 @@ public class RealWorldAdvancedValidationModel
 /// <summary>
 /// Model implementing Sannr.IValidatableObject for model-level validation.
 /// </summary>
-public class ModelLevelValidationModel : Sannr.IValidatableObject
+public partial class ModelLevelValidationModel : Sannr.IValidatableObject
 {
     [Required]
     public string? FirstName { get; set; }
@@ -318,7 +317,7 @@ public class ModelLevelValidationModel : Sannr.IValidatableObject
 /// <summary>
 /// Model with collections to test validation of complex data structures.
 /// </summary>
-public class CollectionModel
+public partial class CollectionModel
 {
     [Required]
     public string? Name { get; set; }
@@ -331,7 +330,7 @@ public class CollectionModel
 /// <summary>
 /// Model for testing boundary values and edge cases.
 /// </summary>
-public class BoundaryTestModel
+public partial class BoundaryTestModel
 {
     [Required]
     [StringLength(10, MinimumLength = 1)]
@@ -349,7 +348,7 @@ public class BoundaryTestModel
 /// <summary>
 /// Model for testing culture-specific validation scenarios.
 /// </summary>
-public class CultureTestModel
+public partial class CultureTestModel
 {
     [Required]
     public string? Name { get; set; }
@@ -431,7 +430,7 @@ public static class CultureAwareNumberValidator
 /// Real-world integration tests to ensure Sannr works reliably in production scenarios.
 /// Tests concurrency, performance, edge cases, and complex integration patterns.
 /// </summary>
-public class RealWorldIntegrationTests
+public partial class RealWorldIntegrationTests
 {
     static RealWorldIntegrationTests()
     {
@@ -1891,9 +1890,11 @@ public class RealWorldIntegrationTests
         Assert.Equal(3, errorResult.Errors.Count); // Should have 3 specific errors
 
         // Each error should clearly indicate which property failed
+        // Each error should clearly indicate which property failed
+        var expectedMembers = new[] { "ShortString", "IntegerRange", "DoubleRange" };
         foreach (var error in errorResult.Errors)
         {
-            Assert.Contains(error.MemberName, new[] { "ShortString", "IntegerRange", "DoubleRange" });
+            Assert.Contains(error.MemberName, expectedMembers);
         }
 
         // Test 5: Easy to extend with custom validators
@@ -1991,7 +1992,7 @@ public class RealWorldIntegrationTests
 /// <summary>
 /// Model demonstrating localized validation messages.
 /// </summary>
-public class LocalizedValidationModel
+public partial class LocalizedValidationModel
 {
     [Required(
         ErrorMessageResourceName = nameof(Resources.ValidationMessages.RequiredFieldRequired),

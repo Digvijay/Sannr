@@ -22,27 +22,24 @@
 // SOFTWARE.
 // ----------------------------------------------------------------------------------
 
-using Sannr;
-using System.Diagnostics.Metrics;
-using Xunit;
-using Microsoft.Extensions.DependencyInjection;
-using System.Diagnostics;
-using Sannr.AspNetCore;
 using System;
+using System.Diagnostics;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Abstractions;
-using Microsoft.AspNetCore.Routing;
-using Microsoft.AspNetCore.Mvc.ModelBinding;
 using Microsoft.AspNetCore.Mvc.ModelBinding.Validation;
+using Microsoft.AspNetCore.Routing;
+using Microsoft.Extensions.DependencyInjection;
+using Sannr.AspNetCore;
+using Xunit;
 
 namespace Sannr.Tests;
 
 /// <summary>
 /// Test models for performance monitoring.
 /// </summary>
-public class SimpleValidationModel
+public partial class SimpleValidationModel
 {
     [Required]
     public string? Name { get; set; }
@@ -51,7 +48,7 @@ public class SimpleValidationModel
     public string? Email { get; set; }
 }
 
-public class ComplexValidationModel
+public partial class ComplexValidationModel
 {
     [Required]
     public string? Name { get; set; }
@@ -72,7 +69,7 @@ public class ComplexValidationModel
 /// <summary>
 /// Tests for performance monitoring and diagnostics.
 /// </summary>
-public class PerformanceMonitoringTests
+public partial class PerformanceMonitoringTests
 {
     [Fact]
     public void SannrValidationOptions_ShouldHaveDefaultValues()
