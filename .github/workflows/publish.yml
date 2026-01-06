@@ -23,7 +23,9 @@ jobs:
 
     # We rebuild to ensure the exact commit matches the tag
     - name: Install CycloneDX
-      run: dotnet tool install --global CycloneDX
+      run: |
+        dotnet tool install --global CycloneDX
+        echo "$HOME/.dotnet/tools" >> $GITHUB_PATH
 
     - name: Generate SBOM
       run: dotnet cyclonedx Sannr.sln -o out -j
