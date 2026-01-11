@@ -21,6 +21,62 @@ It extends the standard validation paradigm with enterprise requirements: **Asyn
 
 ---
 
+## ⚡ Quick Start
+
+For a detailed step-by-step guide, see our **[Getting Started Guide](docs/GETTING_STARTED.md)**.
+
+### 1. Register the Service
+In your ASP.NET Core `Program.cs`, add Sannr. This automatically replaces the default `IObjectModelValidator`.
+
+```csharp
+var builder = WebApplication.CreateBuilder(args);
+
+// Registers the Sannr AOT Validator Adapter
+builder.Services.AddSannr(options => 
+{
+    options.EnableMetrics = true; // Optional performance tracking
+}); 
+
+var app = builder.Build();
+
+// Apply automatic validation/sanitization to a group
+app.MapGroup("/api").WithSannrValidation();
+
+app.Run();
+```
+
+### Automatic Error Handling
+When using `.WithSannrValidation()`, Sannr intercepts invalid requests **before** your handler is reached and returns a `400 Bad Request` with a standard `ValidationProblemDetails` response. Your handler logic only executes if the input is valid and sanitized.
+
+### 2. Define Your Model
+Sannr uses standard attributes familiar to .NET developers, plus powerful extensions.
+
+```csharp
+using Sannr; // Replaces System.ComponentModel.DataAnnotations
+
+public class UserProfile
+{
+    // Auto-Sanitization: Trims whitespace and Uppercases input before validation
+    [Sanitize(Trim = true, ToUpper = true)]
+    [Required]
+    public string Username { get; set; }
+
+    [Required]
+    [EmailAddress]
+    public string Email { get; set; }
+
+    // Conditional Validation: ZipCode is only required if Country is USA
+    public string Country { get; set; }
+
+    [RequiredIf(nameof(Country), "USA")]
+    public string ZipCode { get; set; }
+}
+```
+
+That's it. No manual validator registration is required. Sannr uses **Module Initializers** to automatically register your models at startup.
+
+---
+
 ## 🚀 Why Sannr?
 
 Standard validation libraries rely on Reflection, which is slow, memory-intensive, and hostile to the IL Trimmer. Sannr generates highly optimized static code that looks exactly like code you would write by hand.
@@ -283,61 +339,7 @@ dotnet add package Sannr
 
 ---
 
-## ⚡ Quick Start
 
-For a detailed step-by-step guide, see our **[Getting Started Guide](docs/GETTING_STARTED.md)**.
-
-### 1. Register the Service
-In your ASP.NET Core `Program.cs`, add Sannr. This automatically replaces the default `IObjectModelValidator`.
-
-```csharp
-var builder = WebApplication.CreateBuilder(args);
-
-// Registers the Sannr AOT Validator Adapter
-builder.Services.AddSannr(options => 
-{
-    options.EnableMetrics = true; // Optional performance tracking
-}); 
-
-var app = builder.Build();
-
-// Apply automatic validation/sanitization to a group
-app.MapGroup("/api").WithSannrValidation();
-
-app.Run();
-```
-
-### Automatic Error Handling
-When using `.WithSannrValidation()`, Sannr intercepts invalid requests **before** your handler is reached and returns a `400 Bad Request` with a standard `ValidationProblemDetails` response. Your handler logic only executes if the input is valid and sanitized.
-
-### 2. Define Your Model
-Sannr uses standard attributes familiar to .NET developers, plus powerful extensions.
-
-```csharp
-using Sannr; // Replaces System.ComponentModel.DataAnnotations
-
-public class UserProfile
-{
-    // Auto-Sanitization: Trims whitespace and Uppercases input before validation
-    [Sanitize(Trim = true, ToUpper = true)]
-    [Required]
-    public string Username { get; set; }
-
-    [Required]
-    [EmailAddress]
-    public string Email { get; set; }
-
-    // Conditional Validation: ZipCode is only required if Country is USA
-    public string Country { get; set; }
-
-    [RequiredIf(nameof(Country), "USA")]
-    public string ZipCode { get; set; }
-}
-```
-
-That's it. No manual validator registration is required. Sannr uses **Module Initializers** to automatically register your models at startup.
-
----
 
 ## 🛡️ Enterprise Capabilities
 
