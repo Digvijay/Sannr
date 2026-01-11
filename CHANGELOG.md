@@ -5,6 +5,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.3.0] - 2026-01-11
+
+### Added
+- **Static Reflection**: Introduced "Shadow Types" (`[SannrReflect]`) for zero-allocation, AOT-compatible inspection and manipulation of models.
+- **Deep Cloning**: Generated `DeepClone()` methods for robust, reflection-free object copying using Shadow Types.
+- **PII Awareness**: New `[Pii]` attribute and generated `IsPii` metadata for privacy-aware data handling.
+- **Visitor Pattern**: Zero-allocation `Visit` method on Shadow Types for efficient property iteration.
+- **Documentation**: Comprehensive guides for Static Reflection and updated README with performance comparisons.
+
 ## [1.2.0] - 2026-01-06
 
 ### Added

@@ -53,6 +53,20 @@ public abstract class SannrValidationAttribute : Attribute
 }
 
 /// <summary>
+/// Marks a class for Static Reflection generation.
+/// Sannr will generate a "Shadow Type" for this class containing static metadata, accessors, and deep-cloning logic.
+/// </summary>
+[AttributeUsage(AttributeTargets.Class | AttributeTargets.Struct)]
+public class SannrReflectAttribute : Attribute { }
+
+/// <summary>
+/// Marks a property as Personally Identifiable Information (PII).
+/// Used by Static Reflection to flag sensitive data.
+/// </summary>
+[AttributeUsage(AttributeTargets.Property)]
+public class PiiAttribute : Attribute { }
+
+/// <summary>
 /// Specifies that a property is required.
 /// </summary>
 public class RequiredAttribute : SannrValidationAttribute { }

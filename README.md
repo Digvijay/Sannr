@@ -13,6 +13,8 @@
 
 **Blazingly fast validation** - Up to 20x faster than DataAnnotations with 95% less memory usage. Sannr is a high-performance validation library designed to replace `System.ComponentModel.DataAnnotations` in modern cloud-native applications. By utilizing **Roslyn Source Generators**, Sannr moves validation logic from runtime reflection to compile-time C#, resulting in zero startup overhead and complete compatibility with **Native AOT** trimming.
 
+**Static Reflection** with "Shadow Types" - Get PII tagging, property metadata, and Deep Cloning capabilities without the runtime cost of Reflection.
+
 
 
 It extends the standard validation paradigm with enterprise requirements: **Async Validation**, **Conditional Logic**, **Auto-Sanitization**, and **Validation Groups**, while maintaining a familiar API.
@@ -35,6 +37,7 @@ Standard validation libraries rely on Reflection, which is slow, memory-intensiv
 | **Minimal API Support** | ❌ Manual validation boilerplate | **✅ `Validated<T>` wrapper** |
 | **Client-Side Validation** | ❌ Manual JavaScript/TypeScript | **✅ Auto-generated JSON rules** |
 | **Model-Level Validation** | ✅ `IValidatableObject` | **✅ `Sannr.IValidatableObject`** |
+| **Reflection / Metadata** | ⚠️ Runtime (Slow/Unsafe) | **✅ Static Shadow Types (Fast/Safe)** |
 
 ---
 
@@ -779,6 +782,44 @@ const validator = new FormValidator(rules);
 - ✅ **Zero Runtime Cost**: Validation rules generated at compile-time
 
 📖 **[Complete Client-Side Validation Guide](docs/CLIENT_SIDE_VALIDATION.md)**
+
+---
+
+## 🔮 Static Reflection (Shadow Types)
+
+Sannr allows you to inspect and manipulate your models **without** using System.Reflection, which is crucial for high-performance and Native AOT applications.
+
+### 1. Mark Your Model
+Add `[SannrReflect]` to generate a "Shadow Type".
+
+```csharp
+[SannrReflect]
+public class User
+{
+    public int Id { get; set; }
+    
+    [Pii] // Optional: Mark sensitive data
+    public string Email { get; set; }
+}
+```
+
+### 2. Use the Shadow
+Sannr generates a static `UserShadow` class with direct accessors and logic.
+
+```csharp
+var user = new User { Id = 1, Email = "test@example.com" };
+
+// ⚡ Fast Property Access (No Boxing)
+int id = UserShadow.GetId(user); 
+
+// 🛡️ PII Checking
+if (UserShadow.IsEmailPii) Mask(val);
+
+// 🐑 Deep Cloning (Zero Reflection)
+var copy = UserShadow.DeepClone(user);
+```
+
+📖 **[Static Reflection Guide](docs/STATIC_REFLECTION.md)**
 
 ---## 🏢 Built-in Business Rule Validators
 

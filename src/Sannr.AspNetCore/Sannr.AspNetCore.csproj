@@ -5,19 +5,25 @@
     <IsAotCompatible Condition="$([MSBuild]::IsTargetFrameworkCompatible('$(TargetFramework)', 'net8.0'))">true</IsAotCompatible> <!-- Ensures AOT compatibility for performance and deployment -->
     
     <PackageId>Sannr</PackageId>
-    <Version>1.2.0</Version>
+    <Version>1.3.0</Version>
     <Authors>Digvijay Chauhan</Authors>
     <Description>The AOT-first validation engine for .NET. (Single Package)</Description>
-    <PackageTags>validation;aot;aspnetcore;performance;enterprise</PackageTags>
+    <PackageTags>validation;aot;aspnetcore;performance;enterprise;reflection;source-generator</PackageTags>
     
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
-    <Copyright>Copyright (c) 2025 Digvijay Chauhan</Copyright>
+    <Copyright>Copyright (c) 2026 Digvijay Chauhan</Copyright>
     <PackageProjectUrl>https://github.com/Digvijay/Sannr</PackageProjectUrl>
     <RepositoryUrl>https://github.com/Digvijay/Sannr</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
     <PackageIcon>icon.png</PackageIcon>
     <PackageReadmeFile>README.md</PackageReadmeFile>
-    <PackageReleaseNotes>v1.2.0 - Major migration tooling update: Added Sannr.Cli as a dotnet global tool with support for both attribute-based and fluent-style migrations from FluentValidation. Enhanced DataAnnotations migration with improved attribute mapping. Fixed source generator robustness for malformed attributes. Comprehensive documentation updates including Getting Started guide, migration strategies, and CLI usage examples.</PackageReleaseNotes>
+    <PackageReleaseNotes>v1.3.0 - Introduces **Static Reflection** with Shadow Types! 🔮
+    - New `[SannrReflect]` attribute generates static "Shadow Types" for classes.
+    - Zero-allocation, AOT-compatible property accessors (`GetX`/`SetX`).
+    - Compile-time metadata generation (`TypeName`, `PropertyCount`).
+    - Smart `DeepClone()` support for complex object graphs.
+    - PII-aware property inspection with `[Pii]`.
+    - Generic `Visit` method for high-performance iteration.</PackageReleaseNotes>
     
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <IncludeBuildOutput>true</IncludeBuildOutput>
