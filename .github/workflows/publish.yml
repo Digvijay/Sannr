@@ -22,6 +22,14 @@ jobs:
         dotnet-version: 8.0.x
 
     # We rebuild to ensure the exact commit matches the tag
+    - name: Install CycloneDX
+      run: |
+        dotnet tool install --global CycloneDX
+        echo "$HOME/.dotnet/tools" >> $GITHUB_PATH
+
+    - name: Generate SBOM
+      run: /home/runner/.dotnet/tools/dotnet-CycloneDX Sannr.sln -o out -j
+
     - name: Pack
       run: |
         dotnet restore Sannr.sln
@@ -34,19 +42,17 @@ jobs:
         
         echo "📦 Packing Version: $VERSION"
         
-        # ONLY pack the main project now. It handles bundling Core and Gen automatically.
+        # Pack the main library
         dotnet pack src/Sannr.AspNetCore/Sannr.AspNetCore.csproj -c Release -o out /p:Version=$VERSION
+        
+        # Pack the CLI tool
+        dotnet pack src/Sannr.Cli/Sannr.Cli.csproj -c Release -o out /p:Version=$VERSION
 
-    - name: Push to NuGet (Trusted Publishing)
-      run: dotnet nuget push "./out/*.nupkg" --source https://api.nuget.org/v3/index.json --api-key ${{ secrets.NUGET_API_KEY }}
-      # Note: If using strict OIDC without ANY keys, you would use --interactive methods, 
-      # but standard Trusted Publishing usually maps an OIDC token to a short-lived API key 
-      # internally or validates the token directly. 
-      #
-      # HOWEVER: The simplest "Trusted Publishing" setup currently provided by NuGet 
-      # still recommends passing the key if you aren't using the specialized action, 
-      # BUT the modern way is to just let the environment handle it if you configured OIDC correctly.
-      # 
-      # Let's support the Standard API Key fallback for simplicity if OIDC setup is skipped:
-      env:
-        NUGET_AUTH_TOKEN: ${{ secrets.NUGET_API_KEY }}
+    - name: Push to NuGet
+      run: dotnet nuget push "./out/*.nupkg" --source https://api.nuget.org/v3/index.json --api-key ${{ secrets.NUGET_API_KEY }} --skip-duplicate
+
+    - name: Upload SBOM
+      uses: actions/upload-artifact@v4
+      with:
+        name: sbom
+        path: out/bom.json

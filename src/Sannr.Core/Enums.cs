@@ -29,16 +29,16 @@ namespace Sannr;
 /// </summary>
 public enum Severity
 {
-	/// <summary>
-	/// Indicates a validation error.
-	/// </summary>
-	Error,
-	/// <summary>
-	/// Indicates a validation warning.
-	/// </summary>
-	Warning,
-	/// <summary>
-	/// Indicates informational validation feedback.
-	/// </summary>
-	Info
+    /// <summary>
+    /// Indicates a validation error.
+    /// </summary>
+    Error,
+    /// <summary>
+    /// Indicates a validation warning.
+    /// </summary>
+    Warning,
+    /// <summary>
+    /// Indicates informational validation feedback.
+    /// </summary>
+    Info
 }

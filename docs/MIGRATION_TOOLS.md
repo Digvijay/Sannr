@@ -10,63 +10,62 @@ The Migration Tools CLI is included with the Sannr package and provides three ma
 - `dataannotations` - Automatically migrate from DataAnnotations to Sannr
 - `fluentvalidation` - Generate migration guidance for FluentValidation code
 
-## Installation
+## Installation & Execution
 
-The migration CLI is automatically included when you install Sannr:
+The migration CLI is available as a dotnet global tool. Install it using:
 
 ```bash
-dotnet add package Sannr
+dotnet tool install -g Sannr.Cli
 ```
 
-## Quick Start
-
-### 1. Analyze Your Codebase
-
-Before migrating, analyze your existing validation code:
+Once installed, you can run it using the `sannr` command:
 
 ```bash
-# Analyze all C# files in a directory
-dotnet run --project Sannr.Cli -- analyze --input ./src/MyProject
-
-# Output:
-📊 Analysis Results:
-📁 Files scanned: 25
-🏷️  Validation libraries detected: FluentValidation, DataAnnotations
-🔄 FluentValidation rules found: 18
-📝 DataAnnotations found: 32
-🎯 Migration Complexity: Medium
-💡 Recommendation: Moderate complexity - review generated code carefully
+sannr [command] [options]
 ```
 
-### 2. Migrate DataAnnotations
-
-DataAnnotations migration is largely automatic:
+Alternatively, you can run it without installing from the repository root:
 
 ```bash
-# Migrate in-place (modify existing files)
-dotnet run --project Sannr.Cli -- dataannotations --input ./Models --output ./Models
-
-# Or migrate to new location
-dotnet run --project Sannr.Cli -- dataannotations --input ./OldModels --output ./NewModels
+dotnet run --project src/Sannr.Cli -- [command] [options]
 ```
 
-### 3. Migrate FluentValidation
+## Available Commands
 
-FluentValidation migration provides guidance:
+### 1. `analyze`
+Scans your codebase to estimate migration effort and detect which libraries you are currently using.
 
 ```bash
-# Generate migration guidance
-dotnet run --project Sannr.Cli -- fluentvalidation --input ./Validators --output ./MigratedValidators --dry-run
+dotnet run --project src/Sannr.Cli -- analyze --input ./src/MyProject
 ```
 
-## Detailed Usage
+**Options:**
+- `--input`: Path to directory or file (Required)
+- `--type`: Filter by library (`fluentvalidation`, `dataannotations`, or `auto`)
 
-### Analyze Command
-
-The `analyze` command scans your codebase and provides insights about migration complexity.
+### 2. `fluentvalidation`
+Migrates existing `FluentValidation` code to Sannr. You can choose between converting to **Sannr Attributes** (recommended for simplest models) or keeping the **Sannr Fluent API** structure.
 
 ```bash
-dotnet run --project Sannr.Cli -- analyze --input <path> [--type auto|fluentvalidation|dataannotations]
+# Migrate to Sannr Attributes (Adds attributes to your model properties)
+dotnet run --project src/Sannr.Cli -- fluentvalidation --input ./Models --output ./Migrated --target attribute
+
+# Migrate to Sannr Fluent Style (Keeps code structure similar to FluentValidation)
+dotnet run --project src/Sannr.Cli -- fluentvalidation --input ./Models --output ./Migrated --target fluent
+```
+
+**Options:**
+- `--input`: Path to source files (Required)
+- `--output`: Path to save migrated files (Required)
+- `--target`: `attribute` or `fluent` (Default: `fluent`)
+- `--overwrite`: Overwrite files in output directory
+- `--dry-run`: Preview changes without writing to disk
+
+### 3. `dataannotations`
+Automatically converts standard `System.ComponentModel.DataAnnotations` to high-performance `Sannr` equivalents.
+
+```bash
+dotnet run --project src/Sannr.Cli -- dataannotations --input ./Models --output ./Models
 ```
 
 **Options:**
@@ -116,7 +115,7 @@ dotnet run --project Sannr.Cli -- dataannotations --input <path> --output <path>
 | DataAnnotations | Sannr | Notes |
 |----------------|-------|-------|
 | `[Required]` | `[Required]` | Compatible |
-| `[EmailAddress]` | `[Email]` | Renamed for consistency |
+| `[EmailAddress]` | `[EmailAddress]` | Direct equivalent |
 | `[StringLength(n)]` | `[StringLength(n)]` | Compatible |
 | `[MaxLength(n)]` | `[StringLength(n)]` | Converted |
 | `[MinLength(n)]` | `[MinLength(n)]` | Compatible |
@@ -156,11 +155,11 @@ using Sannr;
 public class User
 {
     [Required]
-    [StringLength(100)]
+    [StringLength(100, MinimumLength = 2)]
     public string Name { get; set; }
 
     [Required]
-    [Email]
+    [EmailAddress]
     public string Email { get; set; }
 
     [StringLength(500)]
@@ -226,7 +225,7 @@ using Sannr;
  * 1. Move validation rules from validator classes to model properties as attributes
  * 2. Convert RuleFor(x => x.Name).NotEmpty() to [Required] on Name property
  * 3. Convert RuleFor(x => x.Name).Length(2, 50) to [StringLength(50)] on Name property
- * 4. Convert RuleFor(x => x.Email).EmailAddress() to [Email] on Email property
+ * 4. Convert RuleFor(x => x.Email).EmailAddress() to [EmailAddress] on Email property
  * 5. Convert RuleFor(x => x.Age).GreaterThan(0) to [Range(1, int.MaxValue)] on Age property
  * 6. Remove this validator class after migrating all rules
  */
@@ -257,12 +256,12 @@ For large codebases, consider migrating one module at a time:
 
 ```bash
 # Phase 1: User management
-dotnet run --project Sannr.Cli -- dataannotations --input ./UserModels --output ./UserModels
-dotnet run --project Sannr.Cli -- fluentvalidation --input ./UserValidators --output ./UserValidators
+sannr dataannotations --input ./UserModels --output ./UserModels
+sannr fluentvalidation --input ./UserValidators --output ./UserValidators --target attribute
 
 # Phase 2: Product management
-dotnet run --project Sannr.Cli -- dataannotations --input ./ProductModels --output ./ProductModels
-dotnet run --project Sannr.Cli -- fluentvalidation --input ./ProductValidators --output ./ProductValidators
+sannr dataannotations --input ./ProductModels --output ./ProductModels
+sannr fluentvalidation --input ./ProductValidators --output ./ProductValidators --target attribute
 
 # Continue with other modules...
 ```
@@ -278,7 +277,7 @@ dotnet run --project Sannr.Cli -- fluentvalidation --input ./ProductValidators -
 | `.Length(min, max)` | `[StringLength(max)]` |
 | `.MaximumLength(n)` | `[StringLength(n)]` |
 | `.MinimumLength(n)` | `[MinLength(n)]` |
-| `.EmailAddress()` | `[Email]` |
+| `.EmailAddress()` | `[EmailAddress]` |
 | `.GreaterThan(n)` | `[Range(n + 1, int.MaxValue)]` |
 | `.LessThan(n)` | `[Range(int.MinValue, n - 1)]` |
 

@@ -22,14 +22,13 @@
 // SOFTWARE.
 // ----------------------------------------------------------------------------------
 
+using System;
+using System.Collections.Generic;
+using System.Diagnostics.Metrics;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc.ModelBinding;
 using Microsoft.AspNetCore.Mvc.ModelBinding.Validation;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
-using System.Diagnostics.Metrics;
-using System;
-using System.Collections.Generic;
 
 namespace Sannr.AspNetCore;
 
@@ -41,7 +40,7 @@ public class SannrValidationOptions
     /// <summary>
     /// Gets or sets whether to enable performance metrics collection.
     /// </summary>
-    public bool EnableMetrics { get; set; } = false;
+    public bool EnableMetrics { get; set; }
 
     /// <summary>
     /// Gets or sets the prefix for metrics names.
@@ -51,7 +50,7 @@ public class SannrValidationOptions
     /// <summary>
     /// Gets or sets whether to enable enhanced error responses with correlation IDs and validation rule metadata.
     /// </summary>
-    public bool EnableEnhancedErrorResponses { get; set; } = false;
+    public bool EnableEnhancedErrorResponses { get; set; }
 
     /// <summary>
     /// Gets or sets whether to include validation rule metadata in error responses.
@@ -61,7 +60,7 @@ public class SannrValidationOptions
     /// <summary>
     /// Gets or sets whether to include validation duration in error responses.
     /// </summary>
-    public bool IncludeValidationDuration { get; set; } = false;
+    public bool IncludeValidationDuration { get; set; }
 }
 
 /// <summary>
@@ -87,7 +86,7 @@ public interface ISannrMetricsCollector
 /// <summary>
 /// Default implementation of metrics collector using System.Diagnostics.Metrics.
 /// </summary>
-public class SannrMetricsCollector : ISannrMetricsCollector
+public sealed class SannrMetricsCollector : ISannrMetricsCollector, IDisposable
 {
     private readonly Meter _meter;
     private readonly Histogram<double> _validationDuration;
@@ -116,6 +115,11 @@ public class SannrMetricsCollector : ISannrMetricsCollector
         {
             _validationErrors.Add(errorCount, new KeyValuePair<string, object?>("model_type", modelType));
         }
+    }
+
+    public void Dispose()
+    {
+        _meter.Dispose();
     }
 }
 

@@ -22,8 +22,6 @@
 // SOFTWARE.
 // ----------------------------------------------------------------------------------
 
-using Sannr;
-using System.Threading.Tasks;
 using System;
 using System.Linq;
 
@@ -32,7 +30,7 @@ namespace Sannr.Tests.Models;
 /// <summary>
 /// Test model for Sannr validation tests.
 /// </summary>
-public class UserProfile
+public partial class UserProfile
 {
     [Required]
     [Sanitize(Trim = true, ToUpper = true)]
@@ -58,7 +56,7 @@ public class UserProfile
 /// <summary>
 /// Advanced test model for testing regex pre-compilation and performance optimizations.
 /// </summary>
-public class AdvancedValidationModel
+public partial class AdvancedValidationModel
 {
     [Required]
     [StringLength(50, MinimumLength = 3)]
@@ -129,7 +127,7 @@ public class AdvancedValidationModel
 /// Test model for client-side validation generation.
 /// </summary>
 [GenerateClientValidators(Language = ClientValidationLanguage.TypeScript)]
-public class ClientValidationModel
+public partial class ClientValidationModel
 {
     [Required]
     [StringLength(100)]

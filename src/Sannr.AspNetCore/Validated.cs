@@ -22,13 +22,12 @@
 // SOFTWARE.
 // ----------------------------------------------------------------------------------
 
-using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.DependencyInjection;
-using Sannr;
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Sannr.AspNetCore;
 
@@ -81,17 +80,11 @@ public class Validated<T> where T : class
     /// <param name="serviceProvider">The service provider to resolve validation services.</param>
     /// <returns>A task that represents the asynchronous validation operation.</returns>
     /// <exception cref="ArgumentNullException">Thrown when <paramref name="model"/> or <paramref name="serviceProvider"/> is null.</exception>
+    [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1000:Do not declare static members on generic types", Justification = "Factory method pattern preferred for this wrapper")]
     public static async Task<Validated<T>> CreateAsync(T model, IServiceProvider serviceProvider)
     {
-        if (model == null)
-        {
-            throw new ArgumentNullException(nameof(model));
-        }
-
-        if (serviceProvider == null)
-        {
-            throw new ArgumentNullException(nameof(serviceProvider));
-        }
+        ArgumentNullException.ThrowIfNull(model);
+        ArgumentNullException.ThrowIfNull(serviceProvider);
 
         var metricsCollector = serviceProvider.GetService<ISannrMetricsCollector>() ?? new NoOpMetricsCollector();
         var modelType = typeof(T).Name;
@@ -115,11 +108,11 @@ public class Validated<T> where T : class
             );
 
             var validationResult = await validator!(sannrContext);
-            
+
             stopwatch.Stop();
             metricsCollector.RecordValidationDuration(modelType, stopwatch.Elapsed.TotalMilliseconds);
             metricsCollector.RecordValidationErrors(modelType, validationResult.Errors.Count);
-            
+
             return new Validated<T>(model, validationResult);
         }
         catch
@@ -154,23 +147,20 @@ public class Validated<T> where T : class
     /// <returns>A <see cref="ValidationProblemDetails"/> object containing the validation errors.</returns>
     public ValidationProblemDetails ToValidationProblemDetails(string? title = null)
     {
-        var errors = new Dictionary<string, string[]>();
+        var errorMap = new Dictionary<string, List<string>>();
 
         foreach (var error in Errors)
         {
             var key = error.MemberName ?? string.Empty;
-            if (!errors.ContainsKey(key))
+            if (!errorMap.TryGetValue(key, out var messageList))
             {
-                errors[key] = new[] { error.Message };
+                messageList = new List<string>();
+                errorMap[key] = messageList;
             }
-            else
-            {
-                var existingErrors = errors[key];
-                Array.Resize(ref existingErrors, existingErrors.Length + 1);
-                existingErrors[^1] = error.Message;
-                errors[key] = existingErrors;
-            }
+            messageList.Add(error.Message);
         }
+
+        var errors = errorMap.ToDictionary(k => k.Key, v => v.Value.ToArray());
 
         return new ValidationProblemDetails(errors)
         {

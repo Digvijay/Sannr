@@ -1,0 +1,387 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sannr | Interactive Demo</title>
+    <link rel="stylesheet" href="/styles.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;800&family=JetBrains+Mono&display=swap"
+        rel="stylesheet">
+    <link rel="icon" type="image/png" href="/icon.png">
+</head>
+
+<body>
+    <div class="container">
+        <header>
+            <a href="/"
+                style="text-decoration: none; color: inherit; display: inline-block; margin-bottom: 20px; font-weight: 600;">←
+                Back to Home</a>
+            <h1>Interactive Demo</h1>
+            <p>Experience the power of compile-time validation and sanitization.</p>
+        </header>
+
+        <div class="tabs">
+            <button class="tab-button active" onclick="showTab('comprehensive')">Comprehensive</button>
+            <button class="tab-button" onclick="showTab('user-profile')">User Profile</button>
+            <button class="tab-button" onclick="showTab('advanced')">Advanced</button>
+            <button class="tab-button" onclick="showTab('business-rules')">Business Rules</button>
+            <button class="tab-button" onclick="showTab('client-validation')">Client-Side</button>
+        </div>
+
+        <div id="comprehensive" class="tab-content active">
+            <h2>Comprehensive Test</h2>
+            <p>Test all major validation attributes in a single complex model.</p>
+
+            <form id="comprehensive-form" onsubmit="submitForm(event, 'validation')">
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label for="comp-username">Username *</label>
+                        <input type="text" id="comp-username" name="username" placeholder="e.g. johndoe">
+                        <small>Rule: [Required]</small>
+                    </div>
+                    <div class="form-group">
+                        <label for="comp-displayname">Display Name</label>
+                        <input type="text" id="comp-displayname" name="displayName" placeholder="3-10 characters">
+                        <small>Rule: [StringLength(10, Min=3)]</small>
+                    </div>
+                    <div class="form-group">
+                        <label for="comp-age">Age</label>
+                        <input type="number" id="comp-age" name="age" placeholder="18-99">
+                        <small>Rule: [Range(18, 99)]</small>
+                    </div>
+                    <div class="form-group">
+                        <label for="comp-price">Price</label>
+                        <input type="number" id="comp-price" name="price" step="0.01" placeholder="0.01 - 1000.00">
+                        <small>Rule: [Range(0.01, 1000)]</small>
+                    </div>
+                    <div class="form-group">
+                        <label for="comp-email">Contact Email</label>
+                        <input type="email" id="comp-email" name="contactEmail" placeholder="valid@email.com">
+                        <small>Rule: [EmailAddress]</small>
+                    </div>
+                    <div class="form-group">
+                        <label for="comp-card">Payment Card</label>
+                        <input type="text" id="comp-card" name="paymentCard" placeholder="Credit card number">
+                        <small>Rule: [CreditCard]</small>
+                    </div>
+                    <div class="form-group">
+                        <label for="comp-url">Portfolio URL</label>
+                        <input type="url" id="comp-url" name="portfolioUrl" placeholder="https://example.com">
+                        <small>Rule: [Url]</small>
+                    </div>
+                    <div class="form-group">
+                        <label for="comp-phone">Phone Number</label>
+                        <input type="tel" id="comp-phone" name="phoneNumber" placeholder="+1-555-0000">
+                        <small>Rule: [Phone]</small>
+                    </div>
+                    <div class="form-group">
+                        <label for="comp-file">Resume File</label>
+                        <input type="text" id="comp-file" name="resumeFileName" placeholder="resume.pdf">
+                        <small>Rule: [FileExtensions("pdf,docx,txt")]</small>
+                    </div>
+                    <div class="form-group">
+                        <label for="comp-country">Country</label>
+                        <select id="comp-country" name="country">
+                            <option value="">Select country</option>
+                            <option value="USA">USA</option>
+                            <option value="Canada">Canada</option>
+                            <option value="UK">UK</option>
+                        </select>
+                        <small>Condition for State</small>
+                    </div>
+                    <div class="form-group">
+                        <label for="comp-state">State (Required if USA)</label>
+                        <input type="text" id="comp-state" name="state" placeholder="e.g. CA">
+                        <small>Rule: [RequiredIf("Country", "USA")]</small>
+                    </div>
+                    <div class="form-group">
+                        <label for="comp-userid">User ID (Sanitization)</label>
+                        <input type="text" id="comp-userid" name="userId" placeholder="  trim_me  ">
+                        <small>Rule: [Sanitize(Trim=true, ToUpper=true)]</small>
+                    </div>
+                    <div class="form-group">
+                        <label for="comp-displayed-age">User's Age (Display Attribute)</label>
+                        <input type="number" id="comp-displayed-age" name="displayedAge" placeholder="18-99">
+                        <small>Rule: [Display(Name="User's Age")]</small>
+                    </div>
+                </div>
+
+                <button type="submit" class="submit-btn" style="width: auto;">Run Comprehensive Validation</button>
+            </form>
+
+            <div id="validation-result" class="result-container" style="display: none;"></div>
+        </div>
+
+        <div id="user-profile" class="tab-content">
+            <h2>User Profile</h2>
+            <p>Test sanitization, conditional validation, and required fields.</p>
+
+            <form id="user-profile-form" onsubmit="submitForm(event, 'user-profile')">
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label for="profile-username">Username *</label>
+                        <input type="text" id="profile-username" name="username">
+                        <small>Rules: [Required], [Sanitize(Trim=true, ToUpper=true)]</small>
+                    </div>
+                    <div class="form-group">
+                        <label for="profile-email">Email *</label>
+                        <input type="email" id="profile-email" name="email">
+                        <small>Rules: [Required], [EmailAddress]</small>
+                    </div>
+                    <div class="form-group">
+                        <label for="profile-age">Years Old</label>
+                        <input type="number" id="profile-age" name="age" placeholder="18-100">
+                        <small>Rule: [Range(18, 100)]</small>
+                    </div>
+                    <div class="form-group">
+                        <label for="profile-country">Country</label>
+                        <select id="profile-country" name="country">
+                            <option value="">Select country</option>
+                            <option value="USA">USA</option>
+                            <option value="Canada">Canada</option>
+                        </select>
+                        <small>Condition for Zip Code</small>
+                    </div>
+                    <div class="form-group">
+                        <label for="profile-zipcode">Zip Code (Required if USA)</label>
+                        <input type="text" id="profile-zipcode" name="zipCode">
+                        <small>Rule: [RequiredIf("Country", "USA")]</small>
+                    </div>
+                    <div class="form-group">
+                        <label for="profile-referral">Referral Code (Optional)</label>
+                        <input type="text" id="profile-referral" name="referralCode">
+                        <small>Rule: [Required(Group="Reg")] - Not active here</small>
+                    </div>
+                </div>
+
+                <button type="submit" class="submit-btn" style="width: auto;">Update Profile</button>
+            </form>
+
+            <div id="user-profile-result" class="result-container" style="display: none;"></div>
+        </div>
+
+        <div id="advanced" class="tab-content">
+            <h2>Advanced Validation</h2>
+            <p>Complex models with custom validators, severity levels, and deep rules.</p>
+
+            <form id="advanced-form" onsubmit="submitForm(event, 'advanced')">
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label for="adv-username">Username *</label>
+                        <input type="text" id="adv-username" name="username">
+                        <small>Rules: [Required], [StringLength(50, Min=3)]</small>
+                    </div>
+                    <div class="form-group">
+                        <label for="adv-email">Email *</label>
+                        <input type="email" id="adv-email" name="email">
+                        <small>Rules: [Required], [EmailAddress]</small>
+                    </div>
+                    <div class="form-group">
+                        <label for="adv-password">Password *</label>
+                        <input type="password" id="adv-password" name="password" placeholder="Complex password">
+                        <small>Rule: [CustomValidator] - 8+ chars, upper, lower, digit</small>
+                    </div>
+                    <div class="form-group">
+                        <label for="adv-security-code">Security PIN</label>
+                        <input type="number" id="adv-security-code" name="securityCode" placeholder="1000-9999">
+                        <small>Rule: [Range(1000, 9999)]</small>
+                    </div>
+                    <div class="form-group">
+                        <label for="adv-website">Website</label>
+                        <input type="url" id="adv-website" name="website">
+                        <small>Rule: [Url]</small>
+                    </div>
+                    <div class="form-group">
+                        <label for="adv-phone">Phone Number</label>
+                        <input type="tel" id="adv-phone" name="phoneNumber">
+                        <small>Rule: [Phone]</small>
+                    </div>
+                    <div class="form-group">
+                        <label for="adv-document">Document Path</label>
+                        <input type="text" id="adv-document" name="documentPath" placeholder="file.pdf">
+                        <small>Rule: [FileExtensions("pdf,doc,docx")]</small>
+                    </div>
+                    <div class="form-group">
+                        <label for="adv-country">Country</label>
+                        <select id="adv-country" name="country">
+                            <option value="">Select</option>
+                            <option value="US">US</option>
+                        </select>
+                        <small>Condition for Zip Code</small>
+                    </div>
+                    <div class="form-group">
+                        <label for="adv-zipcode">Zip Code (Required if US)</label>
+                        <input type="text" id="adv-zipcode" name="zipCode">
+                        <small>Rule: [RequiredIf("Country", "US")]</small>
+                    </div>
+                </div>
+
+                <button type="submit" class="submit-btn" style="width: auto;">Validate Advanced</button>
+            </form>
+
+            <div id="advanced-result" class="result-container" style="display: none;"></div>
+        </div>
+
+        <div id="business-rules" class="tab-content">
+            <h2>Business Rules</h2>
+            <p>Domain-specific logic: future dates, allowed values, conditional ranges.</p>
+
+            <div class="sub-tabs">
+                <button class="sub-tab-button active" onclick="showSubTab('order')">Orders</button>
+                <button class="sub-tab-button" onclick="showSubTab('product')">Products</button>
+                <button class="sub-tab-button" onclick="showSubTab('appointment')">Appointments</button>
+            </div>
+
+            <div id="order" class="sub-tab-content active">
+                <form id="order-form" onsubmit="submitForm(event, 'order')">
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label for="order-customer-id">Customer ID *</label>
+                            <input type="text" id="order-customer-id" name="customerId">
+                            <small>Rule: [Required]</small>
+                        </div>
+                        <div class="form-group">
+                            <label for="order-date">Delivery Date</label>
+                            <input type="datetime-local" id="order-date" name="deliveryDate">
+                            <small>Rule: [FutureDate]</small>
+                        </div>
+                        <div class="form-group">
+                            <label for="order-currency">Currency</label>
+                            <select id="order-currency" name="currency">
+                                <option value="USD">USD</option>
+                                <option value="EUR">EUR</option>
+                                <option value="GBP">GBP</option>
+                            </select>
+                            <small>Rule: [AllowedValues("USD", "EUR", "GBP")]</small>
+                        </div>
+                        <div class="form-group">
+                            <label for="order-amount">Amount</label>
+                            <input type="number" id="order-amount" name="amount" placeholder="50.00">
+                            <small>Rule: [ConditionalRange("Currency", "USD", 1, 1000)]</small>
+                        </div>
+                    </div>
+                    <button type="submit" class="submit-btn" style="width: auto;">Process Order</button>
+                </form>
+            </div>
+
+            <div id="product" class="sub-tab-content">
+                <form id="product-form" onsubmit="submitForm(event, 'product')">
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label for="product-name">Product Name *</label>
+                            <input type="text" id="product-name" name="name">
+                            <small>Rule: [Required]</small>
+                        </div>
+                        <div class="form-group">
+                            <label for="product-status">Status</label>
+                            <select name="status" id="product-status">
+                                <option value="active">Active</option>
+                                <option value="pending">Pending</option>
+                                <option value="inactive">Inactive</option>
+                            </select>
+                            <small>Rule: [AllowedValues("active", "pending", ...)]</small>
+                        </div>
+                        <div class="form-group">
+                            <label for="product-price">Price</label>
+                            <input type="number" id="product-price" name="price" step="0.01">
+                            <small>Rule: [ConditionalRange("Status", "active", 0.01, 999999.99)]</small>
+                        </div>
+                    </div>
+                    <button type="submit" class="submit-btn" style="width: auto;">Save Product</button>
+                </form>
+            </div>
+
+            <div id="appointment" class="sub-tab-content">
+                <form id="appointment-form" onsubmit="submitForm(event, 'appointment')">
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label for="appt-customer-name">Customer Name *</label>
+                            <input type="text" id="appt-customer-name" name="customerName">
+                            <small>Rule: [Required]</small>
+                        </div>
+                        <div class="form-group">
+                            <label for="appt-date">Appointment Date</label>
+                            <input type="datetime-local" id="appt-date" name="appointmentDate">
+                            <small>Rule: [FutureDate]</small>
+                        </div>
+                        <div class="form-group">
+                            <label for="appt-status">Status</label>
+                            <select name="status" id="appt-status">
+                                <option value="pending">Pending</option>
+                                <option value="confirmed">Confirmed</option>
+                            </select>
+                            <small>Rule: [AllowedValues("pending", "confirmed", ...)]</small>
+                        </div>
+                        <div class="form-group">
+                            <label for="appt-duration">Duration (min)</label>
+                            <input type="number" id="appt-duration" name="durationMinutes">
+                            <small>Rule: [ConditionalRange("Status", "confirmed", 30, 480)]</small>
+                        </div>
+                    </div>
+                    <button type="submit" class="submit-btn" style="width: auto;">Schedule Appointment</button>
+                </form>
+            </div>
+
+            <div id="business-rules-result" class="result-container" style="display: none;"></div>
+        </div>
+
+        <div id="client-validation" class="tab-content">
+            <h2>Client-Side Logic</h2>
+            <p>Sannr responses are perfectly structured for seamless frontend consumption.</p>
+
+            <form id="client-form" onsubmit="submitForm(event, 'client-validation')">
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label for="client-name">Name *</label>
+                        <input type="text" name="name" id="client-name">
+                    </div>
+                    <div class="form-group">
+                        <label for="client-email">Email *</label>
+                        <input type="email" name="email" id="client-email">
+                    </div>
+                    <div class="form-group">
+                        <label for="client-age">Age</label>
+                        <input type="number" name="age" id="client-age">
+                        <small>Rule: [Range(18, 120)]</small>
+                    </div>
+                    <div class="form-group" style="display: flex; align-items: center; gap: 10px; grid-column: span 2;">
+                        <input type="checkbox" name="hasAddress" id="client-has-address" style="width: auto;">
+                        <label for="client-has-address" style="margin-bottom: 0;">Specify Street Address?</label>
+                        <small>Rule: [RequiredIf("HasAddress", true)] for field below</small>
+                    </div>
+                    <div class="form-group" style="grid-column: span 2;">
+                        <label for="client-street">Street Address</label>
+                        <input type="text" name="streetAddress" id="client-street" placeholder="123 Main St">
+                    </div>
+                </div>
+                <button type="submit" class="submit-btn" style="width: auto;">Test Client API</button>
+            </form>
+
+            <div id="client-validation-result" class="result-container" style="display: none;"></div>
+
+            <div
+                style="margin-top: 30px; padding: 20px; background: rgba(255, 255, 255, 0.03); border-radius: 8px; border: 1px border rgba(255, 255, 255, 0.1);">
+                <h3>Generated Sannr Metadata</h3>
+                <p>The following logic is automatically generated by Sannr from your C# models. It can be consumed by
+                    any JS/TS framework for zero-latency validation.</p>
+                <div
+                    style="background: #1a1a1a; padding: 15px; border-radius: 4px; overflow: auto; max-height: 200px; margin-bottom: 10px;">
+                    <code id="client-generated-code"
+                        style="color: #61afef; font-family: monospace; white-space: pre-wrap;">Loading generated metadata...</code>
+                </div>
+                <button onclick="applyClientValidation()" class="tab-button"
+                    style="padding: 5px 15px; font-size: 0.9em; width: auto;">Apply Client-Side Logic</button>
+                <div id="client-validation-message"
+                    style="margin-top: 10px; font-style: italic; color: #98c379; display: none;">Client-side validation
+                    rules applied! Try changing the age or email to see instant feedback.</div>
+            </div>
+        </div>
+    </div>
+
+    <script src="/script.js"></script>
+</body>
+
+</html>

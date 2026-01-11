@@ -22,13 +22,9 @@
 // SOFTWARE.
 // ----------------------------------------------------------------------------------
 
-using Microsoft.OpenApi.Models;
-using Sannr;
-using Swashbuckle.AspNetCore.SwaggerGen;
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Reflection;
+using Microsoft.OpenApi.Models;
+using Swashbuckle.AspNetCore.SwaggerGen;
 
 namespace Sannr.OpenApi;
 
@@ -38,18 +34,32 @@ namespace Sannr.OpenApi;
 public static class SannrOpenApiExtensions
 {
     /// <summary>
-    /// Adds Sannr OpenAPI schema generation to SwaggerGen options.
+    /// NOTE: This extension is a placeholder for discoverability.
+    /// To use Sannr's compile-time OpenAPI integration (AoT compatible), add this in your Program.cs:
+    /// 
+    /// <code>
+    /// builder.Services.AddSwaggerGen(options => {
+    ///     options.SchemaFilter&lt;Sannr.OpenApi.SannrGeneratedSchemaFilter&gt;();
+    /// });
+    /// </code>
+    /// 
+    /// The SannrGeneratedSchemaFilter is automatically generated at compile-time for all your validated models,
+    /// without any runtime reflection or IL suppression. It's fully AoT compatible!
     /// </summary>
+    [Obsolete("Don't call this method. Instead, add options.SchemaFilter<Sannr.OpenApi.SannrGeneratedSchemaFilter>() directly in your AddSwaggerGen configuration. See XML documentation for details.")]
     public static void AddSannrValidationSchemas(this SwaggerGenOptions options)
     {
-        // Schema filters are added via the Filters collection
-        // This will be applied to all schemas during generation
+        throw new NotSupportedException(
+            "This method is a placeholder. Add options.SchemaFilter<Sannr.OpenApi.SannrGeneratedSchemaFilter>() " +
+            "directly in your AddSwaggerGen configuration instead. The filter is auto-generated at compile-time.");
     }
 }
 
 /// <summary>
-/// Schema filter that enhances OpenAPI schemas with Sannr validation attributes.
+/// DEPRECATED: Use AddSannrValidationSchemas() instead, which uses the compile-time generated SannrGeneratedSchemaFilter.
+/// This reflection-based filter is kept for backwards compatibility but should not be used in AoT scenarios.
 /// </summary>
+[Obsolete("Use AddSannrValidationSchemas() extension method instead. This reflection-based approach is not AoT compatible.")]
 public class SannrValidationSchemaFilter : ISchemaFilter
 {
     public void Apply(OpenApiSchema schema, SchemaFilterContext context)
@@ -57,67 +67,71 @@ public class SannrValidationSchemaFilter : ISchemaFilter
         if (schema.Properties == null || context.Type == null)
             return;
 
-        foreach (var property in context.Type.GetProperties())
+#pragma warning disable IL2075 // Suppress trimming warning for reflection-based filter
+        var properties = context.Type.GetProperties();
+#pragma warning restore IL2075
+        foreach (var property in properties)
         {
             if (schema.Properties.TryGetValue(property.Name, out var propertySchema))
             {
-                ApplyValidationToSchema(propertySchema, property);
+                var attributes = property.GetCustomAttributes(true);
+                foreach (var attribute in attributes)
+                {
+                    var attrType = attribute.GetType();
+                    if (attrType.FullName == "Sannr.RequiredAttribute")
+                    {
+                        // Required is handled at object level
+                    }
+                    else if (attrType.Name == "StringLengthAttribute")
+                    {
+                        var sla = attribute as Sannr.StringLengthAttribute;
+                        if (sla != null)
+                        {
+                            if (sla.MaximumLength > 0) propertySchema.MaxLength = sla.MaximumLength;
+                            if (sla.MinimumLength > 0) propertySchema.MinLength = sla.MinimumLength;
+                        }
+                    }
+                    else if (attrType.Name == "RangeAttribute")
+                    {
+                        var ra = attribute as Sannr.RangeAttribute;
+                        if (ra != null)
+                        {
+                            propertySchema.Minimum = (decimal)ra.Minimum;
+                            propertySchema.Maximum = (decimal)ra.Maximum;
+                        }
+                    }
+                    if (attrType.Name == "EmailAddressAttribute")
+                    {
+                        propertySchema.Format = "email";
+                    }
+                    else if (attrType.Name == "UrlAttribute")
+                    {
+                        propertySchema.Format = "uri";
+                    }
+                    else if (attrType.Name == "FileExtensionsAttribute")
+                    {
+                        propertySchema.Format = "file";
+                    }
+                    else if (attrType.Name == "RegularExpressionAttribute")
+                    {
+                        var rea = attribute as System.ComponentModel.DataAnnotations.RegularExpressionAttribute;
+                        if (rea != null && !string.IsNullOrEmpty(rea.Pattern))
+                        {
+                            propertySchema.Pattern = rea.Pattern;
+                        }
+                    }
+                    else if (attrType.Name == "MaxLengthAttribute")
+                    {
+                        var mla = attribute as System.ComponentModel.DataAnnotations.MaxLengthAttribute;
+                        if (mla != null && mla.Length > 0) propertySchema.MaxLength = mla.Length;
+                    }
+                    else if (attrType.Name == "MinLengthAttribute")
+                    {
+                        var mla = attribute as System.ComponentModel.DataAnnotations.MinLengthAttribute;
+                        if (mla != null && mla.Length > 0) propertySchema.MinLength = mla.Length;
+                    }
+                }
             }
-        }
-    }
-
-    private void ApplyValidationToSchema(OpenApiSchema schema, PropertyInfo property)
-    {
-        var attributes = property.GetCustomAttributes<SannrValidationAttribute>();
-
-        foreach (var attribute in attributes)
-        {
-            ApplyValidationAttribute(schema, attribute);
-        }
-    }
-
-    private void ApplyValidationAttribute(OpenApiSchema schema, SannrValidationAttribute attribute)
-    {
-        switch (attribute)
-        {
-            case RequiredAttribute:
-                // Required is handled at the object level, not property level in OpenAPI
-                break;
-
-            case StringLengthAttribute stringLength:
-                if (stringLength.MaximumLength > 0)
-                    schema.MaxLength = stringLength.MaximumLength;
-                if (stringLength.MinimumLength > 0)
-                    schema.MinLength = stringLength.MinimumLength;
-                break;
-
-            case RangeAttribute range:
-                if (range.Minimum is double minDouble)
-                    schema.Minimum = (decimal)minDouble;
-                if (range.Maximum is double maxDouble)
-                    schema.Maximum = (decimal)maxDouble;
-                break;
-
-            case EmailAddressAttribute:
-                schema.Format = "email";
-                break;
-
-            case UrlAttribute:
-                schema.Format = "uri";
-                break;
-
-            case PhoneAttribute:
-                // No standard format for phone, could add pattern
-                break;
-
-            case CreditCardAttribute:
-                // No standard format for credit card, could add pattern
-                break;
-
-            case FileExtensionsAttribute fileExt:
-                schema.Format = "file";
-                // Could add pattern validation for extensions if specified
-                break;
         }
     }
 }

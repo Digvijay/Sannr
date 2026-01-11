@@ -1,8 +1,7 @@
-using Xunit;
-using Sannr;
-using System.Threading.Tasks;
 using System;
 using System.Linq;
+using System.Threading.Tasks;
+using Xunit;
 
 namespace Sannr.Tests;
 
@@ -11,7 +10,7 @@ namespace Sannr.Tests;
 /// This model is used across all attribute validation tests to verify the source generator
 /// correctly emits validation logic for different attribute types and combinations.
 /// </summary>
-public class TestModel
+public partial class TestModel
 {
     /// <summary>Required field with custom error message.</summary>
     [Required(ErrorMessage = "Username is mandatory.")]
@@ -51,7 +50,7 @@ public class TestModel
 
     /// <summary>No validation - used as condition for RequiredIf on State property.</summary>
     public string? Country { get; set; }
-    
+
     /// <summary>Conditionally required when Country equals "USA".</summary>
     [RequiredIf(nameof(Country), "USA")]
     public string? State { get; set; }
@@ -72,7 +71,7 @@ public class TestModel
 /// validation attributes and their combinations, including error messages, custom messages,
 /// and edge cases.
 /// </summary>
-public class AttributeValidationTests
+public partial class AttributeValidationTests
 {
     public AttributeValidationTests()
     {
@@ -88,12 +87,12 @@ public class AttributeValidationTests
     {
         // Ensure explicit validators are registered (after any AutoRegisterValidators calls)
         FullTestSuite.RegisterTestValidators();
-        
+
         // Test 1: Null value should fail validation
         var model = new TestModel { Username = null };
         var res = await Validate(model);
         Assert.Contains(res.Errors, e => e.Message.Contains("mandatory"));
-        
+
         // Test 2: Whitespace-only string should also fail validation
         model = CreateValidModel();
         model.Username = "   ";
@@ -119,13 +118,13 @@ public class AttributeValidationTests
         model.DisplayName = "AB";
         var res = await Validate(model);
         Assert.Contains(res.Errors, e => e.Message.Contains("between 3 and 10") || e.Message.Contains("must be a string with a maximum length of 10"));
-        
+
         // Test 2: String too long (11 chars, max is 10)
         model = CreateValidModel();
         model.DisplayName = "ABCDEFGHIJK";
         res = await Validate(model);
         Assert.Contains(res.Errors, e => e.Message.Contains("between 3 and 10") || e.Message.Contains("must be a string with a maximum length of 10"));
-        
+
         // Test 3: Valid string within bounds (9 chars)
         model = CreateValidModel();
         model.DisplayName = "ValidName";
@@ -146,13 +145,13 @@ public class AttributeValidationTests
         model.Age = 17;
         var res = await Validate(model);
         Assert.Contains(res.Errors, e => e.Message.Contains("Age must be valid"));
-        
+
         // Test 2: Value above maximum (100 > 99)
         model = CreateValidModel();
         model.Age = 100;
         res = await Validate(model);
         Assert.Contains(res.Errors, e => e.Message.Contains("Age must be valid"));
-        
+
         // Test 3: Value at minimum boundary (18 is valid)
         model = CreateValidModel();
         model.Age = 18;
@@ -172,7 +171,7 @@ public class AttributeValidationTests
         model.Price = 0.0;
         var res = await Validate(model);
         Assert.Contains(res.Errors, e => e.Message.Contains("must be between 0.01 and 1000"));
-        
+
         // Test 2: Value at minimum boundary (0.01 is valid)
         model = CreateValidModel();
         model.Price = 0.01;
@@ -192,7 +191,7 @@ public class AttributeValidationTests
         model.ContactEmail = "not-an-email";
         var res = await Validate(model);
         Assert.Contains(res.Errors, e => e.Message.Contains("not a valid e-mail address"));
-        
+
         // Test 2: Valid email format
         model = CreateValidModel();
         model.ContactEmail = "user@example.com";
@@ -213,7 +212,7 @@ public class AttributeValidationTests
         model.PaymentCard = "1234";
         var res = await Validate(model);
         Assert.Contains(res.Errors, e => e.Message.Contains("not a valid credit card number"));
-        
+
         // Test 2: Valid card number with dashes (16 digits)
         model = CreateValidModel();
         model.PaymentCard = "4111-1111-1111-1111";
@@ -233,7 +232,7 @@ public class AttributeValidationTests
         model.PortfolioUrl = "ftp://example.com";
         var res = await Validate(model);
         Assert.Contains(res.Errors, e => e.Message.Contains("not a valid"));
-        
+
         // Test 2: Valid HTTPS URL
         model = CreateValidModel();
         model.PortfolioUrl = "https://example.com";
@@ -254,7 +253,7 @@ public class AttributeValidationTests
         model.PhoneNumber = "not-a-phone";
         var res = await Validate(model);
         Assert.Contains(res.Errors, e => e.Message.Contains("not a valid"));
-        
+
         // Test 2: Valid phone number with international format
         model = CreateValidModel();
         model.PhoneNumber = "+1 (555) 123-4567";
@@ -275,7 +274,7 @@ public class AttributeValidationTests
         model.ResumeFileName = "resume.exe";
         var res = await Validate(model);
         Assert.Contains(res.Errors, e => e.Message.Contains("must have one of the following extensions"));
-        
+
         // Test 2: Allowed extension (.pdf is in allowed list)
         model = CreateValidModel();
         model.ResumeFileName = "resume.pdf";
@@ -297,7 +296,7 @@ public class AttributeValidationTests
         model.State = null;
         var res = await Validate(model);
         Assert.Contains(res.Errors, e => e.MemberName == "State");
-        
+
         // Test 2: Condition not met (Country=Canada) - State not required, should pass
         model = CreateValidModel();
         model.Country = "Canada";
@@ -316,7 +315,7 @@ public class AttributeValidationTests
         // Input has leading/trailing spaces and mixed case
         var model = new TestModel { UserId = "  john.doe  " };
         var res = await Validate(model);
-        
+
         // After validation, value should be trimmed and uppercased
         Assert.Equal("JOHN.DOE", model.UserId);
     }
@@ -332,7 +331,7 @@ public class AttributeValidationTests
         // Set DisplayedAge to invalid value (10 < minimum 18)
         var model = new TestModel { DisplayedAge = 10 };
         var res = await Validate(model);
-        
+
         // Error message should use "User's Age" not "DisplayedAge"
         Assert.Contains(res.Errors, e => e.Message.Contains("User's Age"));
     }
@@ -348,7 +347,7 @@ public class AttributeValidationTests
     {
         // Ensure explicit validators are registered
         FullTestSuite.RegisterTestValidators();
-        
+
         SannrValidatorRegistry.TryGetValidator(model.GetType(), out var val);
         if (val == null)
         {
@@ -356,7 +355,7 @@ public class AttributeValidationTests
             result.Errors.Add(new ValidationError("Debug", "No validator found", Severity.Error));
             return result;
         }
-        
+
         Console.WriteLine($"Found validator for {model.GetType().Name}");
         var result2 = await val!(new SannrValidationContext(model));
         Console.WriteLine($"Validation result: {result2.Errors.Count} errors");
@@ -364,7 +363,7 @@ public class AttributeValidationTests
         {
             Console.WriteLine($"Error: {error.MemberName} - {error.Message}");
         }
-        
+
         return result2;
     }
 

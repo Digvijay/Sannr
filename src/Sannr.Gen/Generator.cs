@@ -22,14 +22,14 @@
 // SOFTWARE.
 // ----------------------------------------------------------------------------------
 
+using System;
+using System.Collections.Generic;
+using System.Collections.Immutable;
+using System.Linq;
+using System.Text;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
-using System.Linq;
-using System.Text;
-using System.Collections.Generic;
-using System.Collections.Immutable;
-using System;
 
 namespace Sannr.Gen;
 
@@ -61,6 +61,11 @@ public class SannrGenerator : IIncrementalGenerator
     /// </summary>
     public void Initialize(IncrementalGeneratorInitializationContext context)
     {
+        // Debug: Verify generator is initialized
+        context.RegisterPostInitializationOutput(ctx =>
+        {
+            ctx.AddSource("GeneratorInitDebug.g.cs", "// Generator initialized successfully at " + DateTime.Now);
+        });
         // Simple test: Always add a source file to verify generator is running
         context.RegisterPostInitializationOutput(ctx => ctx.AddSource("TestGenerator.g.cs", "// Test: Generator is working!"));
 
@@ -71,9 +76,38 @@ public class SannrGenerator : IIncrementalGenerator
                 transform: (ctx, _) => GetValidationTarget(ctx))
             .Where(m => m != null)
             .Collect()
-            .Select((targets, _) => ProcessValidationTargets(targets!));
+            .Select((targets, _) => targets);
+
+        // Fluent validation configuration pipeline
+        var fluentValidatorProvider = context.SyntaxProvider
+            .CreateSyntaxProvider(
+                predicate: (s, _) => IsFluentValidatorConfig(s),
+                transform: (ctx, _) => GetFluentValidatorConfig(ctx))
+            .Where(m => m != null)
+            .Collect()
+            .Select((configs, _) => ProcessFluentValidatorConfigs(configs!));
+
+        // Static Reflection (Shadow Type) pipeline
+        var shadowTypeProvider = context.SyntaxProvider
+            .CreateSyntaxProvider(
+                predicate: (s, _) => IsShadowTarget(s),
+                transform: (ctx, _) => GetShadowTarget(ctx))
+            .Where(m => m != null)
+            .Collect()
+            .Select((targets, _) => targets.Distinct<INamedTypeSymbol>(SymbolEqualityComparer.Default).ToImmutableArray());
+
+        // Debug: Always generate a test file to verify fluent pipeline runs
+        context.RegisterPostInitializationOutput(ctx =>
+        {
+            ctx.AddSource("FluentDebug.g.cs", "// Fluent generator is running!");
+        });
 
         context.RegisterSourceOutput(validatorProvider, GenerateValidators!);
+        context.RegisterSourceOutput(fluentValidatorProvider, GenerateFluentValidators!);
+        context.RegisterSourceOutput(shadowTypeProvider, GenerateShadowTypes!);
+
+        // Client validation properties are now generated as part of validator generation
+        // No separate pipeline needed
     }
 
     /// <summary>
@@ -123,8 +157,58 @@ public class SannrGenerator : IIncrementalGenerator
     /// </summary>
     private static bool IsValidationTarget(SyntaxNode node)
     {
-        // Debug: Target all classes to see if generator runs
-        return node is ClassDeclarationSyntax;
+        if (node is ClassDeclarationSyntax classDecl)
+        {
+            // Check if it has class-level attributes
+            if (classDecl.AttributeLists.Any())
+                return true;
+
+            // Check if any properties have validation attributes
+            var hasPropertyValidation = classDecl.Members
+                .OfType<PropertyDeclarationSyntax>()
+                .Any(prop => prop.AttributeLists
+                    .SelectMany(al => al.Attributes)
+                    .Any(attr =>
+                    {
+                        var attrName = attr.Name.ToString();
+                        return attrName.Contains("Required") ||
+                               attrName.Contains("StringLength") ||
+                               attrName.Contains("Range") ||
+                               attrName.Contains("EmailAddress") ||
+                               attrName.Contains("CreditCard") ||
+                               attrName.Contains("Url") ||
+                               attrName.Contains("Phone") ||
+                               attrName.Contains("FileExtensions") ||
+                               attrName.Contains("CustomValidator") ||
+                               attrName.Contains("RequiredIf") ||
+                               attrName.Contains("Sanitize");
+                    }));
+
+            if (hasPropertyValidation)
+                return true;
+
+            // Check if it inherits from ValidatorConfig
+            var hasValidatorConfigBase = classDecl.BaseList?.Types
+                .Any(t => t.Type is GenericNameSyntax generic &&
+                         generic.Identifier.Text == "ValidatorConfig") == true;
+
+            return hasValidatorConfigBase;
+        }
+
+        return false;
+    }
+
+    /// <summary>
+    /// Determines if a syntax node is a potential client validation target.
+    /// </summary>
+    private static bool IsClientValidationTarget(SyntaxNode node)
+    {
+        if (node is ClassDeclarationSyntax classDecl)
+        {
+            // Check if it has the GenerateClientValidators attribute
+            return classDecl.AttributeLists.Any();
+        }
+        return false;
     }
 
     /// <summary>
@@ -135,31 +219,45 @@ public class SannrGenerator : IIncrementalGenerator
         if (context.Node is ClassDeclarationSyntax classDecl)
         {
             var classSymbol = context.SemanticModel.GetDeclaredSymbol(classDecl) as INamedTypeSymbol;
-            if (classSymbol != null && HasValidationAttributes(classSymbol))
+            if (classSymbol != null)
             {
-                return classSymbol;
+                // Check for regular validation attributes
+                if (HasValidationAttributes(classSymbol))
+                    return classSymbol;
+
+                // Fluent validators are handled by the separate pipeline
             }
         }
         return null;
     }
-
-    /// <summary>
-    /// Processes validation targets and returns distinct class symbols.
-    /// </summary>
-    private static ImmutableArray<INamedTypeSymbol> ProcessValidationTargets(ImmutableArray<INamedTypeSymbol> targets)
-    {
-        return targets.Distinct<INamedTypeSymbol>(SymbolEqualityComparer.Default).ToImmutableArray();
-    }
-
-    /// <summary>
-    /// Generates validators for multiple class symbols.
-    /// </summary>
     private static void GenerateValidators(SourceProductionContext context, ImmutableArray<INamedTypeSymbol> targets)
     {
+        var processedClasses = new HashSet<string>(StringComparer.Ordinal);
+
+        // DEBUG: Output all discovered targets
+        var debugSb = new StringBuilder();
+        debugSb.AppendLine("// DEBUG: Discovered validation targets:");
+        foreach (var t in targets)
+        {
+            debugSb.AppendLine($"// - {t.ContainingNamespace}.{t.Name}");
+        }
+        context.AddSource("ValidationTargetsDebug.g.cs", debugSb.ToString());
+
         foreach (var classSymbol in targets)
         {
+            var classKey = $"{classSymbol.ContainingNamespace}.{classSymbol.Name}";
+            if (!processedClasses.Add(classKey))
+                continue; // Skip duplicate
+
+            // Regular attribute-based validation
             GenerateValidator(context, classSymbol);
         }
+
+        // Generate OpenAPI schema filter for AOT-compatible schema generation
+        GenerateOpenApiFilter(context, targets);
+
+        // Generate AddSannr extension method for automatic validator registration
+        GenerateAddSannrMethod(context, targets);
     }
 
     /// <summary>
@@ -212,18 +310,18 @@ public class SannrGenerator : IIncrementalGenerator
         return classSymbol.GetMembers()
             .OfType<IPropertySymbol>()
             .Any(prop => prop.GetAttributes().Any(attr =>
-                attr.AttributeClass?.Name.EndsWith("Attribute") == true &&
-                (attr.AttributeClass.Name.Contains("Required") ||
-                 attr.AttributeClass.Name.Contains("StringLength") ||
-                 attr.AttributeClass.Name.Contains("Range") ||
-                 attr.AttributeClass.Name.Contains("EmailAddress") ||
-                 attr.AttributeClass.Name.Contains("CreditCard") ||
-                 attr.AttributeClass.Name.Contains("Url") ||
-                 attr.AttributeClass.Name.Contains("Phone") ||
-                 attr.AttributeClass.Name.Contains("FileExtensions") ||
-                 attr.AttributeClass.Name.Contains("CustomValidator") ||
-                 attr.AttributeClass.Name.Contains("RequiredIf") ||
-                 attr.AttributeClass.Name.Contains("Sanitize"))));
+                attr.AttributeClass?.Name.EndsWith("Attribute", System.StringComparison.Ordinal) == true &&
+                (attr.AttributeClass.Name.Contains("Required", System.StringComparison.Ordinal) ||
+                 attr.AttributeClass.Name.Contains("StringLength", System.StringComparison.Ordinal) ||
+                 attr.AttributeClass.Name.Contains("Range", System.StringComparison.Ordinal) ||
+                 attr.AttributeClass.Name.Contains("EmailAddress", System.StringComparison.Ordinal) ||
+                 attr.AttributeClass.Name.Contains("CreditCard", System.StringComparison.Ordinal) ||
+                 attr.AttributeClass.Name.Contains("Url", System.StringComparison.Ordinal) ||
+                 attr.AttributeClass.Name.Contains("Phone", System.StringComparison.Ordinal) ||
+                 attr.AttributeClass.Name.Contains("FileExtensions", System.StringComparison.Ordinal) ||
+                 attr.AttributeClass.Name.Contains("CustomValidator", System.StringComparison.Ordinal) ||
+                 attr.AttributeClass.Name.Contains("RequiredIf", System.StringComparison.Ordinal) ||
+                 attr.AttributeClass.Name.Contains("Sanitize", System.StringComparison.Ordinal))));
     }
 
     /// <summary>
@@ -255,7 +353,7 @@ public class SannrGenerator : IIncrementalGenerator
         if (context.Node is PropertyDeclarationSyntax prop &&
             prop.Parent is ClassDeclarationSyntax classDecl)
         {
-             return context.SemanticModel.GetDeclaredSymbol(classDecl) as INamedTypeSymbol;
+            return context.SemanticModel.GetDeclaredSymbol(classDecl) as INamedTypeSymbol;
         }
         return null;
     }
@@ -277,7 +375,7 @@ public class SannrGenerator : IIncrementalGenerator
 
         var sbArgs = new StringBuilder();
         sbArgs.Append(nameVar);
-        foreach(var arg in args) sbArgs.Append(", " + arg);
+        foreach (var arg in args) sbArgs.Append(", " + arg);
 
         return $"string.Format({formatExpr}, {sbArgs.ToString()})";
     }
@@ -310,6 +408,7 @@ public class SannrGenerator : IIncrementalGenerator
             using System.Text.RegularExpressions;
             using System.Runtime.CompilerServices;
             using Sannr;
+            using Sannr.Core; // Integrate with core metrics for observability
 
             namespace {{ns}}
             {
@@ -326,6 +425,8 @@ public class SannrGenerator : IIncrementalGenerator
                         var model = ({{className}})context.ObjectInstance;
                         var result = new ValidationResult();
                         var activeGroup = context.ActiveGroup;
+                        Observability.ValidationEvents.Add(1); // Track validation events for observability
+                        await Task.CompletedTask; // Suppress CS1998 for synchronous paths
             """);
 
         foreach (var member in classSymbol.GetMembers().OfType<IPropertySymbol>())
@@ -339,7 +440,7 @@ public class SannrGenerator : IIncrementalGenerator
                 bool trim = (bool)(sanAttr.NamedArguments.FirstOrDefault(k => k.Key == "Trim").Value.Value ?? false);
                 bool upper = (bool)(sanAttr.NamedArguments.FirstOrDefault(k => k.Key == "ToUpper").Value.Value ?? false);
                 bool lower = (bool)(sanAttr.NamedArguments.FirstOrDefault(k => k.Key == "ToLower").Value.Value ?? false);
-                
+
                 if (trim) sb.AppendLine($$"""if (model.{{prop}} != null) model.{{prop}} = model.{{prop}}.Trim();""");
                 if (upper) sb.AppendLine($$"""if (model.{{prop}} != null) model.{{prop}} = model.{{prop}}.ToUpper();""");
                 if (lower) sb.AppendLine($$"""if (model.{{prop}} != null) model.{{prop}} = model.{{prop}}.ToLower();""");
@@ -349,105 +450,174 @@ public class SannrGenerator : IIncrementalGenerator
             var explicitName = displayAttr?.NamedArguments.FirstOrDefault(k => k.Key == "Name").Value.Value?.ToString();
             string nameVar = explicitName != null ? $"\"{explicitName}\"" : $"\"{prop}\"";
 
-            foreach(var attr in attributes)
+            foreach (var attr in attributes)
             {
                 var attrName = attr.AttributeClass?.Name;
                 var severity = GetSeverity(attr);
                 var groupArg = attr.NamedArguments.FirstOrDefault(k => k.Key == "Group").Value.Value as string;
                 if (groupArg != null) sb.AppendLine($$"""if (activeGroup == "{{groupArg}}") {""");
 
-                if (attrName == "RequiredAttribute") {
+                if (attrName == "RequiredAttribute")
+                {
                     var msg = GetFormattedError(attr, "{0} is required.", nameVar);
                     var propType = member.Type;
                     bool isValueType = propType.IsValueType;
-                    
-                    if (isValueType) {
+                    bool isString = propType.SpecialType == SpecialType.System_String;
+
+                    if (isValueType)
+                    {
                         // For value types, Required always passes since they can't be null
                         // But we could add a check for default values if needed
-                    } else {
-                        // For reference types, check for null or empty strings
+                    }
+                    else if (isString)
+                    {
+                        // For strings, check for null or empty
                         sb.AppendLine($$"""if (model.{{prop}} is null || (model.{{prop}} is string s_{{prop}} && string.IsNullOrWhiteSpace(s_{{prop}}))) result.Add("{{prop}}", {{msg}}, {{severity}});""");
                     }
+                    else
+                    {
+                        // For other reference types (collections, custom objects), just check for null
+                        sb.AppendLine($$"""if (model.{{prop}} is null) result.Add("{{prop}}", {{msg}}, {{severity}});""");
+                    }
                 }
-                else if (attrName == "StringLengthAttribute") {
+                else if (attrName == "StringLengthAttribute")
+                {
                     int max = (int)(attr.ConstructorArguments[0].Value ?? 0);
                     int min = 0;
                     var minArg = attr.NamedArguments.FirstOrDefault(k => k.Key == "MinimumLength");
                     if (minArg.Value.Value != null) min = (int)minArg.Value.Value;
                     var msg = GetFormattedError(attr, "The field {0} must be a string with a maximum length of {1}.", nameVar, max.ToString());
-                    if (min > 0) {
-                        sb.AppendLine($$"""if (model.{{prop}} is string str_{{prop}} && (str_{{prop}}.Length < {{min}} || str_{{prop}}.Length > {{max}})) result.Add("{{prop}}", {{msg}}, {{severity}});""");
-                    } else {
-                        sb.AppendLine($$"""if (model.{{prop}} is string str_{{prop}} && str_{{prop}}.Length > {{max}}) result.Add("{{prop}}", {{msg}}, {{severity}});""");
+                    if (min > 0)
+                    {
+                        sb.AppendLine($$"""if (model.{{prop}} is string str_{{prop}} && (str_{{prop}}.AsSpan().Length < {{min}} || str_{{prop}}.AsSpan().Length > {{max}})) result.Add("{{prop}}", {{msg}}, {{severity}});""");
+                    }
+                    else
+                    {
+                        sb.AppendLine($$"""if (model.{{prop}} is string str_{{prop}} && str_{{prop}}.AsSpan().Length > {{max}}) result.Add("{{prop}}", {{msg}}, {{severity}});""");
                     }
                 }
-                else if (attrName == "RangeAttribute") {
+                else if (attrName == "RangeAttribute" && attr.ConstructorArguments.Length >= 2)
+                {
                     var min = attr.ConstructorArguments[0].Value;
                     var max = attr.ConstructorArguments[1].Value;
                     var msg = GetFormattedError(attr, "The field {0} must be between {1} and {2}.", nameVar, min?.ToString() ?? "0", max?.ToString() ?? "0");
-                    sb.AppendLine($$"""if (model.{{prop}} < (dynamic){{min}} || model.{{prop}} > (dynamic){{max}}) result.Add("{{prop}}", {{msg}}, {{severity}});""");
+
+                    var isDecimal = member.Type.SpecialType == SpecialType.System_Decimal ||
+                                   (member.Type.OriginalDefinition.SpecialType == SpecialType.System_Nullable_T &&
+                                    (member.Type as INamedTypeSymbol)?.TypeArguments.FirstOrDefault()?.SpecialType == SpecialType.System_Decimal);
+                    var cast = isDecimal ? "(decimal)" : "";
+
+                    sb.AppendLine($$"""if (model.{{prop}} < {{cast}}{{min}} || model.{{prop}} > {{cast}}{{max}}) result.Add("{{prop}}", {{msg}}, {{severity}});""");
                 }
-                else if (attrName == "EmailAddressAttribute") {
+                else if (attrName == "EmailAddressAttribute")
+                {
                     var msg = GetFormattedError(attr, "The {0} field is not a valid e-mail address.", nameVar);
                     sb.AppendLine($$"""if (model.{{prop}} != null && !_emailRegex.IsMatch(model.{{prop}}.ToString())) result.Add("{{prop}}", {{msg}}, {{severity}});""");
                 }
-                else if (attrName == "CreditCardAttribute") {
+                else if (attrName == "CreditCardAttribute")
+                {
                     var msg = GetFormattedError(attr, "The {0} field is not a valid credit card number.", nameVar);
                     sb.AppendLine($$"""if (model.{{prop}} != null && !_creditCardRegex.IsMatch(model.{{prop}}.ToString())) result.Add("{{prop}}", {{msg}}, {{severity}});""");
                 }
-                else if (attrName == "UrlAttribute") {
+                else if (attrName == "UrlAttribute")
+                {
                     var msg = GetFormattedError(attr, "The {0} field is not a valid URL.", nameVar);
                     sb.AppendLine($$"""if (model.{{prop}} != null && !_urlRegex.IsMatch(model.{{prop}}.ToString())) result.Add("{{prop}}", {{msg}}, {{severity}});""");
                 }
-                else if (attrName == "PhoneAttribute") {
+                else if (attrName == "PhoneAttribute")
+                {
                     var msg = GetFormattedError(attr, "The {0} field is not a valid phone number.", nameVar);
                     sb.AppendLine($$"""if (model.{{prop}} != null && !_phoneRegex.IsMatch(model.{{prop}}.ToString())) result.Add("{{prop}}", {{msg}}, {{severity}});""");
                 }
-                else if (attrName == "FileExtensionsAttribute") {
+                else if (attrName == "FileExtensionsAttribute")
+                {
                     var extensions = attr.NamedArguments.FirstOrDefault(k => k.Key == "Extensions").Value.Value as string ?? "png,jpg,jpeg,gif";
-                    var extArray = extensions.Split(',').Select(e => e.Trim().ToLower()).Where(e => !string.IsNullOrEmpty(e)).ToArray();
-                    var extList = string.Join(", ", extArray.Select(e => "."+e));
+                    var extArray = extensions.Split(',').Select(e => e.Trim().ToLower(System.Globalization.CultureInfo.InvariantCulture)).Where(e => !string.IsNullOrEmpty(e)).ToArray();
+                    var extList = string.Join(", ", extArray.Select(e => "." + e));
                     // Build all parts as separate strings
                     var msgText = "The {0} field must have one of the following extensions: " + extList + ".";
                     var msgPart = "string.Format(\"" + msgText + "\", " + nameVar + ")";
                     var condParts = new System.Collections.Generic.List<string>();
-                    foreach (var ext in extArray) {
-                        condParts.Add("!model." + prop + ".ToString().ToLower().EndsWith(\"." + ext + "\")");
+                    foreach (var ext in extArray)
+                    {
+                        condParts.Add("!model." + prop + ".ToString().EndsWith(\"." + ext + "\", System.StringComparison.OrdinalIgnoreCase)");
                     }
                     var conditionStr = string.Join(" && ", condParts);
                     sb.AppendLine("if (model." + prop + " != null && (" + conditionStr + ")) result.Add(\"" + prop + "\", " + msgPart + ", " + severity + ");");
                 }
-                else if (attrName == "RequiredIfAttribute") {
+                else if (attrName == "RequiredIfAttribute")
+                {
                     var other = attr.ConstructorArguments[0].Value?.ToString();
                     var val = attr.ConstructorArguments[1].Value;
                     string valStr;
-                    if (val is string s) {
+                    if (val is string s)
+                    {
                         valStr = $"\"{s}\"";
-                    } else if (val == null) {
+                    }
+                    else if (val == null)
+                    {
                         valStr = "null";
-                    } else {
+                    }
+                    else
+                    {
                         valStr = val.ToString();
-                        if (val is bool) valStr = valStr.ToLower();
+                        if (val is bool) valStr = valStr.ToLower(System.Globalization.CultureInfo.InvariantCulture);
                     }
                     var msg = GetFormattedError(attr, "{0} is required.", nameVar);
-                    
+
                     // Check if the property type is a string
                     var propType = member.Type;
                     bool isStringType = propType.SpecialType == SpecialType.System_String;
-                    
-                    if (isStringType) {
+
+                    if (isStringType)
+                    {
                         sb.AppendLine($$"""if (object.Equals(model.{{other}}, {{valStr}}) && (model.{{prop}} is null || string.IsNullOrWhiteSpace(model.{{prop}}))) result.Add("{{prop}}", {{msg}}, {{severity}});""");
-                    } else {
+                    }
+                    else
+                    {
                         // For non-string types, just check if the condition is met
                         sb.AppendLine($$"""if (object.Equals(model.{{other}}, {{valStr}}) && model.{{prop}} is null) result.Add("{{prop}}", {{msg}}, {{severity}});""");
                     }
                 }
-                else if (attrName == "CustomValidatorAttribute") {
+                else if (attrName == "FutureDateAttribute")
+                {
+                    var msg = GetFormattedError(attr, "The {0} field must be a future date.", nameVar);
+                    sb.AppendLine($$"""if (model.{{prop}} != default && model.{{prop}} <= DateTime.Now) result.Add("{{prop}}", {{msg}}, {{severity}});""");
+                }
+                else if (attrName == "AllowedValuesAttribute" && attr.ConstructorArguments.Length > 0)
+                {
+                    var values = attr.ConstructorArguments[0].Values.Select(v => $"\"{v.Value}\"").ToArray();
+                    var valuesList = string.Join(", ", values);
+                    var valuesDisplay = string.Join(", ", attr.ConstructorArguments[0].Values.Select(v => v.Value));
+                    var msg = GetFormattedError(attr, "The {0} field must be one of the following values: {1}.", nameVar, $"\"{valuesDisplay}\"");
+                    sb.AppendLine($$"""if (model.{{prop}} != null && !new[] { {{valuesList}} }.Contains(model.{{prop}}.ToString())) result.Add("{{prop}}", {{msg}}, {{severity}});""");
+                }
+                else if (attrName == "ConditionalRangeAttribute")
+                {
+                    var other = attr.ConstructorArguments[0].Value?.ToString();
+                    var targetVal = attr.ConstructorArguments[1].Value;
+                    var min = attr.ConstructorArguments[2].Value;
+                    var max = attr.ConstructorArguments[3].Value;
+
+                    string targetValStr = targetVal is string ? $"\"{targetVal}\"" : (targetVal?.ToString()?.ToLower(System.Globalization.CultureInfo.InvariantCulture) ?? "null");
+                    var targetValDisplay = targetVal?.ToString() ?? "null";
+                    var msg = GetFormattedError(attr, "The field {0} must be between {1} and {2} when {3} is {4}.", nameVar, min?.ToString() ?? "0", max?.ToString() ?? "0", $"\"{other}\"", $"\"{targetValDisplay}\"");
+
+                    var isDecimal = member.Type.SpecialType == SpecialType.System_Decimal ||
+                                   (member.Type.OriginalDefinition.SpecialType == SpecialType.System_Nullable_T &&
+                                    (member.Type as INamedTypeSymbol)?.TypeArguments.FirstOrDefault()?.SpecialType == SpecialType.System_Decimal);
+                    var cast = isDecimal ? "(decimal)" : "";
+
+                    sb.AppendLine($$"""if (object.Equals(model.{{other}}, {{targetValStr}}) && (model.{{prop}} < {{cast}}{{min}} || model.{{prop}} > {{cast}}{{max}})) result.Add("{{prop}}", {{msg}}, {{severity}});""");
+                }
+                else if (attrName == "CustomValidatorAttribute")
+                {
                     var type = attr.ConstructorArguments[0].Value as INamedTypeSymbol;
                     var method = attr.ConstructorArguments[1].Value?.ToString() ?? "Check";
                     var isAsync = (bool)(attr.NamedArguments.FirstOrDefault(k => k.Key == "IsAsync").Value.Value ?? false);
-                    if (type != null) {
-                        string call = isAsync 
+                    if (type != null)
+                    {
+                        string call = isAsync
                             ? $"await {type.ToDisplayString()}.{method}(model.{prop}, context.ServiceProvider)"
                             : $"{type.ToDisplayString()}.{method}(model.{prop}, context.ServiceProvider)";
                         sb.AppendLine($$"""var customRes_{{prop}} = {{call}}; result.Merge(customRes_{{prop}}, "{{prop}}");""");
@@ -489,6 +659,267 @@ public class SannrGenerator : IIncrementalGenerator
             }
             """);
         spc.AddSource($"{ns}.{className}.SannrValidator.g.cs", sb.ToString());
+
+        // Generate client validation properties for this class
+        GenerateClientValidationProperties(spc, classSymbol);
+    }
+
+    /// <summary>
+    /// Generates client validation properties (JSON, TypeScript, JavaScript) for a validated class.
+    /// </summary>
+    private static void GenerateClientValidationProperties(SourceProductionContext spc, INamedTypeSymbol classSymbol)
+    {
+        var className = classSymbol.Name;
+        var ns = classSymbol.ContainingNamespace.ToDisplayString();
+
+        // Build JSON validation rules
+        var jsonRules = new List<string>();
+        var tsProperties = new List<string>();
+        var tsValidators = new List<string>();
+        var jsValidators = new List<string>();
+
+        foreach (var member in classSymbol.GetMembers().OfType<IPropertySymbol>())
+        {
+            var propName = ToCamelCase(member.Name);
+            var tsType = GetTypeScriptType(member.Type);
+            var isOptional = !IsRequiredProperty(member);
+
+            // TypeScript interface property
+            tsProperties.Add($"  {propName}{(isOptional ? "?" : "")}: {tsType};");
+
+            // Get validation rules
+            var rules = new List<string>();
+            foreach (var attr in member.GetAttributes())
+            {
+                var attrName = attr.AttributeClass?.Name;
+                switch (attrName)
+                {
+                    case "RequiredAttribute":
+                        rules.Add("required: true");
+                        break;
+                    case "EmailAddressAttribute":
+                        rules.Add("email: true");
+                        break;
+                    case "StringLengthAttribute" when attr.ConstructorArguments.Length > 0:
+                        var max = (int)(attr.ConstructorArguments[0].Value ?? 0);
+                        var minArg = attr.NamedArguments.FirstOrDefault(k => k.Key == "MinimumLength");
+                        var min = minArg.Value.Value != null ? (int)minArg.Value.Value : 0;
+                        if (max > 0) rules.Add($"maxLength: {max}");
+                        if (min > 0) rules.Add($"minLength: {min}");
+                        break;
+                    case "RangeAttribute" when attr.ConstructorArguments.Length >= 2:
+                        var minVal = attr.ConstructorArguments[0].Value;
+                        var maxVal = attr.ConstructorArguments[1].Value;
+                        if (minVal != null) rules.Add($"min: {minVal}");
+                        if (maxVal != null) rules.Add($"max: {maxVal}");
+                        break;
+                    case "UrlAttribute":
+                        rules.Add("url: true");
+                        break;
+                    case "PhoneAttribute":
+                        rules.Add("phone: true");
+                        break;
+                    case "CreditCardAttribute":
+                        rules.Add("creditCard: true");
+                        break;
+                    case "RequiredIfAttribute" when attr.ConstructorArguments.Length >= 2:
+                        var otherProp = attr.ConstructorArguments[0].Value?.ToString();
+                        var targetValue = attr.ConstructorArguments[1].Value;
+                        var targetValueJs = targetValue is string ? $"'{targetValue}'" : (targetValue?.ToString()?.ToLower(System.Globalization.CultureInfo.InvariantCulture) ?? "null");
+                        rules.Add($"requiredIf: {{ otherProperty: '{ToCamelCase(otherProp ?? "")}', targetValue: {targetValueJs} }}");
+                        break;
+                    case "AllowedValuesAttribute" when attr.ConstructorArguments.Length > 0:
+                        var vals = attr.ConstructorArguments[0].Values.Select(v => $"'{v.Value}'").ToArray();
+                        rules.Add($"allowedValues: [{string.Join(", ", vals)}]");
+                        break;
+                }
+            }
+
+            if (rules.Count > 0)
+            {
+                var rulesStr = string.Join(", ", rules);
+                jsonRules.Add($"\\\"{propName}\\\": {{ {rulesStr} }}");
+                tsValidators.Add($"  {propName}: {{ {rulesStr} }}");
+                jsValidators.Add($"  {propName}: {{ {rulesStr} }}");
+            }
+        }
+
+        // Generate the C# file with static properties
+        var sb = new StringBuilder();
+        sb.AppendLine("// <auto-generated/>");
+        sb.AppendLine($"// Sannr Client Validation for {className}");
+        sb.AppendLine();
+        sb.AppendLine($"namespace {ns}");
+        sb.AppendLine("{");
+        sb.AppendLine($"#pragma warning disable CS0108 // Member hides inherited member; missing new keyword");
+        sb.AppendLine($"    public partial class {className}");
+        sb.AppendLine("    {");
+
+        // JSON validation rules
+        sb.AppendLine("        /// <summary>");
+        sb.AppendLine("        /// Gets the client-side validation rules as JSON.");
+        sb.AppendLine("        /// </summary>");
+        sb.AppendLine($"        public static string ValidationRulesJson => \"{{{string.Join(",", jsonRules)}}}\";");
+
+        // TypeScript validation rules
+        sb.AppendLine();
+        sb.AppendLine("        /// <summary>");
+        sb.AppendLine("        /// Gets the client-side validation rules as TypeScript code.");
+        sb.AppendLine("        /// </summary>");
+        var tsInterface = string.Join("\\n", tsProperties);
+        var tsVals = string.Join(",\\n", tsValidators);
+        sb.AppendLine($"        public static string ValidationRulesTypeScript => \"export interface {className} {{\\n{tsInterface}\\n}}\\n\\nexport const {ToCamelCase(className)}Validators = {{\\n{tsVals}\\n}};\";");
+
+        // JavaScript validation rules
+        sb.AppendLine();
+        sb.AppendLine("        /// <summary>");
+        sb.AppendLine("        /// Gets the client-side validation rules as JavaScript code.");
+        sb.AppendLine("        /// </summary>");
+        var jsVals = string.Join(",\\n", jsValidators);
+        sb.AppendLine($"        public static string ValidationRulesJavaScript => \"const {ToCamelCase(className)}Validators = {{\\n{jsVals}\\n}};\";");
+
+        sb.AppendLine("    }");
+        sb.AppendLine("}");
+
+        spc.AddSource($"{ns}.{className}.ClientValidation.g.cs", sb.ToString());
+    }
+
+    /// <summary>
+    /// Generates an AOT-compatible OpenAPI schema filter using compile-time generation.
+    /// </summary>
+    private static void GenerateOpenApiFilter(SourceProductionContext context, ImmutableArray<INamedTypeSymbol> targets)
+    {
+        // Don't generate OpenAPI filter if there are no targets
+        if (!targets.Any())
+            return;
+
+        // Check if Swashbuckle is available by looking for the ISchemaFilter interface
+        // This prevents generating the filter for console apps or projects without Swashbuckle
+        var compilation = targets[0].ContainingAssembly.GetTypeByMetadataName("Swashbuckle.AspNetCore.SwaggerGen.ISchemaFilter");
+        var hasSwashbuckle = compilation != null;
+
+        if (!hasSwashbuckle)
+        {
+            // Try checking references
+            var referencedAssemblies = targets[0].ContainingAssembly.Modules.FirstOrDefault()?.ReferencedAssemblies;
+            hasSwashbuckle = referencedAssemblies?.Any(a => a.Name.Contains("Swashbuckle")) ?? false;
+        }
+
+        // Don't generate if Swashbuckle isn't referenced
+        if (!hasSwashbuckle)
+            return;
+
+        var sb = new StringBuilder();
+        sb.AppendLine("// <auto-generated/>");
+        sb.AppendLine("// Sannr OpenAPI Schema Filter Generator");
+        sb.AppendLine("// Generated: " + DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss"));
+        sb.AppendLine("using Microsoft.OpenApi.Models;");
+        sb.AppendLine("using Swashbuckle.AspNetCore.SwaggerGen;");
+        sb.AppendLine("using System;");
+        sb.AppendLine("");
+        sb.AppendLine("namespace Sannr.OpenApi");
+        sb.AppendLine("{");
+        sb.AppendLine("    /// <summary>");
+        sb.AppendLine("    /// AOT-compatible OpenAPI schema filter generated at compile-time.");
+        sb.AppendLine("    /// Applies validation rules to OpenAPI schemas without runtime reflection.");
+        sb.AppendLine("    /// </summary>");
+        sb.AppendLine("    public class SannrGeneratedSchemaFilter : ISchemaFilter");
+        sb.AppendLine("    {");
+        sb.AppendLine("        public void Apply(OpenApiSchema schema, SchemaFilterContext context)");
+        sb.AppendLine("        {");
+        sb.AppendLine("            if (schema.Properties == null || context.Type == null)");
+        sb.AppendLine("                return;");
+        sb.AppendLine("");
+        sb.AppendLine("            var typeName = context.Type.FullName;");
+        sb.AppendLine("            switch (typeName)");
+        sb.AppendLine("            {");
+
+        foreach (var classSymbol in targets)
+        {
+            var className = classSymbol.Name;
+            var ns = classSymbol.ContainingNamespace.ToDisplayString();
+            var fullName = $"{ns}.{className}";
+
+            sb.AppendLine($"                case \"{fullName}\":");
+            sb.AppendLine($"                    Apply{className}Schema(schema);");
+            sb.AppendLine("                    break;");
+        }
+
+        sb.AppendLine("            }");
+        sb.AppendLine("        }");
+
+        // Generate the Apply methods for each class
+        foreach (var classSymbol in targets)
+        {
+            var className = classSymbol.Name;
+            sb.AppendLine($"");
+            sb.AppendLine($"        private static void Apply{className}Schema(OpenApiSchema schema)");
+            sb.AppendLine("        {");
+            sb.AppendLine("            OpenApiSchema propertySchema;");
+
+            foreach (var member in classSymbol.GetMembers().OfType<IPropertySymbol>())
+            {
+                var attributes = member.GetAttributes();
+                var prop = member.Name;
+
+                sb.AppendLine($"            if (schema.Properties.TryGetValue(\"{prop}\", out propertySchema))");
+                sb.AppendLine("            {");
+
+                foreach (var attr in attributes)
+                {
+                    var attrName = attr.AttributeClass?.Name;
+                    if (attrName == "RequiredAttribute")
+                    {
+                        // Required is handled at object level
+                    }
+                    else if (attrName == "StringLengthAttribute")
+                    {
+                        int max = (int)(attr.ConstructorArguments[0].Value ?? 0);
+                        int min = 0;
+                        var minArg = attr.NamedArguments.FirstOrDefault(k => k.Key == "MinimumLength");
+                        if (minArg.Value.Value != null) min = (int)minArg.Value.Value;
+                        if (max > 0) sb.AppendLine($"                propertySchema.MaxLength = {max};");
+                        if (min > 0) sb.AppendLine($"                propertySchema.MinLength = {min};");
+                    }
+                    else if (attrName == "RangeAttribute")
+                    {
+                        var min = attr.ConstructorArguments[0].Value;
+                        var max = attr.ConstructorArguments[1].Value;
+                        if (min != null) sb.AppendLine($"                propertySchema.Minimum = (decimal){min};");
+                        if (max != null) sb.AppendLine($"                propertySchema.Maximum = (decimal){max};");
+                    }
+                    else if (attrName == "EmailAddressAttribute")
+                    {
+                        sb.AppendLine("                propertySchema.Format = \"email\";");
+                    }
+                    else if (attrName == "UrlAttribute")
+                    {
+                        sb.AppendLine("                propertySchema.Format = \"uri\";");
+                    }
+                    else if (attrName == "FileExtensionsAttribute")
+                    {
+                        sb.AppendLine("                propertySchema.Format = \"file\";");
+                    }
+                    else if (attrName == "PhoneAttribute")
+                    {
+                        // No standard format
+                    }
+                    else if (attrName == "CreditCardAttribute")
+                    {
+                        // No standard format
+                    }
+                }
+
+                sb.AppendLine("            }");
+            }
+
+            sb.AppendLine("        }");
+        }
+
+        sb.AppendLine("    }");
+        sb.AppendLine("}");
+
+        context.AddSource("SannrGeneratedSchemaFilter.g.cs", sb.ToString());
     }
 
     /// <summary>
@@ -498,8 +929,6 @@ public class SannrGenerator : IIncrementalGenerator
     {
         var className = classSymbol.Name;
         var ns = classSymbol.ContainingNamespace.ToDisplayString();
-
-        // Get the attribute to determine output settings
         var attribute = classSymbol.GetAttributes()
             .First(a => a.AttributeClass?.Name == "GenerateClientValidatorsAttribute");
 
@@ -508,12 +937,13 @@ public class SannrGenerator : IIncrementalGenerator
         var generateFunctions = (bool)(attribute.NamedArguments.FirstOrDefault(k => k.Key == "GenerateValidationFunctions").Value.Value ?? true);
         var customNamespace = attribute.NamedArguments.FirstOrDefault(k => k.Key == "Namespace").Value.Value as string;
 
-        var clientNamespace = customNamespace ?? ns.ToLower().Replace(".", "_");
+        var clientNamespace = customNamespace ?? ns.ToLower(System.Globalization.CultureInfo.InvariantCulture).Replace(".", "_");
 
         var sb = new StringBuilder();
 
         // Generate TypeScript interface
         sb.AppendLine($"// <auto-generated/>");
+        sb.AppendLine($"#pragma warning disable CS0108 // Member hides inherited member; missing new keyword");
         sb.AppendLine($"// Generated from {ns}.{className}");
         sb.AppendLine();
         sb.AppendLine($"export interface {className} {{");
@@ -639,7 +1069,7 @@ public class SannrGenerator : IIncrementalGenerator
     private static string ToCamelCase(string name)
     {
         if (string.IsNullOrEmpty(name)) return name ?? "";
-        return char.ToLower(name[0]) + name.Substring(1);
+        return char.ToLower(name[0], System.Globalization.CultureInfo.InvariantCulture) + name.Substring(1);
     }
 
     /// <summary>
@@ -654,7 +1084,7 @@ public class SannrGenerator : IIncrementalGenerator
             SpecialType.System_Decimal or SpecialType.System_Double or SpecialType.System_Single => "number",
             SpecialType.System_Boolean => "boolean",
             SpecialType.System_DateTime => "string", // ISO date string
-            _ => type.Name.ToLower()
+            _ => type.Name.ToLower(System.Globalization.CultureInfo.InvariantCulture)
         };
     }
 
@@ -710,7 +1140,7 @@ public class SannrGenerator : IIncrementalGenerator
                     rules.Add("phone: true");
                     break;
 
-                case "AllowedValuesAttribute":
+                case "AllowedValuesAttribute" when attr.ConstructorArguments.Length > 0:
                     var values = attr.ConstructorArguments.FirstOrDefault().Values;
                     if (values.Length > 0)
                     {
@@ -730,5 +1160,958 @@ public class SannrGenerator : IIncrementalGenerator
         }
 
         return string.Join(", ", rules);
+    }
+
+    /// <summary>
+    /// Generates the AddSannr extension method for automatic validator registration.
+    /// </summary>
+    private static void GenerateAddSannrMethod(SourceProductionContext context, ImmutableArray<INamedTypeSymbol> targets)
+    {
+        if (targets.IsEmpty)
+            return;
+
+        var sb = new StringBuilder();
+        sb.AppendLine("""
+            // <auto-generated/>
+            // Sannr Service Registration Generator
+            // Generated: {{DateTime.Now:yyyy-MM-dd HH:mm:ss}}
+            using Microsoft.Extensions.DependencyInjection;
+            using Sannr;
+
+            namespace Sannr.AspNetCore
+            {
+                public static partial class ServiceCollectionExtensions
+                {
+                    static partial void RegisterGeneratedValidators(IServiceCollection services);
+
+                    static partial void RegisterGeneratedValidators(IServiceCollection services)
+                    {
+
+            """);
+
+        foreach (var classSymbol in targets)
+        {
+            var className = classSymbol.Name;
+            var ns = classSymbol.ContainingNamespace.ToDisplayString();
+            var fullName = $"{ns}.{className}";
+
+            sb.AppendLine($$"""
+                        // Register validator for {{fullName}}
+                        SannrValidatorRegistry.Register<{{fullName}}>({{ns}}.{{className}}Validator.ValidateAsync);
+
+            """);
+        }
+
+        sb.AppendLine("""
+                    }
+                }
+            }
+            """);
+
+        context.AddSource("SannrServiceRegistration.g.cs", sb.ToString());
+    }
+
+    #region Static Reflection (Shadow Types)
+
+    private static bool IsShadowTarget(SyntaxNode node)
+    {
+        if (node is ClassDeclarationSyntax classDecl)
+        {
+            return classDecl.AttributeLists.Count > 0;
+        }
+        return false;
+    }
+
+    private static INamedTypeSymbol? GetShadowTarget(GeneratorSyntaxContext context)
+    {
+        if (context.Node is ClassDeclarationSyntax classDecl)
+        {
+            var symbol = context.SemanticModel.GetDeclaredSymbol(classDecl) as INamedTypeSymbol;
+            if (symbol != null && symbol.GetAttributes().Any(a => a.AttributeClass?.Name == "SannrReflectAttribute"))
+            {
+                return symbol;
+            }
+        }
+        return null;
+    }
+
+    private static void GenerateShadowTypes(SourceProductionContext context, ImmutableArray<INamedTypeSymbol> targets)
+    {
+        foreach (var classSymbol in targets)
+        {
+            GenerateShadowType(context, classSymbol);
+        }
+    }
+
+    private static void GenerateShadowType(SourceProductionContext spc, INamedTypeSymbol classSymbol)
+    {
+        var className = classSymbol.Name;
+        var ns = classSymbol.ContainingNamespace.ToDisplayString();
+        var shadowName = $"{className}Shadow";
+        var properties = classSymbol.GetMembers()
+            .OfType<IPropertySymbol>()
+            .Where(p => !p.IsStatic && p.DeclaredAccessibility == Accessibility.Public)
+            .ToList();
+
+        var sb = new StringBuilder();
+        sb.AppendLine($$"""
+            // <auto-generated/>
+            // Sannr Static Reflection Shadow Type
+            // Generated: {{DateTime.Now:yyyy-MM-dd HH:mm:ss}}
+            using System;
+            using System.Collections.Generic;
+            using Sannr;
+
+            namespace {{ns}}
+            {
+                /// <summary>
+                /// Static Shadow Type for {{className}}.
+                /// Provides zero-allocation accessors, metadata, and deep-cloning logic.
+                /// </summary>
+                public static class {{shadowName}}
+                {
+                    public static class Metadata
+                    {
+                        public const string TypeName = "{{className}}";
+                        public const int PropertyCount = {{properties.Count}};
+                    }
+
+            """);
+
+        // Generate Accessors and PII checks
+        foreach (var prop in properties)
+        {
+            var propName = prop.Name;
+            var propType = prop.Type.ToDisplayString();
+            var isPii = prop.GetAttributes().Any(a => a.AttributeClass?.Name == "PiiAttribute");
+
+            sb.AppendLine($"        // Property: {propName}");
+            if (prop.GetMethod != null)
+            {
+                sb.AppendLine($"        public static {propType} Get{propName}({className} instance) => instance.{propName};");
+            }
+            if (prop.SetMethod != null)
+            {
+                sb.AppendLine($"        public static void Set{propName}({className} instance, {propType} value) => instance.{propName} = value;");
+            }
+            sb.AppendLine($"        public static bool Is{propName}Pii => {(isPii ? "true" : "false")};");
+            sb.AppendLine();
+        }
+
+        // Generate DeepClone
+        sb.AppendLine($$"""
+                    /// <summary>
+                    /// Deep clones the instance using generated logic.
+                    /// </summary>
+                    public static {{className}} DeepClone({{className}} source)
+                    {
+                        if (source == null) return null;
+                        var clone = new {{className}}
+                        {
+            """);
+
+        foreach (var prop in properties)
+        {
+            if (prop.SetMethod == null) continue; // Skip read-only properties for initialization
+
+            var propName = prop.Name;
+            var typeSymbol = prop.Type;
+
+            // Check if it's a List<T>
+            var isList = typeSymbol.OriginalDefinition.SpecialType == SpecialType.System_Collections_Generic_IList_T ||
+                         (typeSymbol is INamedTypeSymbol named && named.Name == "List" && named.TypeArguments.Length == 1);
+
+            if (isList && typeSymbol is INamedTypeSymbol listType)
+            {
+                var itemType = listType.TypeArguments[0];
+                var isItemReflect = itemType.GetAttributes().Any(a => a.AttributeClass?.Name == "SannrReflectAttribute");
+                var itemTypeName = itemType.ToDisplayString();
+                
+                // For lists, we can't just use initializer syntax directly if we need logic
+                // But we can assign a method call or use null check inline?
+                // Actually, for complex logic, it's better to assign properties AFTER initialization or use a helper block.
+                // But to keep it in object initializer:
+                // Property = source.Property == null ? null : CloneList(source.Property)
+                // We need to generate a helper method for list cloning inside the shadow class if complex.
+            }
+        }
+
+        // Simpler DeepClone Approach:
+        // Use object initializer for simple types, and then fix up lists after?
+        // Or generate valid C# expression.
+        
+        sb.AppendLine("            // Properties initialized below");
+        sb.AppendLine("        };");
+        sb.AppendLine();
+
+        foreach (var prop in properties)
+        {
+            if (prop.SetMethod == null) continue;
+
+            var propName = prop.Name;
+            var typeSymbol = prop.Type;
+            var propTypeName = typeSymbol.ToDisplayString();
+
+            var isList = (typeSymbol is INamedTypeSymbol named && 
+                         (named.Name == "List" || named.Name == "IList" || named.Name == "ICollection" || named.Name == "IEnumerable") && 
+                         named.TypeArguments.Length == 1);
+            
+            if (isList && typeSymbol is INamedTypeSymbol listType)
+            {
+                var itemType = listType.TypeArguments[0];
+                var isItemReflect = itemType.GetAttributes().Any(a => a.AttributeClass?.Name == "SannrReflectAttribute");
+                var itemTypeName = itemType.ToDisplayString();
+                var shadowItemName = itemType.Name + "Shadow";
+
+                sb.AppendLine($"        if (source.{propName} != null)");
+                sb.AppendLine("        {");
+                sb.AppendLine($"            clone.{propName} = new List<{itemTypeName}>(source.{propName}.Count);");
+                sb.AppendLine($"            foreach (var item in source.{propName})");
+                sb.AppendLine("            {");
+                if (isItemReflect)
+                {
+                    sb.AppendLine($"                clone.{propName}.Add({itemType.ContainingNamespace}.{shadowItemName}.DeepClone(item));");
+                }
+                else
+                {
+                    sb.AppendLine($"                clone.{propName}.Add(item); // Simple copy or assume immutable/shallow");
+                }
+                sb.AppendLine("            }");
+                sb.AppendLine("        }");
+            }
+            else
+            {
+                // Check if the property itself is a SannrReflect type
+                var isReflect = typeSymbol.GetAttributes().Any(a => a.AttributeClass?.Name == "SannrReflectAttribute");
+                if (isReflect)
+                {
+                     var shadowPropName = typeSymbol.Name + "Shadow";
+                     sb.AppendLine($"        if (source.{propName} != null)");
+                     sb.AppendLine($"            clone.{propName} = {typeSymbol.ContainingNamespace}.{shadowPropName}.DeepClone(source.{propName});");
+                }
+                else
+                {
+                     // Primitive / ValueType / String / Unmarked Reference Type
+                     sb.AppendLine($"        clone.{propName} = source.{propName};");
+                }
+            }
+        }
+
+        sb.AppendLine("            return clone;");
+        sb.AppendLine("        }");
+        sb.AppendLine();
+
+        // Generate Visit method
+        sb.AppendLine($$"""
+                    /// <summary>
+                    /// Visits all properties with a callback.
+                    /// </summary>
+                    public static void Visit({{className}} instance, Action<string, object, bool> visitor)
+                    {
+            """);
+
+        foreach (var prop in properties)
+        {
+            if (prop.GetMethod == null) continue;
+            var propName = prop.Name;
+            var isPii = prop.GetAttributes().Any(a => a.AttributeClass?.Name == "PiiAttribute");
+            var isPiiStr = isPii ? "true" : "false";
+
+            sb.AppendLine($"            visitor(\"{propName}\", instance.{propName}, {isPiiStr});");
+        }
+        sb.AppendLine("        }");
+
+        sb.AppendLine("    }");
+        sb.AppendLine("}");
+
+        spc.AddSource($"{ns}.{className}.Shadow.g.cs", sb.ToString());
+    }
+
+    #endregion
+
+    #region Fluent Validation Support
+
+    /// <summary>
+    /// Determines if a syntax node is a fluent validator configuration class.
+    /// </summary>
+    private static bool IsFluentValidatorConfig(SyntaxNode node)
+    {
+        if (node is ClassDeclarationSyntax classDecl)
+        {
+            // Check if it inherits from ValidatorConfig<T>
+            var hasValidatorConfigBase = classDecl.BaseList?.Types
+                .Any(t => t.Type is GenericNameSyntax generic &&
+                         generic.Identifier.Text == "ValidatorConfig") == true;
+
+            // Debug: Add source file for any class that inherits from ValidatorConfig
+            if (hasValidatorConfigBase)
+            {
+                // We'll add debug output in the transform method instead
+            }
+
+            return hasValidatorConfigBase;
+        }
+        return false;
+    }
+
+    /// <summary>
+    /// Gets fluent validator configuration information from syntax context.
+    /// </summary>
+    private static FluentValidatorConfigInfo? GetFluentValidatorConfig(GeneratorSyntaxContext context)
+    {
+        if (context.Node is ClassDeclarationSyntax classDecl)
+        {
+            var classSymbol = context.SemanticModel.GetDeclaredSymbol(classDecl) as INamedTypeSymbol;
+            if (classSymbol != null && classSymbol.BaseType?.Name == "ValidatorConfig")
+            {
+                var targetType = classSymbol.BaseType.TypeArguments.FirstOrDefault();
+                if (targetType != null)
+                {
+                    // Find the Configure method
+                    var configureMethod = classSymbol.GetMembers()
+                        .OfType<IMethodSymbol>()
+                        .FirstOrDefault(m => m.Name == "Configure" && m.Parameters.Length == 0);
+
+                    if (configureMethod != null)
+                    {
+                        // Extract the actual method body from syntax
+                        var methodBody = ExtractMethodBody(classDecl, configureMethod);
+                        return new FluentValidatorConfigInfo(classSymbol, targetType, methodBody);
+                    }
+                }
+            }
+        }
+        return null;
+    }
+
+    /// <summary>
+    /// Extracts the method body from a class declaration syntax.
+    /// </summary>
+    private static string? ExtractMethodBody(ClassDeclarationSyntax classDecl, IMethodSymbol methodSymbol)
+    {
+        // Find the Configure method in the syntax tree
+        var configureMethod = classDecl.DescendantNodes()
+            .OfType<MethodDeclarationSyntax>()
+            .FirstOrDefault(m => m.Identifier.Text == "Configure" && m.ParameterList.Parameters.Count == 0);
+
+        if (configureMethod?.Body != null)
+        {
+            // Extract the method body as text
+            return configureMethod.Body.ToString();
+        }
+
+        return null;
+    }
+
+    /// <summary>
+    /// Processes fluent validator configurations.
+    /// </summary>
+    private static ImmutableArray<FluentValidatorConfigInfo> ProcessFluentValidatorConfigs(
+        ImmutableArray<FluentValidatorConfigInfo> configs)
+    {
+        return configs.Distinct().ToImmutableArray();
+    }
+
+    /// <summary>
+    /// Generates validators from fluent configurations.
+    /// </summary>
+    private static void GenerateFluentValidators(SourceProductionContext context,
+        ImmutableArray<FluentValidatorConfigInfo> configs)
+    {
+        context.AddSource("FluentValidatorsDebug.g.cs", $"// DEBUG: GenerateFluentValidators called with {configs.Length} configs");
+
+        foreach (var config in configs)
+        {
+            GenerateFluentValidator(context, config);
+        }
+    }
+
+    /// <summary>
+    /// Generates a validator from a fluent configuration.
+    /// </summary>
+    private static void GenerateFluentValidator(SourceProductionContext context,
+        FluentValidatorConfigInfo config)
+    {
+        var className = $"{config.ConfigClass.Name.Replace("Validator", "")}FluentValidator";
+        var ns = config.ConfigClass.ContainingNamespace.ToDisplayString();
+
+        // Check if we've already generated this validator
+        var validatorKey = $"{ns}.{className}";
+        if (_generatedValidators.Contains(validatorKey))
+            return;
+
+        _generatedValidators.Add(validatorKey);
+
+        var hintName = $"{config.ConfigClass.Name}.FluentValidator.{Guid.NewGuid()}.g.cs";
+
+        var sb = new StringBuilder();
+        var targetTypeName = config.TargetType.ToDisplayString();
+
+        // Parse the fluent configuration to generate validation logic
+        var validationCode = GenerateValidationCode(config);
+
+        sb.AppendLine($$"""
+            // <auto-generated/>
+            // Generated from fluent configuration: {{config.ConfigClass.Name}}
+
+            using System;
+            using System.Threading.Tasks;
+            using Sannr;
+
+            namespace {{ns}}
+            {
+                /// <summary>
+                /// Auto-generated validator for {{targetTypeName}} based on fluent configuration.
+                /// </summary>
+                public static class {{className}}
+                {
+                    /// <summary>
+                    /// Validates an instance of {{targetTypeName}}.
+                    /// </summary>
+                    public static async Task<ValidationResult> ValidateAsync({{targetTypeName}} instance)
+                    {
+                        var result = new ValidationResult();
+
+            {{validationCode}}
+
+                        return result;
+                    }
+                }
+            }
+            """);
+
+        context.AddSource(hintName, sb.ToString());
+    }
+
+    private static readonly HashSet<string> _generatedValidators = new();
+
+    /// <summary>
+    /// Generates validation code from fluent configuration.
+    /// </summary>
+    private static string GenerateValidationCode(FluentValidatorConfigInfo config)
+    {
+        if (string.IsNullOrEmpty(config.MethodBody))
+            return "// No validation rules configured";
+
+        // Parse the fluent validation rules from the method body
+        return ParseFluentValidationRules(config.MethodBody, config.TargetType);
+    }
+
+    /// <summary>
+    /// Parses fluent validation rules from the Configure method body.
+    /// </summary>
+    private static string ParseFluentValidationRules(string methodBody, ITypeSymbol targetType)
+    {
+        // For debugging: Add the raw method body to the generated code
+        var debugSb = new StringBuilder();
+        debugSb.AppendLine("// DEBUG: Raw method body:");
+        debugSb.AppendLine("// " + methodBody.Replace("\n", "\n// "));
+        debugSb.AppendLine();
+
+        // Parse the fluent validation rules from the method body
+        var validationCode = ParseFluentValidationFromString(methodBody, targetType);
+
+        debugSb.AppendLine(validationCode);
+        return debugSb.ToString();
+    }
+
+    /// <summary>
+    /// Parses fluent validation rules from method body string (fallback approach).
+    /// </summary>
+    private static string ParseFluentValidationFromString(string methodBody, ITypeSymbol targetType)
+    {
+        var sb = new StringBuilder();
+        var lines = methodBody.Split('\n', StringSplitOptions.RemoveEmptyEntries)
+                              .Select(line => line.Trim())
+                              .Where(line => !string.IsNullOrWhiteSpace(line))
+                              .ToArray();
+
+        var ruleChains = new Dictionary<string, RuleChainInfo>();
+
+        foreach (var line in lines)
+        {
+            // Look for RuleFor calls
+            if (line.Contains("RuleFor("))
+            {
+                var propertyMatch = System.Text.RegularExpressions.Regex.Match(line, @"RuleFor\(x\s*=>\s*x\.(\w+)\)");
+                if (propertyMatch.Success)
+                {
+                    var propertyName = propertyMatch.Groups[1].Value;
+                    if (!ruleChains.ContainsKey(propertyName))
+                    {
+                        ruleChains[propertyName] = new RuleChainInfo();
+                    }
+                }
+            }
+            // Look for validation method calls
+            else if (line.Contains(".NotEmpty()"))
+            {
+                // Find the current property being configured
+                var currentProperty = ruleChains.Keys.LastOrDefault();
+                if (currentProperty != null)
+                {
+                    ruleChains[currentProperty].Rules.Add("NotEmpty");
+                }
+            }
+            else if (line.Contains(".Length("))
+            {
+                var currentProperty = ruleChains.Keys.LastOrDefault();
+                if (currentProperty != null)
+                {
+                    var lengthRule = ExtractLengthRule(line);
+                    if (lengthRule != null)
+                    {
+                        ruleChains[currentProperty].Rules.Add(lengthRule);
+                    }
+                }
+            }
+            else if (line.Contains(".Email()"))
+            {
+                var currentProperty = ruleChains.Keys.LastOrDefault();
+                if (currentProperty != null)
+                {
+                    ruleChains[currentProperty].Rules.Add("Email");
+                }
+            }
+            else if (line.Contains(".InclusiveBetween("))
+            {
+                var currentProperty = ruleChains.Keys.LastOrDefault();
+                if (currentProperty != null)
+                {
+                    var rangeRule = ExtractRangeRule(line);
+                    if (rangeRule != null)
+                    {
+                        ruleChains[currentProperty].Rules.Add(rangeRule);
+                    }
+                }
+            }
+            else if (line.Contains(".WithMessage("))
+            {
+                var currentProperty = ruleChains.Keys.LastOrDefault();
+                if (currentProperty != null)
+                {
+                    var message = ExtractCustomMessage(line);
+                    if (!string.IsNullOrEmpty(message))
+                    {
+                        ruleChains[currentProperty].Message = message;
+                    }
+                }
+            }
+        }
+
+        // Generate validation code
+        foreach (var kvp in ruleChains)
+        {
+            var validationCode = GeneratePropertyValidation(kvp.Key, kvp.Value.Rules, kvp.Value.Message, targetType);
+            sb.AppendLine(validationCode);
+            sb.AppendLine();
+        }
+
+        return sb.Length > 0 ? sb.ToString() : "// No validation rules found";
+    }
+
+    /// <summary>
+    /// Parses fluent validation rules from Roslyn syntax tree.
+    /// </summary>
+    private static string ParseFluentValidationFromSyntax(BlockSyntax methodBody, ITypeSymbol targetType)
+    {
+        var sb = new StringBuilder();
+        var statements = methodBody.Statements.ToArray();
+
+        // Group statements by RuleFor chains
+        var ruleChains = new Dictionary<string, RuleChainInfo>();
+
+        string? currentProperty = null;
+
+        foreach (var statement in statements)
+        {
+            if (statement is ExpressionStatementSyntax exprStmt)
+            {
+                var result = ParseExpressionStatement(exprStmt.Expression);
+                if (result != null)
+                {
+                    var (property, rule, message) = result.Value;
+
+                    if (!string.IsNullOrEmpty(property))
+                    {
+                        currentProperty = property;
+                        if (!ruleChains.ContainsKey(property))
+                        {
+                            ruleChains[property] = new RuleChainInfo();
+                        }
+                    }
+
+                    if (!string.IsNullOrEmpty(currentProperty) && !string.IsNullOrEmpty(rule))
+                    {
+                        ruleChains[currentProperty].Rules.Add(rule);
+                    }
+
+                    if (!string.IsNullOrEmpty(currentProperty) && !string.IsNullOrEmpty(message))
+                    {
+                        ruleChains[currentProperty].Message = message;
+                    }
+                }
+            }
+        }
+
+        // Generate validation code for each property
+        foreach (var kvp in ruleChains)
+        {
+            var validationCode = GeneratePropertyValidation(kvp.Key, kvp.Value.Rules, kvp.Value.Message, targetType);
+            sb.AppendLine(validationCode);
+            sb.AppendLine();
+        }
+
+        return sb.Length > 0 ? sb.ToString() : "// No validation rules found";
+    }
+
+    /// <summary>
+    /// Helper class for rule chain information.
+    /// </summary>
+    private sealed class RuleChainInfo
+    {
+        public List<string> Rules { get; } = new();
+        public string Message { get; set; } = "";
+    }
+
+    /// <summary>
+    /// Parses an expression statement and returns (property, rule, message) if applicable.
+    /// </summary>
+    private static (string? property, string? rule, string? message)? ParseExpressionStatement(ExpressionSyntax expression)
+    {
+        // Handle chained calls like: RuleFor(x => x.Name).NotEmpty()
+        if (expression is InvocationExpressionSyntax invocation)
+        {
+            return ParseInvocationChain(invocation);
+        }
+
+        return null;
+    }
+
+    /// <summary>
+    /// Parses a chain of invocations like RuleFor(...).NotEmpty().Length(...)
+    /// </summary>
+    private static (string? property, string? rule, string? message)? ParseInvocationChain(InvocationExpressionSyntax invocation)
+    {
+        // Find the leftmost part of the chain (the RuleFor call)
+        var ruleForInvocation = FindRuleForInChain(invocation);
+        if (ruleForInvocation == null)
+            return null;
+
+        // Extract property from RuleFor
+        var property = ExtractPropertyFromRuleFor(ruleForInvocation);
+        if (string.IsNullOrEmpty(property))
+            return null;
+
+        // Extract the specific rule from this invocation
+        var rule = ExtractRuleFromInvocation(invocation);
+        var message = ExtractMessageFromInvocation(invocation);
+
+        return (property, rule, message);
+    }
+
+    /// <summary>
+    /// Finds the RuleFor invocation in a chain.
+    /// </summary>
+    private static InvocationExpressionSyntax? FindRuleForInChain(InvocationExpressionSyntax invocation)
+    {
+        var current = invocation;
+
+        while (current.Expression is MemberAccessExpressionSyntax memberAccess)
+        {
+            if (memberAccess.Name.Identifier.Text == "RuleFor")
+            {
+                return current;
+            }
+
+            if (memberAccess.Expression is InvocationExpressionSyntax innerInvocation)
+            {
+                current = innerInvocation;
+            }
+            else
+            {
+                break;
+            }
+        }
+
+        return null;
+    }
+
+    /// <summary>
+    /// Extracts property name from RuleFor invocation.
+    /// </summary>
+    private static string? ExtractPropertyFromRuleFor(InvocationExpressionSyntax ruleForInvocation)
+    {
+        var args = ruleForInvocation.ArgumentList.Arguments;
+        if (args.Count != 1)
+            return null;
+
+        var lambda = args[0].Expression as SimpleLambdaExpressionSyntax;
+        var memberAccess = lambda?.Body as MemberAccessExpressionSyntax;
+
+        return memberAccess?.Name.Identifier.Text;
+    }
+
+    /// <summary>
+    /// Extracts the rule type from an invocation.
+    /// </summary>
+    private static string? ExtractRuleFromInvocation(InvocationExpressionSyntax invocation)
+    {
+        var methodName = GetMethodName(invocation);
+        if (string.IsNullOrEmpty(methodName))
+            return null;
+
+        switch (methodName)
+        {
+            case "RuleFor":
+                return null; // Skip RuleFor itself
+            case "NotEmpty":
+                return "NotEmpty";
+            case "Length":
+                return ParseLengthArguments(invocation);
+            case "Email":
+                return "Email";
+            case "InclusiveBetween":
+                return ParseRangeArguments(invocation);
+            case "Must":
+                return "Must:custom";
+            case "When":
+                return "When:condition";
+            case "RequiredIf":
+                return "RequiredIf:condition";
+            default:
+                return null;
+        }
+    }
+
+    /// <summary>
+    /// Extracts custom message from WithMessage invocation.
+    /// </summary>
+    private static string? ExtractMessageFromInvocation(InvocationExpressionSyntax invocation)
+    {
+        var methodName = GetMethodName(invocation);
+        if (methodName == "WithMessage")
+        {
+            return ParseWithMessageArgument(invocation);
+        }
+        return null;
+    }
+
+
+
+    /// <summary>
+    /// Extracts length validation parameters.
+    /// </summary>
+    private static string? ExtractLengthRule(string line)
+    {
+        var match = System.Text.RegularExpressions.Regex.Match(line, @"\.Length\((\d+),\s*(\d+)\)");
+        if (match.Success)
+        {
+            var min = match.Groups[1].Value;
+            var max = match.Groups[2].Value;
+            return $"Length:{min}:{max}";
+        }
+        return null;
+    }
+
+    /// <summary>
+    /// Extracts range validation parameters.
+    /// </summary>
+    private static string? ExtractRangeRule(string line)
+    {
+        var match = System.Text.RegularExpressions.Regex.Match(line, @"\.InclusiveBetween\(([^,]+),\s*([^)]+)\)");
+        if (match.Success)
+        {
+            var min = match.Groups[1].Value.Trim();
+            var max = match.Groups[2].Value.Trim();
+            return $"Range:{min}:{max}";
+        }
+        return null;
+    }
+
+    /// <summary>
+    /// Extracts custom error message.
+    /// </summary>
+    private static string ExtractCustomMessage(string line)
+    {
+        var match = System.Text.RegularExpressions.Regex.Match(line, @"\.WithMessage\(""(.*)""\)");
+        return match.Success ? match.Groups[1].Value : "";
+    }
+
+    /// <summary>
+    /// Gets the method name from an invocation expression.
+    /// </summary>
+    private static string? GetMethodName(InvocationExpressionSyntax invocation)
+    {
+        if (invocation.Expression is MemberAccessExpressionSyntax memberAccess)
+        {
+            return memberAccess.Name.Identifier.Text;
+        }
+        return null;
+    }
+
+    /// <summary>
+    /// Parses Length method arguments.
+    /// </summary>
+    private static string? ParseLengthArguments(InvocationExpressionSyntax invocation)
+    {
+        var args = invocation.ArgumentList.Arguments;
+        if (args.Count == 2 &&
+            args[0].Expression is LiteralExpressionSyntax minLiteral &&
+            args[1].Expression is LiteralExpressionSyntax maxLiteral &&
+            minLiteral.Kind() == SyntaxKind.NumericLiteralExpression &&
+            maxLiteral.Kind() == SyntaxKind.NumericLiteralExpression)
+        {
+            var min = minLiteral.Token.ValueText;
+            var max = maxLiteral.Token.ValueText;
+            return $"Length:{min}:{max}";
+        }
+        return null;
+    }
+
+    /// <summary>
+    /// Parses InclusiveBetween method arguments.
+    /// </summary>
+    private static string? ParseRangeArguments(InvocationExpressionSyntax invocation)
+    {
+        var args = invocation.ArgumentList.Arguments;
+        if (args.Count == 2)
+        {
+            var minExpr = args[0].Expression.ToString();
+            var maxExpr = args[1].Expression.ToString();
+            return $"Range:{minExpr}:{maxExpr}";
+        }
+        return null;
+    }
+
+    /// <summary>
+    /// Parses WithMessage method argument.
+    /// </summary>
+    private static string ParseWithMessageArgument(InvocationExpressionSyntax invocation)
+    {
+        var args = invocation.ArgumentList.Arguments;
+        if (args.Count == 1 &&
+            args[0].Expression is LiteralExpressionSyntax literal &&
+            literal.Kind() == SyntaxKind.StringLiteralExpression)
+        {
+            return literal.Token.ValueText.Trim('"');
+        }
+        return "";
+    }
+
+
+
+    /// <summary>
+    /// Generates validation code for a single property.
+    /// </summary>
+    private static string GeneratePropertyValidation(string propertyName, List<string> rules, string customMessage, ITypeSymbol targetType)
+    {
+        var sb = new StringBuilder();
+        var propertyType = GetPropertyType(targetType, propertyName);
+        var isString = propertyType?.SpecialType == SpecialType.System_String;
+        var message = string.IsNullOrEmpty(customMessage) ? GenerateDefaultMessage(propertyName, rules) : customMessage;
+
+        // Generate validation logic based on rules
+        foreach (var rule in rules)
+        {
+            if (rule == "NotEmpty")
+            {
+                if (isString)
+                {
+                    sb.AppendLine($"            if (string.IsNullOrEmpty(instance.{propertyName}))");
+                    sb.AppendLine("            {");
+                    sb.AppendLine($"                result.Errors.Add(new ValidationError(\"{propertyName}\", \"{message}\", Severity.Error));");
+                    sb.AppendLine("            }");
+                }
+            }
+            else if (rule.StartsWith("Length:", System.StringComparison.Ordinal))
+            {
+                var parts = rule.Split(':');
+                if (parts.Length >= 3 && int.TryParse(parts[1], out var min) && int.TryParse(parts[2], out var max))
+                {
+                    sb.AppendLine($"            if (instance.{propertyName} != null && (instance.{propertyName}.Length < {min} || instance.{propertyName}.Length > {max}))");
+                    sb.AppendLine("            {");
+                    sb.AppendLine($"                result.Errors.Add(new ValidationError(\"{propertyName}\", \"{message}\", Severity.Error));");
+                    sb.AppendLine("            }");
+                }
+            }
+            else if (rule == "Email")
+            {
+                sb.AppendLine($"            if (!string.IsNullOrEmpty(instance.{propertyName}) && !instance.{propertyName}.Contains(\"@\"))");
+                sb.AppendLine("            {");
+                sb.AppendLine($"                result.Errors.Add(new ValidationError(\"{propertyName}\", \"{message}\", Severity.Error));");
+                sb.AppendLine("            }");
+            }
+            else if (rule.StartsWith("Range:", System.StringComparison.Ordinal))
+            {
+                var parts = rule.Split(':');
+                if (parts.Length >= 3)
+                {
+                    var min = parts[1];
+                    var max = parts[2];
+                    sb.AppendLine($"            if (instance.{propertyName} < {min} || instance.{propertyName} > {max})");
+                    sb.AppendLine("            {");
+                    sb.AppendLine($"                result.Errors.Add(new ValidationError(\"{propertyName}\", \"{message}\", Severity.Error));");
+                    sb.AppendLine("            }");
+                }
+            }
+            // Add more rule handlers as needed
+        }
+
+        return sb.ToString().TrimEnd();
+    }
+
+    /// <summary>
+    /// Gets the type of a property from the target type.
+    /// </summary>
+    private static ITypeSymbol? GetPropertyType(ITypeSymbol targetType, string propertyName)
+    {
+        if (targetType is INamedTypeSymbol namedType)
+        {
+            var property = namedType.GetMembers()
+                .OfType<IPropertySymbol>()
+                .FirstOrDefault(p => p.Name == propertyName);
+            return property?.Type;
+        }
+        return null;
+    }
+
+    /// <summary>
+    /// Generates a default error message based on the rules.
+    /// </summary>
+    private static string GenerateDefaultMessage(string propertyName, List<string> rules)
+    {
+        if (rules.Contains("NotEmpty"))
+            return $"The {propertyName} field is required.";
+
+        if (rules.Any(r => r.StartsWith("Length:", System.StringComparison.Ordinal)))
+            return $"The {propertyName} field has invalid length.";
+
+        if (rules.Contains("Email"))
+            return $"The {propertyName} field must be a valid email address.";
+
+        if (rules.Any(r => r.StartsWith("Range:", System.StringComparison.Ordinal)))
+            return $"The {propertyName} field is outside the valid range.";
+
+        return $"The {propertyName} field is invalid.";
+    }
+
+    #endregion
+}
+
+/// <summary>
+/// Information about a fluent validator configuration.
+/// </summary>
+internal sealed class FluentValidatorConfigInfo
+{
+    public INamedTypeSymbol ConfigClass { get; }
+    public ITypeSymbol TargetType { get; }
+    public string? MethodBody { get; }
+
+    public FluentValidatorConfigInfo(INamedTypeSymbol configClass, ITypeSymbol targetType, string? methodBody)
+    {
+        ConfigClass = configClass;
+        TargetType = targetType;
+        MethodBody = methodBody;
     }
 }

@@ -1,6 +1,6 @@
 using FluentValidation;
 
-public class TestValidator : AbstractValidator<TestModel>
+public partial class TestValidator : AbstractValidator<TestModel>
 {
     public TestValidator()
     {
@@ -8,7 +8,7 @@ public class TestValidator : AbstractValidator<TestModel>
     }
 }
 
-public class TestModel
+public partial class TestModel
 {
     public string Name { get; set; }
 }

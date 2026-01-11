@@ -164,11 +164,11 @@ Custom validators and model-level validations don't generate OpenAPI constraints
 ### Conditional Validations
 Attributes like `[RequiredIf]` don't affect OpenAPI schemas as they represent runtime conditional logic.
 
-## Troubleshooting
+### Troubleshooting
 
 ### Schema Not Generated
 - Ensure `AddSannrValidationSchemas()` is called in SwaggerGen options
-- Verify the Sannr.AspNetCore package is installed
+- Verify the Sannr package is installed
 - Check that model properties have Sannr validation attributes
 
 ### Incorrect Constraints
@@ -179,7 +179,7 @@ Attributes like `[RequiredIf]` don't affect OpenAPI schemas as they represent ru
 ### Build Errors
 - Confirm Swashbuckle.AspNetCore version compatibility
 - Check for conflicting schema filters
-- Verify all Sannr packages are the same version
+- Verify Sannr package is correctly referenced
 
 ## Advanced Usage
 

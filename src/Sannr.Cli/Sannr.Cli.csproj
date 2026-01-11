@@ -5,11 +5,25 @@
     <TargetFramework>net8.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
+    <PackAsTool>true</PackAsTool>
+    <ToolCommandName>sannr</ToolCommandName>
+    <PackageId>Sannr.Cli</PackageId>
+    <Version>1.2.0</Version>
+    <IsPackable>true</IsPackable>
+    <Description>CLI migration tools for Sannr validation framework. Supports automatic migration from DataAnnotations and FluentValidation with both attribute-based and fluent-style output options.</Description>
+    <PackageTags>validation;dotnet-tool;migration;cli;sannr</PackageTags>
+    <PackageIcon>icon.png</PackageIcon>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="4.8.0" />
-    <PackageReference Include="System.CommandLine" Version="2.0.0-beta4.22272.1" />
+    <None Include="../../icon.png" Pack="true" PackagePath="icon.png" />
+    <None Include="README.md" Pack="true" PackagePath="README.md" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.CodeAnalysis.CSharp" />
+    <PackageReference Include="System.CommandLine" />
   </ItemGroup>
 
 </Project>

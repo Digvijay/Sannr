@@ -212,8 +212,8 @@ We welcome community input on prioritization. Please:
 ## Support & Community
 
 - **Documentation**: [Full Documentation](./README.md)
-- **Issues**: [GitHub Issues](https://github.com/digvijay/sannr/issues)
-- **Discussions**: [GitHub Discussions](https://github.com/digvijay/sannr/discussions)
+- **Issues**: [GitHub Issues](https://github.com/Digvijay/Sannr/issues)
+- **Discussions**: [GitHub Discussions](https://github.com/Digvijay/Sannr/discussions)
 
 ---
 

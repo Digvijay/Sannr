@@ -23,7 +23,6 @@
 // ----------------------------------------------------------------------------------
 
 using System;
-using Sannr;
 using Xunit;
 
 namespace Sannr.Tests;
@@ -31,7 +30,7 @@ namespace Sannr.Tests;
 /// <summary>
 /// Test models for business rule validators.
 /// </summary>
-public class OrderModel
+public partial class OrderModel
 {
     [Required]
     public string? CustomerId { get; set; }
@@ -46,7 +45,7 @@ public class OrderModel
     public decimal Amount { get; set; }
 }
 
-public class ProductModel
+public partial class ProductModel
 {
     [Required]
     public string? Name { get; set; }
@@ -61,7 +60,7 @@ public class ProductModel
     public decimal? Price { get; set; }
 }
 
-public class AppointmentModel
+public partial class AppointmentModel
 {
     [Required]
     public string? CustomerName { get; set; }
@@ -79,7 +78,7 @@ public class AppointmentModel
 /// <summary>
 /// Tests for built-in business rule validators.
 /// </summary>
-public class BusinessRuleValidationTests
+public partial class BusinessRuleValidationTests
 {
     [Fact]
     public void FutureDateAttribute_ShouldBeDefined()
@@ -101,8 +100,10 @@ public class BusinessRuleValidationTests
         // Act & Assert
         Assert.IsType<AllowedValuesAttribute>(attribute);
         Assert.IsAssignableFrom<SannrValidationAttribute>(attribute);
-        Assert.Equal(new[] { "test1", "test2" }, attribute.Values);
+        Assert.Equal(ExpectedTestValues, attribute.Values);
     }
+
+    private static readonly string[] ExpectedTestValues = { "test1", "test2" };
 
     [Fact]
     public void ConditionalRangeAttribute_ShouldBeDefined()
@@ -234,8 +235,10 @@ public class BusinessRuleValidationTests
         var attribute = new AllowedValuesAttribute("USD", "EUR", "GBP", "JPY");
 
         // Act & Assert
-        Assert.Equal(new[] { "USD", "EUR", "GBP", "JPY" }, attribute.Values);
+        Assert.Equal(ExpectedCurrencyValues, attribute.Values);
     }
+
+    private static readonly string[] ExpectedCurrencyValues = { "USD", "EUR", "GBP", "JPY" };
 
     [Fact]
     public void ConditionalRangeAttribute_ShouldStorePropertiesCorrectly()
