@@ -2,7 +2,7 @@
 
 **Blazingly fast validation - Up to 20x faster with 95% less memory usage**
 
-![Technical Summary Header](images/Sannr_TS.png)
+![Technical Summary Header](../images/Sannr_TS.png)
 
 ## Architecture Overview
 

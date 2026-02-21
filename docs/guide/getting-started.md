@@ -137,7 +137,7 @@ builder.Services.AddSannr(options =>
 
 ## Next Steps
 
-- Explore [available attributes](./ATTRIBUTES.md)
-- Learn about [client-side validation](./CLIENT_SIDE_VALIDATION.md)
-- Check out the [OpenAPI integration](./OPENAPI_INTEGRATION.md)
-- See how to use [Fluent-style configuration](./BUSINESS_RULE_VALIDATORS.md)
+- Explore [available attributes](/features/validation-attributes)
+- Learn about [client-side validation](/integrations/client-side)
+- Check out the [OpenAPI integration](/integrations/openapi)
+- See how to use [Fluent-style configuration](/features/business-rules)

@@ -1,6 +1,6 @@
 # Executive Summary: Sannr Validation Library
 
-![Executive Summary Header](images/Sannr_ES.png)
+![Executive Summary Header](../images/Sannr_ES.png)
 
 ## Overview
 

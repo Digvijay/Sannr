@@ -78,5 +78,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Enterprise-grade validation with async support
 - Custom validation rules and business logic validation
 - Internationalization support
-- Performance monitoring capabilities</content>
-<parameter name="filePath">/Users/digvijay/source/github/Sannr/CHANGELOG.md
+- Performance monitoring capabilities

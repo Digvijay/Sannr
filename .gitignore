@@ -54,3 +54,6 @@ FEATURE_VERIFICATION.md
 HYGIENE_CHECK_REPORT.md
 AI_PROJECT_KICKOFF_PROMPT.md
 docs/node_modules/
+docs/.vitepress/dist
+docs/.vitepress/cache
+docs/build_output.log

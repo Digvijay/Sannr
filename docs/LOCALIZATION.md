@@ -121,7 +121,7 @@ var result = await validator.Validate(model);
 **Type Safety:**
 - **Sannr**:  Strong - Generated code uses strongly-typed resource properties
 - **FluentValidation**:  Strong - Strongly-typed resource wrappers prevent invalid access
-- **DataAnnotations**:  Strong - Type-safe resource access through generic IStringLocalizer<T>
+- **DataAnnotations**:  Strong - Type-safe resource access through generic `IStringLocalizer<T>`
 
 ## Advanced Usage
 

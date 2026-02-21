@@ -110,5 +110,4 @@ As .NET's AoT capabilities evolve, we may explore hybrid approaches that combine
 
 ## Conclusion
 
-By adopting explicit validator registration in our testing strategy, Sannr maintains its commitment to high-performance, AoT-compatible validation. This approach not only ensures compatibility with modern .NET deployment scenarios but also provides a clear, maintainable foundation for enterprise-grade validation logic.</content>
-<parameter name="filePath">/Users/digvijay/source/github/Sannr/docs/TESTING_STRATEGY.md
+By adopting explicit validator registration in our testing strategy, Sannr maintains its commitment to high-performance, AoT-compatible validation. This approach not only ensures compatibility with modern .NET deployment scenarios but also provides a clear, maintainable foundation for enterprise-grade validation logic.

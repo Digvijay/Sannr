@@ -254,5 +254,4 @@ Ensure `AddSannr()` is called in startup and assemblies contain attributed types
 
 - Ensure properties are public instance properties
 - Custom validators must inherit from `SannrValidator<T>`
-- Service provider access requires proper DI registration</content>
-<parameter name="filePath">/Users/digvijay/source/github/Sannr/docs/ADVANCED_VALIDATION_FEATURES.md
+- Service provider access requires proper DI registration

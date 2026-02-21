@@ -154,7 +154,7 @@ When validation fails, `ToBadRequestResult()` returns a `400 Bad Request` respon
 
 ## Integration with OpenAPI/Swagger
 
-When using `Validated<T>` with Swashbuckle.AspNetCore, the OpenAPI schema will automatically include validation constraints from your Sannr attributes. See the [OpenAPI Integration](OPENAPI_INTEGRATION.md) documentation for details.
+When using `Validated<T>` with Swashbuckle.AspNetCore, the OpenAPI schema will automatically include validation constraints from your Sannr attributes. See the [OpenAPI Integration](/integrations/openapi) documentation for details.
 
 ## Complete Example
 
@@ -223,7 +223,7 @@ app.MapPost("/users", async (CreateUserRequest request) =>
 });
 ```
 
-### After (with Validated<T>)
+### After (with `Validated<T>`)
 
 ```csharp
 app.MapPost("/users", async (Validated<CreateUserRequest> request) =>
@@ -261,6 +261,6 @@ If OpenAPI schemas don't show validation constraints:
 
 ## See Also
 
-- [OpenAPI Integration](OPENAPI_INTEGRATION.md) - Automatic schema generation
-- [Validation Attributes](ATTRIBUTES.md) - Available validation attributes
-- [Publishing Guide](PUBLISHING.md) - Deployment considerations
+- [OpenAPI Integration](/integrations/openapi) - Automatic schema generation
+- [Validation Attributes](/features/validation-attributes) - Available validation attributes
+- [Publishing Guide](https://github.com/Digvijay/Sannr/blob/master/docs/PUBLISHING.md) - Deployment considerations

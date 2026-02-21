@@ -1,6 +1,7 @@
 import { defineConfig } from 'vitepress'
 
 export default defineConfig({
+    srcExclude: ['[A-Z]*.md'],
     base: '/',
     title: "Sannr",
     description: "Enterprise-Grade, AOT-First Validation Engine for .NET",

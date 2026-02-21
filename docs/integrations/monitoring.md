@@ -166,25 +166,25 @@ listener.Start();
 
 #### Average Validation Duration by Model Type
 
-```promql
+```txt
 histogram_quantile(0.95, rate(myapp_validation_duration_bucket[5m])) by (model_type)
 ```
 
 #### Validation Error Rate
 
-```promql
+```txt
 rate(myapp_validation_errors_total[5m]) by (model_type)
 ```
 
 #### Slowest Validations (Top 10)
 
-```promql
+```txt
 topk(10, max_over_time(myapp_validation_duration{quantile="0.95"}[1h]))
 ```
 
 #### Validation Throughput
 
-```promql
+```txt
 rate(myapp_validation_duration_count[5m]) by (model_type)
 ```
 
@@ -507,5 +507,4 @@ Sannr's performance monitoring provides:
 - **Production Ready**: Minimal overhead, AOT compatible, thread-safe
 - **Actionable Insights**: Data for performance optimization and capacity planning
 
-Performance monitoring is essential for maintaining high-quality validation services in production environments. Sannr makes it effortless to gain deep insights into your validation performance.</content>
-<parameter name="filePath">/Users/digvijay/source/github/Sannr/docs/PERFORMANCE_MONITORING.md
+Performance monitoring is essential for maintaining high-quality validation services in production environments. Sannr makes it effortless to gain deep insights into your validation performance.
