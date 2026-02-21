@@ -14,11 +14,11 @@ Create .resx files in your project for different cultures:
 
 ```
 Resources/
-├── ValidationMessages.resx          (Default/English)
-├── ValidationMessages.es.resx       (Spanish)
-├── ValidationMessages.fr.resx       (French)
-├── ValidationMessages.de.resx       (German)
-└── ValidationMessages.Designer.cs   (Auto-generated)
+ ValidationMessages.resx          (Default/English)
+ ValidationMessages.es.resx       (Spanish)
+ ValidationMessages.fr.resx       (French)
+ ValidationMessages.de.resx       (German)
+ ValidationMessages.Designer.cs   (Auto-generated)
 ```
 
 ### 2. Define Resource Messages
@@ -38,7 +38,7 @@ For Spanish (`ValidationMessages.es.resx`):
 | Name | Value |
 |------|-------|
 | RequiredFieldRequired | El campo {0} es obligatorio. |
-| EmailFieldInvalid | El campo {0} no es una dirección de correo electrónico válida. |
+| EmailFieldInvalid | El campo {0} no es una direccin de correo electrnico vlida. |
 | AgeFieldOutOfRange | El campo {0} debe estar entre {1} y {2}. |
 
 ### 4. Use in Model Classes
@@ -90,11 +90,11 @@ var result = await validator.Validate(model);
 
 | Feature | Sannr | FluentValidation | DataAnnotations |
 |---------|-------|------------------|-----------------|
-| Resource Files | ✅ .resx | ✅ .resx | ✅ .resx |
-| Compile-time Safety | ✅ Full | ✅ Partial | ⚠️ Partial |
-| Performance | ✅ Generated | ✅ Cached | ✅ Cached |
-| Culture Fallback | ✅ Automatic | ✅ Automatic | ✅ Automatic |
-| Type Safety | ✅ Strong | ✅ Strong | ✅ Strong |
+| Resource Files |  .resx |  .resx |  .resx |
+| Compile-time Safety |  Full |  Partial |  Partial |
+| Performance |  Generated |  Cached |  Cached |
+| Culture Fallback |  Automatic |  Automatic |  Automatic |
+| Type Safety |  Strong |  Strong |  Strong |
 
 ### Detailed Comparison
 
@@ -104,24 +104,24 @@ var result = await validator.Validate(model);
 - **DataAnnotations**: .resx support through IStringLocalizer and resource types
 
 **Compile-time Safety:**
-- **Sannr**: ✅ Full - Source generator validates resource names and types at compile time
-- **FluentValidation**: ✅ Partial - Strongly-typed wrappers provide compile-time safety, but string keys can still be runtime errors
-- **DataAnnotations**: ⚠️ Partial - Resource types are validated at compile time, but property names are runtime-checked
+- **Sannr**:  Full - Source generator validates resource names and types at compile time
+- **FluentValidation**:  Partial - Strongly-typed wrappers provide compile-time safety, but string keys can still be runtime errors
+- **DataAnnotations**:  Partial - Resource types are validated at compile time, but property names are runtime-checked
 
 **Performance:**
-- **Sannr**: ✅ Generated - Zero runtime overhead, all code generated at compile time
-- **FluentValidation**: ✅ Cached - Uses ConcurrentDictionary caching for translations
-- **DataAnnotations**: ✅ Cached - ResourceManager caching with delegate-based access
+- **Sannr**:  Generated - Zero runtime overhead, all code generated at compile time
+- **FluentValidation**:  Cached - Uses ConcurrentDictionary caching for translations
+- **DataAnnotations**:  Cached - ResourceManager caching with delegate-based access
 
 **Culture Fallback:**
-- **Sannr**: ✅ Automatic - ResourceManager handles culture hierarchy fallback
-- **FluentValidation**: ✅ Automatic - ResourceManager fallback from specific to neutral to English
-- **DataAnnotations**: ✅ Automatic - Standard .NET ResourceManager culture fallback
+- **Sannr**:  Automatic - ResourceManager handles culture hierarchy fallback
+- **FluentValidation**:  Automatic - ResourceManager fallback from specific to neutral to English
+- **DataAnnotations**:  Automatic - Standard .NET ResourceManager culture fallback
 
 **Type Safety:**
-- **Sannr**: ✅ Strong - Generated code uses strongly-typed resource properties
-- **FluentValidation**: ✅ Strong - Strongly-typed resource wrappers prevent invalid access
-- **DataAnnotations**: ✅ Strong - Type-safe resource access through generic IStringLocalizer<T>
+- **Sannr**:  Strong - Generated code uses strongly-typed resource properties
+- **FluentValidation**:  Strong - Strongly-typed resource wrappers prevent invalid access
+- **DataAnnotations**:  Strong - Type-safe resource access through generic IStringLocalizer<T>
 
 ## Advanced Usage
 

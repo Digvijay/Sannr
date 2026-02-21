@@ -74,21 +74,21 @@ dotnet run --project src/Sannr.Cli -- dataannotations --input ./Models --output 
 
 **Example Output:**
 ```
-🔍 Analyzing validation code in: ./src/MyApp
-🏷️  Library type: auto-detect
+ Analyzing validation code in: ./src/MyApp
+  Library type: auto-detect
 
-📊 Analysis Results:
-📁 Files scanned: 42
-🏷️  Validation libraries detected: FluentValidation, DataAnnotations
-🔄 FluentValidation rules found: 27
+ Analysis Results:
+ Files scanned: 42
+  Validation libraries detected: FluentValidation, DataAnnotations
+ FluentValidation rules found: 27
    - RuleFor calls: 27
    - Must calls: 3
-📝 DataAnnotations found: 58
+ DataAnnotations found: 58
    - [Required]: 23
    - [StringLength]: 15
    - [EmailAddress]: 8
-🎯 Migration Complexity: High
-💡 Recommendation: Complex migration - consider phased approach
+ Migration Complexity: High
+ Recommendation: Complex migration - consider phased approach
 ```
 
 **Complexity Levels:**

@@ -80,7 +80,7 @@ graph TB
     end
     
     subgraph "Traditional Approach (Reflection)"
-        REF[Reflection Discovery] -.-> X[❌ AoT Incompatible]
+        REF[Reflection Discovery] -.-> X[ AoT Incompatible]
     end
     
     SG --> EXP
