@@ -69,8 +69,14 @@ public class SannrGenerator : IIncrementalGenerator
         // Read MSBuild properties
         var optionsProvider = context.AnalyzerConfigOptionsProvider.Select((options, _) =>
         {
-            options.GlobalOptions.TryGetValue("build_property.SannrOpenApiVersion", out var version);
-            options.GlobalOptions.TryGetValue("build_property.EnableSannrSchemaGen", out var enableStr);
+            options.GlobalOptions.TryGetValue("build_property.sannropenapiversion", out var versionLower);
+            options.GlobalOptions.TryGetValue("build_property.SannrOpenApiVersion", out var versionOriginal);
+            var version = versionLower ?? versionOriginal;
+
+            options.GlobalOptions.TryGetValue("build_property.enablesannrschemagen", out var enableStrLower);
+            options.GlobalOptions.TryGetValue("build_property.EnableSannrSchemaGen", out var enableStrOriginal);
+            var enableStr = enableStrLower ?? enableStrOriginal;
+
             bool enable = string.Equals(enableStr, "true", StringComparison.OrdinalIgnoreCase);
             return (Version: version ?? "v2", Enable: enable);
         });
