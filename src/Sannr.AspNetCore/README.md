@@ -466,7 +466,8 @@ Sannr automatically generates OpenAPI schema constraints from your validation at
 // In Program.cs
 builder.Services.AddSwaggerGen(options =>
 {
-    options.AddSannrValidationSchemas(); // ✨ One line to enable!
+    // AOT-compatible, compile-time generated schema filter
+    options.SchemaFilter<Sannr.OpenApi.SannrGeneratedSchemaFilter>();
 });
 ```
 

@@ -22,8 +22,6 @@ public static partial class ServiceCollectionExtensions
     {
         // Example: Register validation services idempotently
         // services.TryAddEnumerable(ServiceDescriptor.Singleton<IValidationService, DefaultValidationService>()); // Idempotent DI registration
-        // Ensure DummyForOpenApi is compiled
-        _ = typeof(DummyForOpenApi);
         return services;
     }
 

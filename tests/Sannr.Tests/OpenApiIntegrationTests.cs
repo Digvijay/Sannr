@@ -109,7 +109,7 @@ namespace Sannr.Tests
         {
             // Arrange
             var options = new SwaggerGenOptions();
-            var filter = new SannrValidationSchemaFilter();
+            var filter = new SannrGeneratedSchemaFilter();
 
             // Act
             // options.SchemaFilters.Add(filter);
@@ -125,7 +125,7 @@ namespace Sannr.Tests
         public void SchemaFilter_AppliesToModelWithValidationAttributes()
         {
             // Arrange
-            var filter = new SannrValidationSchemaFilter();
+            var filter = new SannrGeneratedSchemaFilter();
             var schema = new OpenApiSchema { Properties = new Dictionary<string, OpenApiSchema>() };
             var context = new SchemaFilterContext(
                 type: typeof(TestApiModel),
@@ -145,7 +145,7 @@ namespace Sannr.Tests
         public void EmailAddressAttribute_SetsFormatToEmail()
         {
             // Arrange
-            var filter = new SannrValidationSchemaFilter();
+            var filter = new SannrGeneratedSchemaFilter();
             var schema = new OpenApiSchema
             {
                 Properties = new Dictionary<string, OpenApiSchema>
@@ -171,7 +171,7 @@ namespace Sannr.Tests
         public void RangeAttribute_SetsMinimumAndMaximum()
         {
             // Arrange
-            var filter = new SannrValidationSchemaFilter();
+            var filter = new SannrGeneratedSchemaFilter();
             var schema = new OpenApiSchema
             {
                 Properties = new Dictionary<string, OpenApiSchema>
@@ -198,7 +198,7 @@ namespace Sannr.Tests
         public void StringLengthAttribute_SetsMinLengthAndMaxLength()
         {
             // Arrange
-            var filter = new SannrValidationSchemaFilter();
+            var filter = new SannrGeneratedSchemaFilter();
             var schema = new OpenApiSchema
             {
                 Properties = new Dictionary<string, OpenApiSchema>
@@ -225,7 +225,7 @@ namespace Sannr.Tests
         public void UrlAttribute_SetsFormatToUri()
         {
             // Arrange
-            var filter = new SannrValidationSchemaFilter();
+            var filter = new SannrGeneratedSchemaFilter();
             var schema = new OpenApiSchema
             {
                 Properties = new Dictionary<string, OpenApiSchema>
@@ -251,7 +251,7 @@ namespace Sannr.Tests
         public void FileExtensionsAttribute_SetsFormatToFile()
         {
             // Arrange
-            var filter = new SannrValidationSchemaFilter();
+            var filter = new SannrGeneratedSchemaFilter();
             var schema = new OpenApiSchema
             {
                 Properties = new Dictionary<string, OpenApiSchema>
@@ -277,7 +277,7 @@ namespace Sannr.Tests
         public void PropertiesWithoutValidationAttributes_AreNotModified()
         {
             // Arrange
-            var filter = new SannrValidationSchemaFilter();
+            var filter = new SannrGeneratedSchemaFilter();
             var schema = new OpenApiSchema
             {
                 Properties = new Dictionary<string, OpenApiSchema>
@@ -307,7 +307,7 @@ namespace Sannr.Tests
         public void SchemaFilter_HandlesNullSchemaProperties()
         {
             // Arrange
-            var filter = new SannrValidationSchemaFilter();
+            var filter = new SannrGeneratedSchemaFilter();
             var schema = new OpenApiSchema(); // Properties is null
             var context = new SchemaFilterContext(
                 type: typeof(TestApiModel),
@@ -322,7 +322,7 @@ namespace Sannr.Tests
         public void SchemaFilter_HandlesNullTypeInContext()
         {
             // Arrange
-            var filter = new SannrValidationSchemaFilter();
+            var filter = new SannrGeneratedSchemaFilter();
             var schema = new OpenApiSchema { Properties = new Dictionary<string, OpenApiSchema>() };
             var context = new SchemaFilterContext(
                 type: null!,
@@ -338,7 +338,7 @@ namespace Sannr.Tests
         {
             // Arrange - Create a model with multiple attributes on one property
             var testModelType = typeof(MultipleAttributesModel);
-            var filter = new SannrValidationSchemaFilter();
+            var filter = new SannrGeneratedSchemaFilter();
             var schema = new OpenApiSchema
             {
                 Properties = new Dictionary<string, OpenApiSchema>
@@ -366,7 +366,7 @@ namespace Sannr.Tests
         {
             // Arrange
             var testModelType = typeof(DoubleRangeModel);
-            var filter = new SannrValidationSchemaFilter();
+            var filter = new SannrGeneratedSchemaFilter();
             var schema = new OpenApiSchema
             {
                 Properties = new Dictionary<string, OpenApiSchema>
@@ -393,7 +393,7 @@ namespace Sannr.Tests
         public void RequiredAttribute_DoesNotSetRequiredFlag()
         {
             // Arrange - Note: Required properties are handled at the schema level, not property level
-            var filter = new SannrValidationSchemaFilter();
+            var filter = new SannrGeneratedSchemaFilter();
             var schema = new OpenApiSchema
             {
                 Properties = new Dictionary<string, OpenApiSchema>
@@ -417,11 +417,63 @@ namespace Sannr.Tests
         }
 
         [Fact]
+        public void PhoneAttribute_SetsFormatToTel()
+        {
+            // Arrange
+            var filter = new SannrGeneratedSchemaFilter();
+            var schema = new OpenApiSchema
+            {
+                Properties = new Dictionary<string, OpenApiSchema>
+                {
+                    ["PhoneField"] = new OpenApiSchema { Type = "string" }
+                }
+            };
+            var context = new SchemaFilterContext(
+                type: typeof(TestApiModel),
+                schemaGenerator: null!,
+                schemaRepository: _schemaRepository);
+
+            // Act
+            filter.Apply(schema, context);
+
+            // Assert
+            Assert.True(schema.Properties.ContainsKey("PhoneField"));
+            var phoneProperty = schema.Properties["PhoneField"];
+            Assert.Equal("tel", phoneProperty.Format);
+        }
+
+        [Fact]
+        public void CreditCardAttribute_SetsFormatToCreditCard()
+        {
+            // Arrange
+            var filter = new SannrGeneratedSchemaFilter();
+            var schema = new OpenApiSchema
+            {
+                Properties = new Dictionary<string, OpenApiSchema>
+                {
+                    ["CreditCardField"] = new OpenApiSchema { Type = "string" }
+                }
+            };
+            var context = new SchemaFilterContext(
+                type: typeof(TestApiModel),
+                schemaGenerator: null!,
+                schemaRepository: _schemaRepository);
+
+            // Act
+            filter.Apply(schema, context);
+
+            // Assert
+            Assert.True(schema.Properties.ContainsKey("CreditCardField"));
+            var creditCardProperty = schema.Properties["CreditCardField"];
+            Assert.Equal("credit-card", creditCardProperty.Format);
+        }
+
+        [Fact]
         public void EmptyModel_DoesNotThrowException()
         {
             // Arrange
             var testModelType = typeof(EmptyModel);
-            var filter = new SannrValidationSchemaFilter();
+            var filter = new SannrGeneratedSchemaFilter();
             var schema = new OpenApiSchema { Properties = new Dictionary<string, OpenApiSchema>() };
             var context = new SchemaFilterContext(
                 type: testModelType,

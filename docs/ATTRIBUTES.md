@@ -183,6 +183,23 @@ public string State { get; set; }
 
 ---
 
+### `[Compare]`
+Validates that the property value matches another property's value.
+
+| Parameter | Type | Description |
+| :--- | :--- | :--- |
+| `OtherProperty` | `string` | **(Constructor)** Name of the property to compare against. |
+
+**Example:**
+```csharp
+public string Password { get; set; }
+
+[Compare(nameof(Password), ErrorMessage = "Passwords do not match.")]
+public string ConfirmPassword { get; set; }
+```
+
+---
+
 ### `[AllowedValues]`
 Restricts a property to a predefined set of values.
 

@@ -92,7 +92,7 @@ public class Validated<T> where T : class
 
         try
         {
-            if (!SannrValidatorRegistry.TryGetValidator(typeof(T), out var validator))
+            if (!global::Sannr.SannrValidatorRegistry.TryGetValidator(typeof(T), out var validator))
             {
                 // If no validator is registered, consider the model valid
                 stopwatch.Stop();

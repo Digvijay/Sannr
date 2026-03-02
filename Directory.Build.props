@@ -14,6 +14,12 @@
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
   </PropertyGroup>
 
+  <!-- Make Sannr MSBuild properties visible to Source Generators -->
+  <ItemGroup>
+    <CompilerVisibleProperty Include="EnableSannrSchemaGen" />
+    <CompilerVisibleProperty Include="SannrOpenApiVersion" />
+  </ItemGroup>
+
   <!-- Common build settings for AOT-friendly libraries -->
   <PropertyGroup Condition="'$(IsAotCompatible)' == '' and '$(TargetFrameworkIdentifier)' == '.NETCoreApp'">
     <IsAotCompatible>true</IsAotCompatible>

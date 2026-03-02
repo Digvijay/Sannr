@@ -210,6 +210,12 @@ public class RequiredIfAttribute : SannrValidationAttribute
     }
 }
 
+public class CompareAttribute : SannrValidationAttribute
+{
+    public string OtherProperty { get; }
+    public CompareAttribute(string otherProperty) => OtherProperty = otherProperty;
+}
+
 [AttributeUsage(AttributeTargets.Property)]
 public class SanitizeAttribute : Attribute
 {

@@ -1,60 +1,87 @@
 # Getting Started with Sannr
 
-Sannr is a high-performance, compile-time validation and sanitization library for .NET. This guide will help you integrate Sannr into your own projects.
+Sannr is a high-performance, compile-time validation and sanitization library for .NET. This guide will help you integrate Sannr into your projects, whether you're starting fresh or migrating an existing application.
 
 ## Prerequisites
 
-- .NET 8.0 SDK or later
-- An ASP.NET Core project (Web API, Minimal API, etc.)
+- .NET 8.0 / 9.0 / 10.0 Runtime
+- .NET 10.0 SDK (Recommended for the latest source generation features)
+- **IDE Support**: Visual Studio 2022, JetBrains Rider, or VS Code with C# Dev Kit.
 
 ## 1. Installation
 
-Add the Sannr NuGet package to your project:
+Add the Sannr NuGet package to your primary project (usually your Web API project):
 
 ```bash
 dotnet add package Sannr
 ```
 
-*Note: Sannr uses source generation. Ensure your IDE supports Roslyn source generators (Visual Studio 2022, JetBrains Rider, or VS Code with C# Dev Kit).*
+> [!IMPORTANT]
+> Sannr leverages **Roslyn Source Generators**. Ensure your build environment and IDE are up to date to support real-time code generation.
 
-## 2. Basic Configuration
+---
 
-In your `Program.cs`, register Sannr services and enable validation for your routes.
+## 2. Greenfield Projects (New Setup)
+
+If you are starting a new project, follow these steps to enable Sannr's validation engine.
+
+### Step 1: Register Sannr
+In your `Program.cs`, call `AddSannr()` to register the validation infrastructure.
 
 ```csharp
-using Sannr;
 using Sannr.AspNetCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// 1. Register Sannr - this finds and registers all generated validators
-builder.Services.AddSannr();
-
-var app = builder.Build();
-// 2. Enable Sannr validation for your API group or specific endpoints
-// This automatically validates and sanitizes incoming requests
-var api = app.MapGroup("/api").WithSannrValidation();
-
-api.MapPost("/users", (UserDto user) => 
-{
-    // If you reach here, 'user' is already validated and sanitized!
-    return Results.Ok(user);
+// Register Sannr - this automatically finds and registers all generated validators
+builder.Services.AddSannr(options => {
+    options.EnableMetrics = true; // Optional: Enable performance metrics
 });
 
-app.Run();
+var app = builder.Build();
 ```
 
-### Automatic Error Handling
+### Step 2: Enable Validation for Routes
+Sannr integrates seamlessly with Minimal APIs and Controllers. Use `.WithSannrValidation()` to protect your endpoints.
 
-When you use `.WithSannrValidation()`, Sannr injects an `IEndpointFilter` into your route pipeline. 
-- **Validation Success**: Your handler is called with the `user` object already sanitized and ready for use.
-- **Validation Failure**: Sannr intercepts the request **before** it reaches your handler. It automatically returns a `400 Bad Request` response with a standard `ValidationProblemDetails` body containing all validation errors grouped by property name.
+```csharp
+var api = app.MapGroup("/api/v1").WithSannrValidation();
 
-*Note: You don't need to write manual `if (!ModelState.IsValid)` checks in your handlers.*
+api.MapPost("/users", (UserDto user) => Results.Ok(user));
+```
 
-## 3. Define Your Models
+---
 
-Create your models and decorate them with Sannr validation and sanitization attributes. Models must be `partial` for source generation to work.
+## 3. Existing Projects (Migration)
+
+If you have an existing project using `DataAnnotations` or `FluentValidation`, Sannr makes it easy to migrate incrementally.
+
+### Automatic Migration via CLI
+Use the Sannr CLI to automatically convert your existing models:
+
+```bash
+# Install the tool
+dotnet tool install --global Sannr.Cli
+
+# Migrate models in a directory
+sannr migrate --source ./Models --target ./Models
+```
+
+### Opt-in Configuration
+In existing projects, you might not want to generate code for every class immediately. You can control this via your `.csproj`:
+
+```xml
+<PropertyGroup>
+  <!-- Only generate validators for classes explicitly registered or used -->
+  <EnableSannrSchemaGen>true</EnableSannrSchemaGen>
+</PropertyGroup>
+```
+
+---
+
+## 4. Define Your Models
+
+To enable validation, your models must be `partial` and decorated with Sannr attributes.
 
 ```csharp
 using Sannr;
@@ -63,14 +90,13 @@ namespace MyApp.Models;
 
 public partial class UserDto
 {
-    [Required(ErrorMessage = "Username is mandatory")]
+    [Required]
     [StringLength(50, MinimumLength = 3)]
-    [Sanitize(Trim = true)]
+    [Sanitize(Trim = true)] // Automatically cleans input data
     public string Username { get; set; } = string.Empty;
 
     [Required]
     [EmailAddress]
-    [Sanitize(ToLower = true)]
     public string Email { get; set; } = string.Empty;
 
     [Range(18, 99)]
@@ -78,66 +104,24 @@ public partial class UserDto
 }
 ```
 
-## 4. Advanced Features
+---
 
-### Sanitization
-Sannr can automatically clean your data before it reaches your handlers.
-```csharp
-[Sanitize(Trim = true, ToUpper = true)]
-public string ProductCode { get; set; }
-```
+## 5. Performance Monitoring
 
-### Conditional Validation
-Make fields required based on other fields.
-```csharp
-public bool HasCustomShipping { get; set; }
-
-[RequiredIf(nameof(HasCustomShipping), true)]
-public string? ShippingAddress { get; set; }
-```
-
-### Client-Side Validation
-Generate validation rules for your frontend automatically.
-```csharp
-[GenerateClientValidators(Language = ClientValidationLanguage.TypeScript)]
-public partial class LoginForm { ... }
-```
-Access the rules via `LoginForm.ValidationRulesTypeScript` or export them to a file.
-
-## 5. Configuration Options
-
-You can customize Sannr's behavior by passing an options action to `AddSannr()`.
+Sannr provides built-in support for `System.Diagnostics.Metrics`. You can monitor validation performance in real-time.
 
 ```csharp
-builder.Services.AddSannr(options => 
-{
-    // 1. Performance Monitoring
-    options.EnableMetrics = true;           // Enables System.Diagnostics.Metrics
-    options.MetricsPrefix = "myapp_sannr"; // Custom prefix for metric names
-
-    // 2. Enhanced Error Responses
-    // Returns detailed error objects including correlation IDs and timing metadata
-    options.EnableEnhancedErrorResponses = true;
-    
-    // 3. Metadata Control
-    options.IncludeValidationRuleMetadata = true; // Includes which rule failed in the response
-    options.IncludeValidationDuration = true;     // Includes 'durationMs' in the response
+builder.Services.AddSannr(options => {
+    options.EnableMetrics = true;
+    options.MetricsPrefix = "my_api_validation";
 });
 ```
 
-### Options Reference
-
-| Option | Type | Default | Description |
-| :--- | :--- | :--- | :--- |
-| `EnableMetrics` | `bool` | `false` | Enables collection of validation performance metrics. |
-| `MetricsPrefix` | `string` | `"sannr_validation"` | Prefix for the reported metrics. |
-| `EnableEnhancedErrorResponses` | `bool` | `false` | Enables rich ProblemDetails with correlation IDs and metadata. |
-| `IncludeValidationRuleMetadata` | `bool` | `true` | When enhanced responses are on, includes rule details (e.g. min/max values). |
-| `IncludeValidationDuration` | `bool` | `false` | Includes the validation time in milliseconds in the error response. |
+---
 
 ## Next Steps
 
-- Explore [available attributes](./ATTRIBUTES.md)
-- Learn about [client-side validation](./CLIENT_SIDE_VALIDATION.md)
-- Check out the [OpenAPI integration](./OPENAPI_INTEGRATION.md)
-- See how to use [Fluent-style configuration](./BUSINESS_RULE_VALIDATORS.md)
+- **Reference**: [Available Attributes](./ATTRIBUTES.md)
+- **Integration**: [OpenAPI / Swagger Setup](./OPENAPI_INTEGRATION.md)
+- **Advanced**: [Minimal API Integration](./MINIMAL_API_INTEGRATION.md)
+- **Security**: [PII & Shadow Types](./STATIC_REFLECTION.md)

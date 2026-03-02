@@ -37,7 +37,7 @@ public record ValidationError(string MemberName, string Message, Severity Severi
 /// <summary>
 /// Represents the result of a validation operation, including any validation errors.
 /// </summary>
-public class ValidationResult
+public partial class ValidationResult
 {
     /// <summary>
     /// Gets a value indicating whether the validation result is valid (no errors of severity Error).
@@ -72,5 +72,18 @@ public class ValidationResult
     {
         foreach (var err in other.Errors)
             Errors.Add(new ValidationError($"{prefix}.{err.MemberName}", err.Message, err.Severity));
+    }
+
+    /// <summary>
+    /// Converts the errors to a dictionary compatible with ASP.NET Core ValidationProblemDetails.
+    /// </summary>
+    public IDictionary<string, string[]> ToErrorsDictionary()
+    {
+        return Errors
+            .GroupBy(e => e.MemberName)
+            .ToDictionary(
+                g => g.Key,
+                g => g.Select(e => e.Message).ToArray()
+            );
     }
 }

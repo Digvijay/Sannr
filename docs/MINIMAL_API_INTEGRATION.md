@@ -23,45 +23,26 @@ builder.Services.AddSannr();
 var app = builder.Build();
 ```
 
-## Basic Usage
+## Automatic Validation (Recommended)
 
-Define your model with Sannr validation attributes:
-
-```csharp
-public class CreateUserRequest
-{
-    [Required, EmailAddress]
-    public string? Email { get; set; }
-
-    [Required, StringLength(50, MinimumLength = 2)]
-    public string? Name { get; set; }
-
-    [Range(18, 120)]
-    public int Age { get; set; }
-}
-```
-
-Use `Validated<T>` in your Minimal API endpoints:
+The easiest way to use Sannr with Minimal APIs is by using the `.WithSannrValidation()` extension. This automatically injects an endpoint filter that validates incoming parameters using Sannr's compile-time generators.
 
 ```csharp
-app.MapPost("/users", async (Validated<CreateUserRequest> request) =>
-{
-    // Validation happens automatically
-    if (!request.IsValid)
-    {
-        // Return 400 Bad Request with validation errors
-        return request.ToBadRequestResult();
-    }
+using Sannr.AspNetCore;
 
-    // Safe to access the validated data
-    var user = request.Value;
+var api = app.MapGroup("/api/v1").WithSannrValidation();
 
-    // Process the valid request...
-    await CreateUserAsync(user);
-
-    return Results.Created($"/users/{user.Id}", user);
-});
+// 'user' is automatically validated and sanitized!
+api.MapPost("/users", (UserDto user) => Results.Ok(user));
 ```
+
+- **Zero Boilerplate**: No need to manually check `IsValid` or return results.
+- **AOT Compatible**: Uses pre-registered compile-time validators.
+- **Consistent Response**: Automatically returns `400 Validation Problem` on failure.
+
+---
+
+## Explicit Validation (with Validated<T>)
 
 ## Advanced Usage
 
@@ -256,7 +237,7 @@ Common issues:
 ### OpenAPI Schema Issues
 
 If OpenAPI schemas don't show validation constraints:
-- Ensure `AddSannrValidationSchemas()` is called in your Swagger configuration
+- Ensure `options.SchemaFilter<Sannr.OpenApi.SannrGeneratedSchemaFilter>()` is called in your Swagger configuration
 - Check that the model is used in endpoints with `Validated<T>`
 
 ## See Also

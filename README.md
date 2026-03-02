@@ -8,6 +8,7 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
 [![Native AOT](https://img.shields.io/badge/Native%20AOT-Compatible-green)](https://learn.microsoft.com/en-us/dotnet/core/deploying/native-aot/)
 [![.NET 8 LTS](https://img.shields.io/badge/.NET-8.0%20LTS-purple)](https://dotnet.microsoft.com/en-us/download/dotnet/8.0)
+[![Documentation](https://img.shields.io/badge/docs-sannr.digvijay.dev-blue?logo=gitbook)](https://sannr.digvijay.dev)
 
 **The Enterprise-Grade, AOT-First Validation Engine for .NET.**
 
@@ -21,7 +22,7 @@ It extends the standard validation paradigm with enterprise requirements: **Asyn
 
 ---
 
-##  Quick Start
+## ⚡ Quick Start
 
 For a detailed step-by-step guide, see our **[Getting Started Guide](docs/GETTING_STARTED.md)**.
 
@@ -77,33 +78,33 @@ That's it. No manual validator registration is required. Sannr uses **Module Ini
 
 ---
 
-##  Why Sannr?
+## 🚀 Why Sannr?
 
 Standard validation libraries rely on Reflection, which is slow, memory-intensive, and hostile to the IL Trimmer. Sannr generates highly optimized static code that looks exactly like code you would write by hand.
 
 | Feature | System.ComponentModel.DataAnnotations | **Sannr** |
 | :--- | :--- | :--- |
 | **Runtime Mechanism** | Reflection (Slow) | **Static C# (Instant)** |
-| **Native AOT** |  Requires warnings/trimming | ** 100% Trimming Safe** |
-| **Async Support** |  Synchronous Only | ** Native `Task<T>`** |
-| **Dependency Injection** |  Service Locator Anti-Pattern | ** `IServiceProvider` Support** |
-| **Conditional Logic** |  Custom implementation required | ** `[RequiredIf]` Built-in** |
-| **Sanitization** |  Manual code in Controllers | ** `[Sanitize]` Built-in** |
-| **OpenAPI Integration** |  Manual schema definitions | ** Auto-generated schemas** |
-| **Minimal API Support** |  Manual validation boilerplate | ** `Validated<T>` wrapper** |
-| **Client-Side Validation** |  Manual JavaScript/TypeScript | ** Auto-generated JSON rules** |
-| **Model-Level Validation** |  `IValidatableObject` | ** `Sannr.IValidatableObject`** |
-| **Reflection / Metadata** |  Runtime (Slow/Unsafe) | ** Static Shadow Types (Fast/Safe)** |
+| **Native AOT** | ⚠️ Requires warnings/trimming | **✅ 100% Trimming Safe** |
+| **Async Support** | ❌ Synchronous Only | **✅ Native `Task<T>`** |
+| **Dependency Injection** | ❌ Service Locator Anti-Pattern | **✅ `IServiceProvider` Support** |
+| **Conditional Logic** | ❌ Custom implementation required | **✅ `[RequiredIf]` Built-in** |
+| **Sanitization** | ❌ Manual code in Controllers | **✅ `[Sanitize]` Built-in** |
+| **OpenAPI Integration** | ❌ Manual schema definitions | **✅ Auto-generated schemas** |
+| **Minimal API Support** | ❌ Manual validation boilerplate | **✅ `Validated<T>` wrapper** |
+| **Client-Side Validation** | ❌ Manual JavaScript/TypeScript | **✅ Auto-generated JSON rules** |
+| **Model-Level Validation** | ✅ `IValidatableObject` | **✅ `Sannr.IValidatableObject`** |
+| **Reflection / Metadata** | ⚠️ Runtime (Slow/Unsafe) | **✅ Static Shadow Types (Fast/Safe)** |
 
 ---
 
-##  Transparency First
+## 🔍 Transparency First
 
 **Before you start:** Sannr uses compile-time source generation for maximum performance, but this comes with specific limitations. Please review our **[Limitations & Future Roadmap](docs/LIMITATIONS_AND_ROADMAP.md)** to ensure Sannr fits your use case.
 
 ---
 
-##  Understanding Sannr: A Layman's Guide
+## 💡 Understanding Sannr: A Layman's Guide
 
 ### What is Sannr?
 
@@ -123,36 +124,36 @@ Sannr takes a different approach:
 
 ### Business Problems Sannr Solves
 
-####  **Performance Problems**
+#### 🚀 **Performance Problems**
 - **Slow application startup** - Reflection-based validation delays your app launch
 - **High memory usage** - Traditional libraries keep unnecessary metadata in memory
 - **Poor user experience** - Validation delays frustrate users and hurt conversion rates
 
-####  **Cloud Cost Problems**
+#### ☁️ **Cloud Cost Problems**
 - **Higher infrastructure costs** - Slower apps need more servers to handle the same load
 - **Serverless cold starts** - Reflection delays hurt serverless performance
 - **Memory limits exceeded** - Traditional libraries consume too much RAM in constrained environments
 
-####  **Modern Deployment Problems**
+#### 🔒 **Modern Deployment Problems**
 - **Native AOT incompatibility** - Traditional libraries can't be used in ahead-of-time compiled apps
 - **Container size issues** - Reflection requires keeping metadata that bloats container images
 - **Security scanning problems** - Dynamic code execution makes compliance audits difficult
 
 ### Business Advantages of AOT Technology
 
-####  **Cost Savings**
+#### 💰 **Cost Savings**
 - **Up to 19x faster validation** (benchmarked: 518ns vs 10,341ns for complex models) means fewer servers needed
 - **87-95% less memory allocation** (256B vs 2,080B for simple models) allows more users per server
 - **Near-zero GC pressure** with minimal Gen0 collections for optimal serverless performance
 - **Smaller container images** reduce storage and transfer costs
 
-####  **User Experience**
+#### ⚡ **User Experience**
 - **Blazingly fast validation** - Complex models validate in under 1 microsecond
 - **Instant app startup** - No more waiting for validation systems to initialize
 - **Faster API responses** - Validation happens in microseconds, not milliseconds
 - **Better mobile performance** - Critical for mobile apps and PWAs
 
-####  **Enterprise Benefits**
+#### 🏢 **Enterprise Benefits**
 - **Cloud-native ready** - Works perfectly in Kubernetes, serverless, and edge computing
 - **Compliance friendly** - No dynamic code execution means easier security audits
 - **Future-proof** - Compatible with .NET's most advanced compilation technologies
@@ -165,13 +166,13 @@ In an era where milliseconds matter and cloud costs dominate IT budgets, Sannr d
 
 ---
 
-##  Performance Benchmarks: Blazingly Fast Validation
+## ⚡ Performance Benchmarks: Blazingly Fast Validation
 
 ### Benchmark Results Overview
 
 *Tested on: Intel Core i7-4980HQ CPU 2.80GHz (Haswell), 8 logical cores, macOS 15.7, .NET 8.0.22*
 
-| Validation Scenario | **Sannr** | FluentValidation | DataAnnotations |  **vs DataAnnotations** |  **vs FluentValidation** |
+| Validation Scenario | **Sannr** | FluentValidation | DataAnnotations | 🚀 **vs DataAnnotations** | 💪 **vs FluentValidation** |
 |---------------------|-----------|-----------------|----------------|-------------------------|--------------------------|
 | **Simple Model** (3 fields) | **207.8 ns** | 1,371.3 ns | 2,802.4 ns | **13.5x faster** | **6.6x faster** |
 | **Complex Model** (15 fields) | **623.5 ns** | 5,682.9 ns | 12,156.7 ns | **20x faster** | **9x faster** |
@@ -181,34 +182,34 @@ In an era where milliseconds matter and cloud costs dominate IT budgets, Sannr d
 
 ### Performance Visualization: The "Wow" Factor
 
-####  Speed Comparison (Lower = Better)
+#### ⚡ Speed Comparison (Lower = Better)
 ```
 Time in Nanoseconds (Log Scale - Normalized to Sannr Async = 1 unit)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+DataAnnotations Complex: ████████████████████████████████████████████████████████ (66.1x)
+DataAnnotations Simple:  ███████████████████████████████████████████████ (15.3x)
+FluentValidation Complex: ███████████████████████████████ (31.0x)
+FluentValidation Simple:  ███████████████ (7.5x)
+Sannr Complex:           ███ (3.4x)
+Sannr Simple:            ██ (1.1x)
+Sannr Async:             █ (1.0x baseline)
 
-DataAnnotations Complex:  (66.1x)
-DataAnnotations Simple:   (15.3x)
-FluentValidation Complex:  (31.0x)
-FluentValidation Simple:   (7.5x)
-Sannr Complex:            (3.4x)
-Sannr Simple:             (1.1x)
-Sannr Async:              (1.0x baseline)
-
- Sannr is up to 66x faster than DataAnnotations and 31x faster than FluentValidation!
+🚀 Sannr is up to 66x faster than DataAnnotations and 31x faster than FluentValidation!
 ```
 
-####  Memory Usage Comparison (Lower = Better)
+#### 💾 Memory Usage Comparison (Lower = Better)
 ```
 Bytes Allocated (Linear Scale)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+DataAnnotations Complex: ████████████████████████████████████████████████████████ (8,192 B)
+DataAnnotations Simple:  ████████████████████ (2,080 B)
+FluentValidation Complex: ████████ (1,208 B)
+FluentValidation Simple:  ████ (736 B)
+Sannr Complex:           ███ (392 B)
+Sannr Simple:            ██ (256 B)
+Sannr Async:             ██ (256 B)
 
-DataAnnotations Complex:  (8,192 B)
-DataAnnotations Simple:   (2,080 B)
-FluentValidation Complex:  (1,208 B)
-FluentValidation Simple:   (736 B)
-Sannr Complex:            (392 B)
-Sannr Simple:             (256 B)
-Sannr Async:              (256 B)
-
- Sannr uses 87-95% less memory than DataAnnotations and 65-67% less than FluentValidation!
+💾 Sannr uses 87-95% less memory than DataAnnotations and 65-67% less than FluentValidation!
 ```
 
 ### Real-World Performance Impact
@@ -217,22 +218,22 @@ Sannr Async:              (256 B)
 - **DataAnnotations**: ~82 req/sec (12,157 ns per request)
 - **FluentValidation**: ~176 req/sec (5,683 ns per request)  
 - **Sannr**: ~1,601 req/sec (623 ns per request)
-- ** Sannr Improvement**: 19.5x vs DataAnnotations, 9.1x vs FluentValidation
+- **🚀 Sannr Improvement**: 19.5x vs DataAnnotations, 9.1x vs FluentValidation
 
 **Memory Efficiency (MB per 1M requests):**
 - **DataAnnotations**: 8.192 MB
 - **FluentValidation**: 1.208 MB
 - **Sannr**: 0.392 MB
-- ** Sannr Savings**: 95% vs DataAnnotations, 67% vs FluentValidation
+- **💾 Sannr Savings**: 95% vs DataAnnotations, 67% vs FluentValidation
 
 **Serverless Cost Impact:**
 - Cold start penalty reduction: ~95% vs DataAnnotations
 - Memory allocation savings: Massive reduction in GC pressure
-- Execution time: Sub-microsecond validation (0.6s vs 12s vs 5.7s)
+- Execution time: Sub-microsecond validation (0.6μs vs 12μs vs 5.7μs)
 ```
 
 #### Real-World Impact
-- **API Response Time**: Complex validation in ~0.5s instead of 10s
+- **API Response Time**: Complex validation in ~0.5μs instead of 10μs
 - **Serverless Costs**: 95% reduction in memory allocation = lower cold-start costs
 - **Throughput**: Handle 19x more validation requests per second
 - **GC Pressure**: Near-zero Gen0 collections vs heavy GC pressure
@@ -251,7 +252,7 @@ Sannr Async:              (256 B)
 
 ---
 
-##  Architecture
+## 🏗️ Architecture
 
 Sannr's architecture is designed for maximum performance and AoT compatibility. The Roslyn Source Generator analyzes your model classes at compile-time and generates static validation methods that are indistinguishable from hand-written code.
 
@@ -293,23 +294,23 @@ graph LR
 
 > **Note:** To ensure full compatibility with Ahead-of-Time (AoT) compilation, including Native AOT scenarios, this library's test suite uses explicit validator registration instead of reflection-based auto-discovery. This approach avoids runtime metadata inspection and guarantees that all validation logic is statically compiled, making Sannr suitable for high-performance, trimmed applications where reflection is unavailable or undesirable.
 
- **[AoT Testing Strategy](docs/TESTING_STRATEGY.md)**
+📖 **[AoT Testing Strategy](docs/TESTING_STRATEGY.md)**
 
- **[Important: Limitations & Future Roadmap](docs/LIMITATIONS_AND_ROADMAP.md)** - *Read this first to understand current limitations and planned improvements.*
+⚠️ **[Important: Limitations & Future Roadmap](docs/LIMITATIONS_AND_ROADMAP.md)** - *Read this first to understand current limitations and planned improvements.*
 
 ---
 
-##  Common Pitfalls & Troubleshooting
+## ⚠️ Common Pitfalls & Troubleshooting
 
 ### 1. The `partial` Keyword is Mandatory
 Sannr is a **Source Generator**. It needs to generate code *inside* your class to add validation methods.
 **Incorrect:**
 ```csharp
-public class UserDto { } //  Compiler error or no validation generated
+public class UserDto { } // ❌ Compiler error or no validation generated
 ```
 **Correct:**
 ```csharp
-public partial class UserDto { } // 
+public partial class UserDto { } // ✅
 ```
 
 ### 2. Namespace Collisions
@@ -327,9 +328,30 @@ Accessing `ValidationRulesJson` returns an empty string?
 - Ensure you added `[GenerateClientValidators]` to the class.
 - Rebuild the solution (Source Generators run at compile time).
 
+### 5. OpenAPI Schemas Missing?
+- Ensure you called `options.SchemaFilter<Sannr.OpenApi.SannrGeneratedSchemaFilter>()` in `AddSwaggerGen`.
+- Ensure you have `<EnableSannrSchemaGen>true</EnableSannrSchemaGen>` in your `.csproj` or called `AddSannr()`.
+
 ---
 
-##  Installation
+## ⚙️ Configuration (MSBuild Properties)
+
+Sannr allows customizing the source generator behavior via properties in your `.csproj` file.
+
+| Property | Default | Description |
+| :--- | :--- | :--- |
+| `EnableSannrSchemaGen` | `false` | Enables compile-time generation of OpenAPI filters and automatic validator registration. |
+| `SannrOpenApiVersion` | `v2` | Target OpenAPI specification version (`v2` or `v3`). Targets `v2` by default for Swashbuckle 10+ compatibility. |
+
+Example configuration:
+```xml
+<PropertyGroup>
+  <EnableSannrSchemaGen>true</EnableSannrSchemaGen>
+  <SannrOpenApiVersion>v2</SannrOpenApiVersion>
+</PropertyGroup>
+```
+
+## 📦 Installation
 
 ```bash
 dotnet add package Sannr
@@ -341,7 +363,7 @@ dotnet add package Sannr
 
 
 
-##  Enterprise Capabilities
+## 🛡️ Enterprise Capabilities
 
 ### 1. Asynchronous & Database Validation
 Validating data against external sources (Databases, APIs) requires async. Sannr handles this natively.
@@ -404,7 +426,7 @@ public int Age { get; set; }
 // Error Output: "The field User Age must be between 18 and 100."
 ```
 
- **[Complete Localization Guide](docs/LOCALIZATION.md)**
+📖 **[Complete Localization Guide](docs/LOCALIZATION.md)**
 
 ### 5. Model-Level Validation
 Sannr provides `IValidatableObject` for cross-property business rules that can't be expressed with attributes.
@@ -436,7 +458,7 @@ public class EmploymentModel : Sannr.IValidatableObject
 
 ---
 
-##  Advanced Validation Features
+## 🎯 Advanced Validation Features
 
 Sannr provides comprehensive validation capabilities that go beyond basic attribute validation, including source generator-based auto-discovery, sanitization, custom validators, and conditional logic.
 
@@ -542,11 +564,11 @@ Support for localized error messages:
 public string? Name { get; set; }
 ```
 
- **[Complete Advanced Validation Documentation](docs/ADVANCED_VALIDATION_FEATURES.md)**
+📖 **[Complete Advanced Validation Documentation](docs/ADVANCED_VALIDATION_FEATURES.md)**
 
 ---
 
-##  Advanced Error Handling
+## 🔍 Advanced Error Handling
 
 Sannr provides structured, enterprise-grade error responses with correlation IDs, validation rule metadata, and RFC 7807 Problem Details compliance.
 
@@ -593,7 +615,7 @@ builder.Services.AddSannr(options =>
 
 ---
 
-##  OpenAPI/Swagger Integration
+## 📋 OpenAPI/Swagger Integration
 
 Sannr automatically generates OpenAPI schema constraints from your validation attributes, ensuring your API documentation stays in sync with your validation rules.
 
@@ -603,7 +625,8 @@ Sannr automatically generates OpenAPI schema constraints from your validation at
 // In Program.cs
 builder.Services.AddSwaggerGen(options =>
 {
-    options.AddSannrValidationSchemas(); //  One line to enable!
+    // AOT-compatible, compile-time generated schema filter
+    options.SchemaFilter<Sannr.OpenApi.SannrGeneratedSchemaFilter>();
 });
 ```
 
@@ -666,15 +689,15 @@ public class CreateUserRequest
 | `[FileExtensions]` | `"format": "file"` |
 
 **Benefits:**
--  **Single Source of Truth**: Validation rules automatically become API documentation
--  **Always Up-to-Date**: Schema updates when validation attributes change
--  **No Boilerplate**: Eliminates manual schema definitions
--  **Type Safety**: Compile-time validation of attribute usage
+- ✅ **Single Source of Truth**: Validation rules automatically become API documentation
+- ✅ **Always Up-to-Date**: Schema updates when validation attributes change
+- ✅ **No Boilerplate**: Eliminates manual schema definitions
+- ✅ **Type Safety**: Compile-time validation of attribute usage
 
- **[Complete OpenAPI Integration Guide](docs/OPENAPI_INTEGRATION.md)**
+📖 **[Complete OpenAPI Integration Guide](docs/OPENAPI_INTEGRATION.md)**
 
 ---
-##  Minimal API Integration
+## ⚡ Minimal API Integration
 
 Sannr provides seamless integration with ASP.NET Core Minimal APIs through the `Validated<T>` wrapper, which automatically handles validation and returns appropriate HTTP responses.
 
@@ -703,15 +726,15 @@ app.MapPost("/users", async (Validated<CreateUserRequest> request) =>
 ```
 
 **Key Benefits:**
--  **Clean Code**: Eliminates boilerplate validation logic
--  **Type Safety**: Strongly-typed access to validated data
--  **Consistent Errors**: Standardized validation error responses
--  **OpenAPI Integration**: Automatic schema generation with validation constraints
+- ✅ **Clean Code**: Eliminates boilerplate validation logic
+- ✅ **Type Safety**: Strongly-typed access to validated data
+- ✅ **Consistent Errors**: Standardized validation error responses
+- ✅ **OpenAPI Integration**: Automatic schema generation with validation constraints
 
- **[Complete Minimal API Integration Guide](docs/MINIMAL_API_INTEGRATION.md)**
+📖 **[Complete Minimal API Integration Guide](docs/MINIMAL_API_INTEGRATION.md)**
 
 ---
-##  Client-Side Validation
+## 🌐 Client-Side Validation
 
 Sannr automatically generates JSON validation rules from your server-side attributes, enabling seamless client-side validation in JavaScript/TypeScript applications.
 
@@ -778,16 +801,16 @@ const validator = new FormValidator(rules);
 | `[ConditionalRange]` | `"minRange": min, "maxRange": max, "conditionProperty": "prop", "conditionValue": value` |
 
 **Benefits:**
--  **Single Source of Truth**: Client and server validation rules stay synchronized
--  **Type Safety**: Compile-time generation prevents typos
--  **Framework Agnostic**: Works with any JavaScript validation library
--  **Zero Runtime Cost**: Validation rules generated at compile-time
+- ✅ **Single Source of Truth**: Client and server validation rules stay synchronized
+- ✅ **Type Safety**: Compile-time generation prevents typos
+- ✅ **Framework Agnostic**: Works with any JavaScript validation library
+- ✅ **Zero Runtime Cost**: Validation rules generated at compile-time
 
- **[Complete Client-Side Validation Guide](docs/CLIENT_SIDE_VALIDATION.md)**
+📖 **[Complete Client-Side Validation Guide](docs/CLIENT_SIDE_VALIDATION.md)**
 
 ---
 
-##  Static Reflection (Shadow Types)
+## 🔮 Static Reflection (Shadow Types)
 
 Sannr allows you to inspect and manipulate your models **without** using System.Reflection, which is crucial for high-performance and Native AOT applications.
 
@@ -811,19 +834,19 @@ Sannr generates a static `UserShadow` class with direct accessors and logic.
 ```csharp
 var user = new User { Id = 1, Email = "test@example.com" };
 
-//  Fast Property Access (No Boxing)
+// ⚡ Fast Property Access (No Boxing)
 int id = UserShadow.GetId(user); 
 
-//  PII Checking
+// 🛡️ PII Checking
 if (UserShadow.IsEmailPii) Mask(val);
 
-//  Deep Cloning (Zero Reflection)
+// 🐑 Deep Cloning (Zero Reflection)
 var copy = UserShadow.DeepClone(user);
 ```
 
- **[Static Reflection Guide](docs/STATIC_REFLECTION.md)**
+📖 **[Static Reflection Guide](docs/STATIC_REFLECTION.md)**
 
----##  Built-in Business Rule Validators
+---## 🏢 Built-in Business Rule Validators
 
 Sannr includes common business validation patterns out-of-the-box, eliminating the need for custom validators in most enterprise scenarios.
 
@@ -892,15 +915,15 @@ All business rule validators generate appropriate client-side JSON rules:
 ```
 
 **Benefits:**
--  **Common Patterns**: Covers 80% of business validation scenarios
--  **Type Safe**: Compile-time validation of attribute usage
--  **Client-Side Ready**: Automatic JSON rule generation
--  **Performance**: Zero runtime overhead with AOT compilation
+- ✅ **Common Patterns**: Covers 80% of business validation scenarios
+- ✅ **Type Safe**: Compile-time validation of attribute usage
+- ✅ **Client-Side Ready**: Automatic JSON rule generation
+- ✅ **Performance**: Zero runtime overhead with AOT compilation
 
- **[Complete Business Rule Validators Guide](docs/BUSINESS_RULE_VALIDATORS.md)**
+📖 **[Complete Business Rule Validators Guide](docs/BUSINESS_RULE_VALIDATORS.md)**
 
 ---
-##  Performance Monitoring & Diagnostics
+## 📊 Performance Monitoring & Diagnostics
 
 Sannr provides built-in performance monitoring and diagnostics to help you track validation performance in production environments.
 
@@ -975,10 +998,10 @@ builder.Services.ConfigureTelemetryModule<DependencyTrackingTelemetryModule>((mo
 4. **Profile Performance**: Use metrics to identify models with complex validation logic
 5. **Resource Monitoring**: Correlate validation metrics with CPU/memory usage
 
- **[Complete Performance Monitoring Guide](docs/PERFORMANCE_MONITORING.md)**
+📖 **[Complete Performance Monitoring Guide](docs/PERFORMANCE_MONITORING.md)**
 
 ---
-##  Architecture
+## �🔧 Architecture
 
 When you compile your project, Sannr generates a static class for every model marked with validation attributes.
 
@@ -1008,7 +1031,7 @@ This ensures **zero allocations** for metadata lookups and **maximum throughput*
 
 ---
 
-##  Supported Attributes
+## 📋 Supported Attributes
 
 | Attribute | Function |
 | :--- | :--- |
@@ -1027,11 +1050,11 @@ This ensures **zero allocations** for metadata lookups and **maximum throughput*
 | `[CustomValidator]` | Points to static sync or async methods. |
 | `IValidatableObject` | **Model-level:** Cross-property business rules. |
 
- **[Complete Attributes Reference](docs/ATTRIBUTES.md)**
+📖 **[Complete Attributes Reference](docs/ATTRIBUTES.md)**
 
 ---
 
-##  Migration Tools
+## 🔄 Migration Tools
 
 Sannr includes a powerful CLI tool to help migrate from other validation libraries like FluentValidation and DataAnnotations.
 
@@ -1052,13 +1075,13 @@ First, analyze your existing validation code to understand migration complexity:
 dotnet run --project Sannr.Cli -- analyze --input ./MyProject/Models
 
 # Output example:
- Analysis Results:
- Files scanned: 15
-  Validation libraries detected: FluentValidation, DataAnnotations
- FluentValidation rules found: 23
- DataAnnotations found: 45
- Migration Complexity: Medium
- Recommendation: Moderate complexity - review generated code carefully
+📊 Analysis Results:
+📁 Files scanned: 15
+🏷️  Validation libraries detected: FluentValidation, DataAnnotations
+🔄 FluentValidation rules found: 23
+📝 DataAnnotations found: 45
+🎯 Migration Complexity: Medium
+💡 Recommendation: Moderate complexity - review generated code carefully
 ```
 
 ### Migrate from DataAnnotations
@@ -1074,10 +1097,10 @@ dotnet run --project Sannr.Cli -- dataannotations --input ./OldModels --output .
 ```
 
 **What gets converted:**
-- `[Required]`  `[Required]` (Sannr equivalent)
-- `[EmailAddress]`  `[Email]` (Sannr naming)
-- `[StringLength(50)]`  `[StringLength(50)]` (compatible)
-- `[MaxLength(100)]`  `[StringLength(100)]` (converted)
+- `[Required]` → `[Required]` (Sannr equivalent)
+- `[EmailAddress]` → `[Email]` (Sannr naming)
+- `[StringLength(50)]` → `[StringLength(50)]` (compatible)
+- `[MaxLength(100)]` → `[StringLength(100)]` (converted)
 - Adds `using Sannr;` directive
 
 ### Migrate from FluentValidation
@@ -1089,12 +1112,12 @@ Get guidance for converting FluentValidation validators:
 dotnet run --project Sannr.Cli -- fluentvalidation --input ./Validators --dry-run
 
 # Output provides migration guidance:
- Migration completed!
- Files processed: 3
- Validators migrated: 3
-  Warnings: 3
+✅ Migration completed!
+📊 Files processed: 3
+🔄 Validators migrated: 3
+⚠️  Warnings: 3
 
-  Warnings:
+⚠️  Warnings:
    - Migrated validator in UserValidator.cs
    - Migrated validator in ProductValidator.cs
    - Migrated validator in OrderValidator.cs
@@ -1192,20 +1215,20 @@ dotnet run --project Sannr.Cli -- fluentvalidation --input <path> --output <path
 ```
 
 **Benefits:**
--  **Risk-Free Analysis**: Understand migration complexity before starting
--  **Automated Conversion**: DataAnnotations migration is largely automatic
--  **Guided Migration**: FluentValidation provides step-by-step guidance
--  **Dry Run Support**: Preview changes before applying them
--  **Incremental Migration**: Migrate files or directories individually
+- ✅ **Risk-Free Analysis**: Understand migration complexity before starting
+- ✅ **Automated Conversion**: DataAnnotations migration is largely automatic
+- ✅ **Guided Migration**: FluentValidation provides step-by-step guidance
+- ✅ **Dry Run Support**: Preview changes before applying them
+- ✅ **Incremental Migration**: Migrate files or directories individually
 
- **[Complete Migration Tools Guide](docs/MIGRATION_TOOLS.md)**
+📖 **[Complete Migration Tools Guide](docs/MIGRATION_TOOLS.md)**
 
 ---
 
-##  Contributing
+## 🤝 Contributing
 
 Sannr is open-source. We welcome contributions to expand the standard validator set and optimize regex generation patterns.
 
 **License**: MIT
 
- **[TECHNICAL SUMMARY](docs/TECHNICAL_SUMMARY.md)** | **[EXECUTIVE SUMMARY](docs/EXECUTIVE_SUMMARY.md)** | **[LIMITATIONS & ROADMAP](docs/LIMITATIONS_AND_ROADMAP.md)**
+📖 **[TECHNICAL SUMMARY](docs/TECHNICAL_SUMMARY.md)** | **[EXECUTIVE SUMMARY](docs/EXECUTIVE_SUMMARY.md)** | **[LIMITATIONS & ROADMAP](docs/LIMITATIONS_AND_ROADMAP.md)**

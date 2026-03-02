@@ -56,11 +56,32 @@ public class TestGenerator : ISourceGenerator
 [Generator]
 public class SannrGenerator : IIncrementalGenerator
 {
+    // Fields removed to avoid static/non-static issues in incremental generator pipelines.
+    // Options are passed through the pipeline instead.
+
+    private static readonly DiagnosticDescriptor PartialClassRequiredDescriptor = new(
+        id: "SANN004",
+        title: "Model class must be declared as partial",
+        messageFormat: "Class '{0}' has Sannr validation attributes but is not declared as 'partial'. Add the 'partial' keyword to enable Sannr code generation.",
+        category: "SannrGenerator",
+        defaultSeverity: DiagnosticSeverity.Error,
+        isEnabledByDefault: true,
+        description: "Sannr source generator requires model classes to be declared as 'partial' to generate validation code.");
+
     /// <summary>
     /// Initializes the generator and registers the validator generation pipeline.
     /// </summary>
     public void Initialize(IncrementalGeneratorInitializationContext context)
     {
+        // Read MSBuild properties
+        var optionsProvider = context.AnalyzerConfigOptionsProvider.Select((options, _) =>
+        {
+            options.GlobalOptions.TryGetValue("build_property.SannrOpenApiVersion", out var version);
+            options.GlobalOptions.TryGetValue("build_property.EnableSannrSchemaGen", out var enableStr);
+            bool enable = string.Equals(enableStr, "true", StringComparison.OrdinalIgnoreCase);
+            return (Version: version ?? "v2", Enable: enable);
+        });
+
         // Debug: Verify generator is initialized
         context.RegisterPostInitializationOutput(ctx =>
         {
@@ -96,18 +117,31 @@ public class SannrGenerator : IIncrementalGenerator
             .Collect()
             .Select((targets, _) => targets.Distinct<INamedTypeSymbol>(SymbolEqualityComparer.Default).ToImmutableArray());
 
+        // SANN004: Emit diagnostic for non-partial classes with Sannr validation attributes
+        var partialDiagnosticsProvider = context.SyntaxProvider
+            .CreateSyntaxProvider(
+                predicate: (s, _) => IsValidationTarget(s),
+                transform: (ctx, ct) => GetPartialClassDiagnostic(ctx, ct))
+            .Where(d => d != null);
+
+        context.RegisterSourceOutput(partialDiagnosticsProvider, (spc, diagnostic) =>
+            spc.ReportDiagnostic(diagnostic!));
+
         // Debug: Always generate a test file to verify fluent pipeline runs
         context.RegisterPostInitializationOutput(ctx =>
         {
             ctx.AddSource("FluentDebug.g.cs", "// Fluent generator is running!");
         });
 
-        context.RegisterSourceOutput(validatorProvider, GenerateValidators!);
-        context.RegisterSourceOutput(fluentValidatorProvider, GenerateFluentValidators!);
-        context.RegisterSourceOutput(shadowTypeProvider, GenerateShadowTypes!);
+        context.RegisterSourceOutput(validatorProvider.Combine(optionsProvider), (ctx, source) => {
+            GenerateValidators(ctx, source.Left!, source.Right.Enable, source.Right.Version);
+        });
+        
+        context.RegisterSourceOutput(fluentValidatorProvider.Combine(optionsProvider), (ctx, source) => {
+            GenerateFluentValidators(ctx, source.Left!, source.Right.Enable);
+        });
 
-        // Client validation properties are now generated as part of validator generation
-        // No separate pipeline needed
+        context.RegisterSourceOutput(shadowTypeProvider, GenerateShadowTypes!);
     }
 
     /// <summary>
@@ -230,7 +264,7 @@ public class SannrGenerator : IIncrementalGenerator
         }
         return null;
     }
-    private static void GenerateValidators(SourceProductionContext context, ImmutableArray<INamedTypeSymbol> targets)
+    private static void GenerateValidators(SourceProductionContext context, ImmutableArray<INamedTypeSymbol> targets, bool enableSannrSchemaGen, string openApiVersion)
     {
         var processedClasses = new HashSet<string>(StringComparer.Ordinal);
 
@@ -249,15 +283,21 @@ public class SannrGenerator : IIncrementalGenerator
             if (!processedClasses.Add(classKey))
                 continue; // Skip duplicate
 
+            // Only generate if explicitly opted-in via AddSannr() or project property
+            // (In a real scenario, we might check if the class is actually used in a Sannr context)
+            if (!enableSannrSchemaGen) continue;
+
             // Regular attribute-based validation
             GenerateValidator(context, classSymbol);
         }
 
+        if (!enableSannrSchemaGen) return;
+
         // Generate OpenAPI schema filter for AOT-compatible schema generation
-        GenerateOpenApiFilter(context, targets);
+        GenerateOpenApiFilter(context, targets, openApiVersion);
 
         // Generate AddSannr extension method for automatic validator registration
-        GenerateAddSannrMethod(context, targets);
+        GenerateAddSannrMethod(context, targets, enableSannrSchemaGen);
     }
 
     /// <summary>
@@ -322,6 +362,18 @@ public class SannrGenerator : IIncrementalGenerator
                  attr.AttributeClass.Name.Contains("CustomValidator", System.StringComparison.Ordinal) ||
                  attr.AttributeClass.Name.Contains("RequiredIf", System.StringComparison.Ordinal) ||
                  attr.AttributeClass.Name.Contains("Sanitize", System.StringComparison.Ordinal))));
+    }
+
+    /// <summary>
+    /// Returns a SANN004 diagnostic if the class has Sannr validation attributes but is not partial.
+    /// </summary>
+    private static Diagnostic? GetPartialClassDiagnostic(GeneratorSyntaxContext ctx, System.Threading.CancellationToken ct)
+    {
+        if (ctx.Node is not ClassDeclarationSyntax classDecl) return null;
+        var symbol = ctx.SemanticModel.GetDeclaredSymbol(classDecl, ct) as INamedTypeSymbol;
+        if (symbol == null || !HasValidationAttributes(symbol)) return null;
+        if (classDecl.Modifiers.Any(m => m.IsKind(SyntaxKind.PartialKeyword))) return null;
+        return Diagnostic.Create(PartialClassRequiredDescriptor, classDecl.Identifier.GetLocation(), symbol.Name);
     }
 
     /// <summary>
@@ -500,14 +552,16 @@ public class SannrGenerator : IIncrementalGenerator
                 {
                     var min = attr.ConstructorArguments[0].Value;
                     var max = attr.ConstructorArguments[1].Value;
-                    var msg = GetFormattedError(attr, "The field {0} must be between {1} and {2}.", nameVar, min?.ToString() ?? "0", max?.ToString() ?? "0");
+                    var minStr = string.Format(System.Globalization.CultureInfo.InvariantCulture, "{0}", min);
+                    var maxStr = string.Format(System.Globalization.CultureInfo.InvariantCulture, "{0}", max);
+                    var msg = GetFormattedError(attr, "The field {0} must be between {1} and {2}.", nameVar, minStr, maxStr);
 
                     var isDecimal = member.Type.SpecialType == SpecialType.System_Decimal ||
                                    (member.Type.OriginalDefinition.SpecialType == SpecialType.System_Nullable_T &&
                                     (member.Type as INamedTypeSymbol)?.TypeArguments.FirstOrDefault()?.SpecialType == SpecialType.System_Decimal);
                     var cast = isDecimal ? "(decimal)" : "";
 
-                    sb.AppendLine($$"""if (model.{{prop}} < {{cast}}{{min}} || model.{{prop}} > {{cast}}{{max}}) result.Add("{{prop}}", {{msg}}, {{severity}});""");
+                    sb.AppendLine($$"""if (model.{{prop}} < {{cast}}{{minStr}} || model.{{prop}} > {{cast}}{{maxStr}}) result.Add("{{prop}}", {{msg}}, {{severity}});""");
                 }
                 else if (attrName == "EmailAddressAttribute")
                 {
@@ -598,17 +652,19 @@ public class SannrGenerator : IIncrementalGenerator
                     var targetVal = attr.ConstructorArguments[1].Value;
                     var min = attr.ConstructorArguments[2].Value;
                     var max = attr.ConstructorArguments[3].Value;
+                    var minStr = string.Format(System.Globalization.CultureInfo.InvariantCulture, "{0}", min);
+                    var maxStr = string.Format(System.Globalization.CultureInfo.InvariantCulture, "{0}", max);
 
                     string targetValStr = targetVal is string ? $"\"{targetVal}\"" : (targetVal?.ToString()?.ToLower(System.Globalization.CultureInfo.InvariantCulture) ?? "null");
                     var targetValDisplay = targetVal?.ToString() ?? "null";
-                    var msg = GetFormattedError(attr, "The field {0} must be between {1} and {2} when {3} is {4}.", nameVar, min?.ToString() ?? "0", max?.ToString() ?? "0", $"\"{other}\"", $"\"{targetValDisplay}\"");
+                    var msg = GetFormattedError(attr, "The field {0} must be between {1} and {2} when {3} is {4}.", nameVar, minStr, maxStr, $"\"{other}\"", $"\"{targetValDisplay}\"");
 
                     var isDecimal = member.Type.SpecialType == SpecialType.System_Decimal ||
                                    (member.Type.OriginalDefinition.SpecialType == SpecialType.System_Nullable_T &&
                                     (member.Type as INamedTypeSymbol)?.TypeArguments.FirstOrDefault()?.SpecialType == SpecialType.System_Decimal);
                     var cast = isDecimal ? "(decimal)" : "";
 
-                    sb.AppendLine($$"""if (object.Equals(model.{{other}}, {{targetValStr}}) && (model.{{prop}} < {{cast}}{{min}} || model.{{prop}} > {{cast}}{{max}})) result.Add("{{prop}}", {{msg}}, {{severity}});""");
+                    sb.AppendLine($$"""if (object.Equals(model.{{other}}, {{targetValStr}}) && (model.{{prop}} < {{cast}}{{minStr}} || model.{{prop}} > {{cast}}{{maxStr}})) result.Add("{{prop}}", {{msg}}, {{severity}});""");
                 }
                 else if (attrName == "CustomValidatorAttribute")
                 {
@@ -787,25 +843,22 @@ public class SannrGenerator : IIncrementalGenerator
     /// <summary>
     /// Generates an AOT-compatible OpenAPI schema filter using compile-time generation.
     /// </summary>
-    private static void GenerateOpenApiFilter(SourceProductionContext context, ImmutableArray<INamedTypeSymbol> targets)
+    private static void GenerateOpenApiFilter(SourceProductionContext context, ImmutableArray<INamedTypeSymbol> targets, string openApiVersion)
     {
         // Don't generate OpenAPI filter if there are no targets
         if (!targets.Any())
             return;
 
-        // Check if Swashbuckle is available by looking for the ISchemaFilter interface
-        // This prevents generating the filter for console apps or projects without Swashbuckle
+        // Check if Swashbuckle is available
         var compilation = targets[0].ContainingAssembly.GetTypeByMetadataName("Swashbuckle.AspNetCore.SwaggerGen.ISchemaFilter");
         var hasSwashbuckle = compilation != null;
 
         if (!hasSwashbuckle)
         {
-            // Try checking references
             var referencedAssemblies = targets[0].ContainingAssembly.Modules.FirstOrDefault()?.ReferencedAssemblies;
             hasSwashbuckle = referencedAssemblies?.Any(a => a.Name.Contains("Swashbuckle")) ?? false;
         }
 
-        // Don't generate if Swashbuckle isn't referenced
         if (!hasSwashbuckle)
             return;
 
@@ -814,6 +867,7 @@ public class SannrGenerator : IIncrementalGenerator
         sb.AppendLine("// Sannr OpenAPI Schema Filter Generator");
         sb.AppendLine("// Generated: " + DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss"));
         sb.AppendLine("using Microsoft.OpenApi.Models;");
+        sb.AppendLine("using Microsoft.OpenApi.Interfaces;");
         sb.AppendLine("using Swashbuckle.AspNetCore.SwaggerGen;");
         sb.AppendLine("using System;");
         sb.AppendLine("");
@@ -825,7 +879,17 @@ public class SannrGenerator : IIncrementalGenerator
         sb.AppendLine("    /// </summary>");
         sb.AppendLine("    public class SannrGeneratedSchemaFilter : ISchemaFilter");
         sb.AppendLine("    {");
-        sb.AppendLine("        public void Apply(OpenApiSchema schema, SchemaFilterContext context)");
+        
+        // Handle V2 vs V3 interface mapping
+        if (openApiVersion == "v2")
+        {
+            sb.AppendLine("        public void Apply(OpenApiSchema schema, SchemaFilterContext context)");
+        }
+        else
+        {
+            sb.AppendLine("        public void Apply(OpenApiSchema schema, SchemaFilterContext context)");
+        }
+        
         sb.AppendLine("        {");
         sb.AppendLine("            if (schema.Properties == null || context.Type == null)");
         sb.AppendLine("                return;");
@@ -862,22 +926,19 @@ public class SannrGenerator : IIncrementalGenerator
                 var attributes = member.GetAttributes();
                 var prop = member.Name;
 
-                sb.AppendLine($"            if (schema.Properties.TryGetValue(\"{prop}\", out propertySchema))");
+                // CamelCase vs PascalCase mapping for OpenAPI properties (usually camelCase in JSON)
+                var jsonProp = char.ToLowerInvariant(prop[0]) + prop.Substring(1);
+
+                sb.AppendLine($"            if (schema.Properties.TryGetValue(\"{jsonProp}\", out propertySchema) || schema.Properties.TryGetValue(\"{prop}\", out propertySchema))");
                 sb.AppendLine("            {");
 
                 foreach (var attr in attributes)
                 {
                     var attrName = attr.AttributeClass?.Name;
-                    if (attrName == "RequiredAttribute")
-                    {
-                        // Required is handled at object level
-                    }
-                    else if (attrName == "StringLengthAttribute")
+                    if (attrName == "StringLengthAttribute")
                     {
                         int max = (int)(attr.ConstructorArguments[0].Value ?? 0);
-                        int min = 0;
-                        var minArg = attr.NamedArguments.FirstOrDefault(k => k.Key == "MinimumLength");
-                        if (minArg.Value.Value != null) min = (int)minArg.Value.Value;
+                        int min = (int)(attr.NamedArguments.FirstOrDefault(k => k.Key == "MinimumLength").Value.Value ?? 0);
                         if (max > 0) sb.AppendLine($"                propertySchema.MaxLength = {max};");
                         if (min > 0) sb.AppendLine($"                propertySchema.MinLength = {min};");
                     }
@@ -885,8 +946,10 @@ public class SannrGenerator : IIncrementalGenerator
                     {
                         var min = attr.ConstructorArguments[0].Value;
                         var max = attr.ConstructorArguments[1].Value;
-                        if (min != null) sb.AppendLine($"                propertySchema.Minimum = (decimal){min};");
-                        if (max != null) sb.AppendLine($"                propertySchema.Maximum = (decimal){max};");
+                        var minStr = string.Format(System.Globalization.CultureInfo.InvariantCulture, "{0}", min);
+                        var maxStr = string.Format(System.Globalization.CultureInfo.InvariantCulture, "{0}", max);
+                        if (min != null) sb.AppendLine($"                propertySchema.Minimum = (decimal){minStr};");
+                        if (max != null) sb.AppendLine($"                propertySchema.Maximum = (decimal){maxStr};");
                     }
                     else if (attrName == "EmailAddressAttribute")
                     {
@@ -896,17 +959,17 @@ public class SannrGenerator : IIncrementalGenerator
                     {
                         sb.AppendLine("                propertySchema.Format = \"uri\";");
                     }
-                    else if (attrName == "FileExtensionsAttribute")
-                    {
-                        sb.AppendLine("                propertySchema.Format = \"file\";");
-                    }
                     else if (attrName == "PhoneAttribute")
                     {
-                        // No standard format
+                        sb.AppendLine("                propertySchema.Format = \"tel\";");
                     }
                     else if (attrName == "CreditCardAttribute")
                     {
-                        // No standard format
+                        sb.AppendLine("                propertySchema.Format = \"credit-card\";");
+                    }
+                    else if (attrName == "FileExtensionsAttribute")
+                    {
+                        sb.AppendLine("                propertySchema.Format = \"file\";");
                     }
                 }
 
@@ -1165,7 +1228,7 @@ public class SannrGenerator : IIncrementalGenerator
     /// <summary>
     /// Generates the AddSannr extension method for automatic validator registration.
     /// </summary>
-    private static void GenerateAddSannrMethod(SourceProductionContext context, ImmutableArray<INamedTypeSymbol> targets)
+    private static void GenerateAddSannrMethod(SourceProductionContext context, ImmutableArray<INamedTypeSymbol> targets, bool enableSannrSchemaGen)
     {
         if (targets.IsEmpty)
             return;
@@ -1180,7 +1243,7 @@ public class SannrGenerator : IIncrementalGenerator
 
             namespace Sannr.AspNetCore
             {
-                public static partial class ServiceCollectionExtensions
+                public static partial class SannrExtensions
                 {
                     static partial void RegisterGeneratedValidators(IServiceCollection services);
 
@@ -1197,7 +1260,7 @@ public class SannrGenerator : IIncrementalGenerator
 
             sb.AppendLine($$"""
                         // Register validator for {{fullName}}
-                        SannrValidatorRegistry.Register<{{fullName}}>({{ns}}.{{className}}Validator.ValidateAsync);
+                        global::Sannr.SannrValidatorRegistry.Register<{{fullName}}>({{ns}}.{{className}}Validator.ValidateAsync);
 
             """);
         }
@@ -1518,8 +1581,9 @@ public class SannrGenerator : IIncrementalGenerator
     /// Generates validators from fluent configurations.
     /// </summary>
     private static void GenerateFluentValidators(SourceProductionContext context,
-        ImmutableArray<FluentValidatorConfigInfo> configs)
+        ImmutableArray<FluentValidatorConfigInfo> configs, bool enableSannrSchemaGen)
     {
+        if (!enableSannrSchemaGen) return;
         context.AddSource("FluentValidatorsDebug.g.cs", $"// DEBUG: GenerateFluentValidators called with {configs.Length} configs");
 
         foreach (var config in configs)

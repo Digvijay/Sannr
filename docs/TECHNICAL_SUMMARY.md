@@ -57,13 +57,24 @@ public static class UserModelValidator
 
 ### Validator Registry Pattern
 
-```csharp
-// Compile-time registration
-SannrValidatorRegistry.Register<UserModel>(UserModelValidator.Validate);
+Sannr uses a global registry for O(1) validator lookup, enabling high-performance integration with web frameworks.
 
-// Runtime lookup (O(1) dictionary access)
-var validator = SannrValidatorRegistry.GetValidator(typeof(UserModel));
-var result = await validator.ValidateAsync(model, context);
+```csharp
+// Compile-time registration (automatically generated)
+SannrValidatorRegistry.Register<UserModel>(UserModelValidator.ValidateAsync);
+
+// High-performance runtime lookup
+var validatorFound = SannrValidatorRegistry.TryGetValidator(typeof(UserModel), out var validator);
+var result = await validator(model);
+```
+
+### Minimal API Filter Pattern
+
+The `.WithSannrValidation()` extension uses an endpoint filter to automatically intercept and validate requests.
+
+```csharp
+app.MapPost("/user", (UserModel user) => Results.Ok(user))
+   .WithSannrValidation();
 ```
 
 ## Performance Characteristics
@@ -248,7 +259,8 @@ app.MapPost("/users-manual", (Validated<UserModel> request) =>
 // Automatic schema constraints
 builder.Services.AddSwaggerGen(options =>
 {
-    options.AddSannrValidationSchemas();
+    // AOT-compatible, compile-time generated schema filter
+    options.SchemaFilter<Sannr.OpenApi.SannrGeneratedSchemaFilter>();
 });
 
 // Generated schema includes validation rules
@@ -399,7 +411,7 @@ public static void RegisterTestValidators()
 
 ### Supported Platforms
 
-- **.NET Version**: .NET 8.0+ (LTS)
+- **.NET Version**: .NET 10.0+ (LTS) SDK for Building, .NET 8.0/9.0/10.0 Runtime
 - **OS**: Windows, Linux, macOS
 - **Architectures**: x64, ARM64
 - **Deployment**: Framework-dependent, self-contained, Native AOT
@@ -428,7 +440,7 @@ NuGet Packages:
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Sannr" Version="1.0.0" />
+    <PackageReference Include="Sannr" Version="1.4.0" />
     <!-- Source generator included automatically -->
   </ItemGroup>
 </Project>

@@ -29,6 +29,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.ModelBinding.Validation;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
+using Sannr;
 
 namespace Sannr.AspNetCore;
 
@@ -203,7 +204,7 @@ public class AotObjectModelValidator : IObjectModelValidator
 
         try
         {
-            if (SannrValidatorRegistry.TryGetValidator(model.GetType(), out var validator))
+            if (global::Sannr.SannrValidatorRegistry.TryGetValidator(model.GetType(), out var validator))
             {
                 var sannrContext = new SannrValidationContext(
                     instance: model,
@@ -256,7 +257,7 @@ public class AotObjectModelValidator : IObjectModelValidator
 /// <summary>
 /// Extension methods for registering Sannr validation in ASP.NET Core DI.
 /// </summary>
-public static class SannrExtensions
+public static partial class SannrExtensions
 {
     /// <summary>
     /// Adds Sannr validation services to the specified service collection.
@@ -297,10 +298,11 @@ public static class SannrExtensions
             services.AddSannrProblemDetails();
         }
 
-        // Note: Validators should be explicitly registered by the application
-        // for AoT compatibility. Auto-registration using reflection is not AoT-compatible.
-        // SannrValidatorRegistry.AutoRegisterValidators();
+        // Register validators generated at compile-time
+        RegisterGeneratedValidators(services);
 
         return services;
     }
+
+    static partial void RegisterGeneratedValidators(IServiceCollection services);
 }

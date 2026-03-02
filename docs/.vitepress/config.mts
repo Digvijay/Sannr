@@ -1,4 +1,7 @@
 import { defineConfig } from 'vitepress'
+import { createRequire } from 'module'
+const require = createRequire(import.meta.url)
+const pkg = require('../package.json')
 
 export default defineConfig({
     srcExclude: ['[A-Z]*.md'],
@@ -10,6 +13,7 @@ export default defineConfig({
     ],
     themeConfig: {
         nav: [
+            { text: `v${pkg.version}`, link: 'https://github.com/Digvijay/Sannr/releases', target: '_blank' },
             { text: 'Home', link: '/' },
             { text: 'Guide', link: '/guide/getting-started' },
             { text: 'Features', link: '/features/validation-attributes' },
@@ -95,7 +99,7 @@ export default defineConfig({
 
         footer: {
             message: 'Released under the MIT License.',
-            copyright: 'Copyright  2026 Digvijay'
+            copyright: 'Copyright © 2026 Digvijay Chauhan'
         }
     }
 })
