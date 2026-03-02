@@ -45,7 +45,7 @@ namespace Sannr.AspNetCore
         public static async Task<ValidationResult> ValidateAsync(object instance)
         {
             if (instance == null) return ValidationResult.Success();
-            
+
             if (TryGetValidator(instance.GetType(), out var validator) && validator != null)
             {
                 return await validator(instance);
