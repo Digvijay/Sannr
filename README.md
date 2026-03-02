@@ -330,26 +330,9 @@ Accessing `ValidationRulesJson` returns an empty string?
 
 ### 5. OpenAPI Schemas Missing?
 - Ensure you called `options.SchemaFilter<Sannr.OpenApi.SannrGeneratedSchemaFilter>()` in `AddSwaggerGen`.
-- Ensure you have `<EnableSannrSchemaGen>true</EnableSannrSchemaGen>` in your `.csproj` or called `AddSannr()`.
+- Ensure you have the Swashbuckle library referenced in the project where the validators are defined.
 
 ---
-
-## ⚙️ Configuration (MSBuild Properties)
-
-Sannr allows customizing the source generator behavior via properties in your `.csproj` file.
-
-| Property | Default | Description |
-| :--- | :--- | :--- |
-| `EnableSannrSchemaGen` | `false` | Enables compile-time generation of OpenAPI filters and automatic validator registration. |
-| `SannrOpenApiVersion` | `v2` | Target OpenAPI specification version (`v2` or `v3`). Targets `v2` by default for Swashbuckle 10+ compatibility. |
-
-Example configuration:
-```xml
-<PropertyGroup>
-  <EnableSannrSchemaGen>true</EnableSannrSchemaGen>
-  <SannrOpenApiVersion>v2</SannrOpenApiVersion>
-</PropertyGroup>
-```
 
 ## 📦 Installation
 

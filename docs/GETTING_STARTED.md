@@ -67,15 +67,6 @@ dotnet tool install --global Sannr.Cli
 sannr migrate --source ./Models --target ./Models
 ```
 
-### Opt-in Configuration
-In existing projects, you might not want to generate code for every class immediately. You can control this via your `.csproj`:
-
-```xml
-<PropertyGroup>
-  <!-- Only generate validators for classes explicitly registered or used -->
-  <EnableSannrSchemaGen>true</EnableSannrSchemaGen>
-</PropertyGroup>
-```
 
 ---
 
