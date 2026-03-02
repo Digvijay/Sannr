@@ -67,19 +67,7 @@ public class SannrGenerator : IIncrementalGenerator
     public void Initialize(IncrementalGeneratorInitializationContext context)
     {
         // Read MSBuild properties
-        var optionsProvider = context.AnalyzerConfigOptionsProvider.Select((options, _) =>
-        {
-            options.GlobalOptions.TryGetValue("build_property.sannropenapiversion", out var versionLower);
-            options.GlobalOptions.TryGetValue("build_property.SannrOpenApiVersion", out var versionOriginal);
-            var version = versionLower ?? versionOriginal;
-
-            options.GlobalOptions.TryGetValue("build_property.enablesannrschemagen", out var enableStrLower);
-            options.GlobalOptions.TryGetValue("build_property.EnableSannrSchemaGen", out var enableStrOriginal);
-            var enableStr = enableStrLower ?? enableStrOriginal;
-
-            bool enable = string.Equals(enableStr, "true", StringComparison.OrdinalIgnoreCase);
-            return (Version: version ?? "v2", Enable: enable);
-        });
+        var compilationProvider = context.CompilationProvider;
 
         // Debug: Verify generator is initialized
         context.RegisterPostInitializationOutput(ctx =>
@@ -132,14 +120,15 @@ public class SannrGenerator : IIncrementalGenerator
             ctx.AddSource("FluentDebug.g.cs", "// Fluent generator is running!");
         });
 
-        context.RegisterSourceOutput(validatorProvider.Combine(optionsProvider), (ctx, source) =>
+        context.RegisterSourceOutput(validatorProvider.Combine(compilationProvider), (ctx, source) =>
         {
-            GenerateValidators(ctx, source.Left!, source.Right.Enable, source.Right.Version);
+            GenerateValidators(ctx, source.Left!, source.Right);
         });
 
-        context.RegisterSourceOutput(fluentValidatorProvider.Combine(optionsProvider), (ctx, source) =>
+        context.RegisterSourceOutput(fluentValidatorProvider.Combine(compilationProvider), (ctx, source) =>
         {
-            GenerateFluentValidators(ctx, source.Left!, source.Right.Enable);
+            // Fluent validators previously used optionsProvider, but we'll default enable=true logically internally or we drop that logic
+            GenerateFluentValidators(ctx, source.Left!, true);
         });
 
         context.RegisterSourceOutput(shadowTypeProvider, GenerateShadowTypes!);
@@ -260,7 +249,7 @@ public class SannrGenerator : IIncrementalGenerator
         }
         return null;
     }
-    private static void GenerateValidators(SourceProductionContext context, ImmutableArray<INamedTypeSymbol> targets, bool enableSannrSchemaGen, string openApiVersion)
+    private static void GenerateValidators(SourceProductionContext context, ImmutableArray<INamedTypeSymbol> targets, Compilation compilation)
     {
         var processedClasses = new HashSet<string>(StringComparer.Ordinal);
 
@@ -279,21 +268,21 @@ public class SannrGenerator : IIncrementalGenerator
             if (!processedClasses.Add(classKey))
                 continue; // Skip duplicate
 
-            // Only generate if explicitly opted-in via AddSannr() or project property
-            // (In a real scenario, we might check if the class is actually used in a Sannr context)
-            if (!enableSannrSchemaGen) continue;
-
             // Regular attribute-based validation
             GenerateValidator(context, classSymbol);
         }
 
-        if (!enableSannrSchemaGen) return;
+        bool hasSwashbuckle = compilation.GetTypeByMetadataName("Swashbuckle.AspNetCore.SwaggerGen.ISchemaFilter") != null ||
+                              compilation.References.Any(r => r.Display != null && r.Display.Contains("Swashbuckle"));
 
-        // Generate OpenAPI schema filter for AOT-compatible schema generation
-        GenerateOpenApiFilter(context, targets, openApiVersion);
+        if (hasSwashbuckle)
+        {
+            // Generate OpenAPI schema filter for AOT-compatible schema generation
+            GenerateOpenApiFilter(context, targets, "v3");
+        }
 
         // Generate AddSannr extension method for automatic validator registration
-        GenerateAddSannrMethod(context, targets, enableSannrSchemaGen);
+        GenerateAddSannrMethod(context, targets);
     }
 
     /// <summary>
@@ -1212,7 +1201,7 @@ public class SannrGenerator : IIncrementalGenerator
     /// <summary>
     /// Generates the AddSannr extension method for automatic validator registration.
     /// </summary>
-    private static void GenerateAddSannrMethod(SourceProductionContext context, ImmutableArray<INamedTypeSymbol> targets, bool enableSannrSchemaGen)
+    private static void GenerateAddSannrMethod(SourceProductionContext context, ImmutableArray<INamedTypeSymbol> targets)
     {
         if (targets.IsEmpty)
             return;

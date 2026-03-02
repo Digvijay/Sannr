@@ -1,0 +1,6 @@
+<Project>
+  <ItemGroup>
+    <CompilerVisibleProperty Include="EnableSannrSchemaGen" />
+    <CompilerVisibleProperty Include="SannrOpenApiVersion" />
+  </ItemGroup>
+</Project>
