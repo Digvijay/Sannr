@@ -5,9 +5,25 @@ permissions:
 
 on:
   push:
-    branches: [ "main" ]
+    branches: [ "main", "development" ]
+    paths:
+      - 'src/**'
+      - 'tests/**'
+      - '.github/workflows/ci.yml'
+      - 'Directory.Build.props'
+      - 'Directory.Packages.props'
+      - 'global.json'
+      - 'Sannr.sln'
   pull_request:
-    branches: [ "main" ]
+    branches: [ "main", "development" ]
+    paths:
+      - 'src/**'
+      - 'tests/**'
+      - '.github/workflows/ci.yml'
+      - 'Directory.Build.props'
+      - 'Directory.Packages.props'
+      - 'global.json'
+      - 'Sannr.sln'
 
 jobs:
   build:

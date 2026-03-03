@@ -17,13 +17,12 @@
     <RepositoryType>git</RepositoryType>
     <PackageIcon>icon.png</PackageIcon>
     <PackageReadmeFile>README.md</PackageReadmeFile>
-    <PackageReleaseNotes>v1.3.0 - Introduces **Static Reflection** with Shadow Types! 🔮
-    - New `[SannrReflect]` attribute generates static "Shadow Types" for classes.
-    - Zero-allocation, AOT-compatible property accessors (`GetX`/`SetX`).
-    - Compile-time metadata generation (`TypeName`, `PropertyCount`).
-    - Smart `DeepClone()` support for complex object graphs.
-    - PII-aware property inspection with `[Pii]`.
-    - Generic `Visit` method for high-performance iteration.</PackageReleaseNotes>
+    <PackageReleaseNotes>v1.4.0 - Swashbuckle 10.x Compatibility & SANN004 Analyzer 🛡️
+    - SANN004 Build Error: Enforces `partial` keyword on validated classes to prevent silent generator skips.
+    - Swashbuckle 10.x Support: Schema filter now targets Microsoft.OpenApi v2.0 by default.
+    - Enhanced Schema Generation: Added support for `Phone`, `CreditCard`, and `FileExtensions`.
+    - Performance & Reliability: Moved schema registration to compile-time via `[ModuleInitializer]`.
+    - CI/CD Fix: Resolved race conditions between formatting and code generation steps.</PackageReleaseNotes>
     
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <IncludeBuildOutput>true</IncludeBuildOutput>
