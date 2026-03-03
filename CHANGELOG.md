@@ -5,18 +5,20 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [1.4.0] - 2026-03-02
+## [1.4.0] - 2026-03-03
 
 ### Added
-- **OpenAPI & Swashbuckle 10.x Compatibility**: Updated source generator to target OpenAPI v2 (Swagger 2.0) by default, resolving breaking changes in Swashbuckle.AspNetCore v10.
-- **Toggleable OpenAPI Versions**: New MSBuild property `SannrOpenApiVersion` (defaults to `v2`) allows switching between OpenAPI v2 and v3 schemas.
-- **Source Generator Opt-in**: Added `EnableSannrSchemaGen` MSBuild property and explicit `AddSannr()` registration check to reduce redundant code generation.
-- **Performance Optimization**: The generator now only emits code for classes explicitly part of a registered validation context, significantly reducing assembly size and build overhead.
+- **SANN004 Analyzer**: Build error when a class uses Sannr validation attributes without the `partial` keyword. Catches a common mistake that silently breaks code generation.
+- **Swashbuckle 10.x Compatibility**: Schema filter targets the Swashbuckle.AspNetCore v10 API (`Microsoft.OpenApi` v2.0) by default.
+- **Phone, CreditCard, FileExtensions OpenAPI schemas**: Now correctly map to `format: "tel"`, `format: "credit-card"`, and `format: "file"`.
+
+### Changed
+- **Always-present `SannrGeneratedSchemaFilter`**: The filter class now lives in `Sannr.AspNetCore` and is always available regardless of build environment. Schema constraints are registered via `[ModuleInitializer]` at startup rather than as generated class definitions.
+- **No MSBuild opt-in required**: `EnableSannrSchemaGen` and `SannrOpenApiVersion` properties are no longer needed.
 
 ### Fixed
-- **OpenAPI Schema Generation**: Added missing support for `Phone`, `CreditCard`, and `FileExtensions` attributes in the generated schema filter.
-- **Source Control Hygiene**: Updated `.gitignore` to exclude large build artifacts (`node_modules`, `dist`, `logs`) from the `docs` directory.
-- **Dependency Management**: Updated .NET SDK to `10.0.101` in `global.json` for compatibility with latest installed SDKs.
+- **CI reliability**: Resolved a class of CI failures where `dotnet format --verify-no-changes` would fail on a clean checkout because source-generated types had not yet been produced.
+
 
 ## [1.3.0] - 2026-01-11
 

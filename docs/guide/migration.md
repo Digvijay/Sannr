@@ -1,5 +1,61 @@
 # Migration Guide
 
+## Upgrading from v1.3 to v1.4
+
+Version 1.4 makes three changes that affect existing projects.
+
+### 1. `SannrGeneratedSchemaFilter` - Always Present, No Opt-in Needed
+
+Previously the filter class was only generated if you set `<EnableSannrSchemaGen>true</EnableSannrSchemaGen>`.
+In v1.4 it always exists in the `Sannr.AspNetCore` assembly.
+
+**Before:**
+```xml
+<!-- Was required in .csproj -->
+<PropertyGroup>
+  <EnableSannrSchemaGen>true</EnableSannrSchemaGen>
+</PropertyGroup>
+```
+```csharp
+options.SchemaFilter<SannrGeneratedSchemaFilter>(); // worked
+```
+
+**After:** Just remove the MSBuild property entirely. The filter is always available:
+```csharp
+options.SchemaFilter<SannrGeneratedSchemaFilter>(); // still works, no csproj change needed
+```
+
+### 2. Schema Registration API
+
+If you used `options.AddSannrValidationSchemas()`, change it to:
+```csharp
+options.SchemaFilter<SannrGeneratedSchemaFilter>();
+```
+
+### 3. SANN004: Classes with Sannr Attributes Must Be `partial`
+
+A new build error (SANN004) is emitted if your model class uses Sannr validation attributes but is not declared as `partial`. This was previously a silent failure.
+
+```csharp
+// Before - source generator silently skipped this class
+public class UserRequest
+{
+    [Required, EmailAddress]
+    public string Email { get; set; } = string.Empty;
+}
+
+// After - required in v1.4
+public partial class UserRequest
+{
+    [Required, EmailAddress]
+    public string Email { get; set; } = string.Empty;
+}
+```
+
+---
+
+## Migrating from Other Libraries
+
 Sannr includes a powerful CLI tool to help migrate from other validation libraries like FluentValidation and DataAnnotations.
 
 ## Installation

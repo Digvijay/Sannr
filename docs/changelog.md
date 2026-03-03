@@ -5,6 +5,38 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.4.0] - 2026-03-03
+
+### Added
+- **SANN004 Analyzer**: New build error when a class has Sannr validation attributes but is missing the `partial` keyword. Prevents silent source generator skips.
+- **Swashbuckle 10.x Compatibility**: Generated schema filter now targets the Swashbuckle.AspNetCore v10 API (`Microsoft.OpenApi` v2.0) by default.
+- **Phone, CreditCard, FileExtensions schemas**: These attributes now map to `format: "tel"`, `format: "credit-card"`, and `format: "file"` respectively.
+
+### Changed
+- **Always-present `SannrGeneratedSchemaFilter`**: The filter class now lives directly in `Sannr.AspNetCore` and is always available, regardless of whether the source generator has run. Schema constraints are registered via a `[ModuleInitializer]` rather than being injected as a generated class. This removes all dependency on MSBuild opt-in properties.
+- **No MSBuild opt-in required**: `EnableSannrSchemaGen` and `SannrOpenApiVersion` properties are no longer needed. Simply reference Swashbuckle and annotate your models.
+
+### Migration from v1.3
+If you previously used:
+```xml
+<EnableSannrSchemaGen>true</EnableSannrSchemaGen>
+```
+You can **remove** this property. The schema filter works automatically.
+
+Change any `options.AddSannrValidationSchemas()` calls to:
+```csharp
+options.SchemaFilter<SannrGeneratedSchemaFilter>();
+```
+
+Ensure all model classes using Sannr attributes are declared as `partial`:
+```csharp
+// Before
+public class UserRequest { ... }
+
+// After (required)
+public partial class UserRequest { ... }
+```
+
 ## [1.3.0] - 2026-01-11
 
 ### Added
