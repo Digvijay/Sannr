@@ -5,7 +5,7 @@
     <IsAotCompatible Condition="$([MSBuild]::IsTargetFrameworkCompatible('$(TargetFramework)', 'net8.0'))">true</IsAotCompatible> <!-- Ensures AOT compatibility for performance and deployment -->
     
     <PackageId>Sannr</PackageId>
-    <Version>1.4.0</Version>
+    <Version>1.5.0</Version>
     <Authors>Digvijay Chauhan</Authors>
     <Description>The AOT-first validation engine for .NET. (Single Package)</Description>
     <PackageTags>validation;aot;aspnetcore;performance;enterprise;reflection;source-generator</PackageTags>
@@ -17,12 +17,12 @@
     <RepositoryType>git</RepositoryType>
     <PackageIcon>icon.png</PackageIcon>
     <PackageReadmeFile>README.md</PackageReadmeFile>
-    <PackageReleaseNotes>v1.4.0 - Swashbuckle 10.x Compatibility & SANN004 Analyzer 🛡️
-    - SANN004 Build Error: Enforces `partial` keyword on validated classes to prevent silent generator skips.
-    - Swashbuckle 10.x Support: Schema filter now targets Microsoft.OpenApi v2.0 by default.
-    - Enhanced Schema Generation: Added support for `Phone`, `CreditCard`, and `FileExtensions`.
-    - Performance & Reliability: Moved schema registration to compile-time via `[ModuleInitializer]`.
-    - CI/CD Fix: Resolved race conditions between formatting and code generation steps.</PackageReleaseNotes>
+    <PackageReleaseNotes>v1.5.0 - Automatic AOT Registration &amp; Swashbuckle 10+ Synergy 🛡️
+    - Automatic Registration: No more manual/partial method calls. Validators are registered via [ModuleInitializer].
+    - Swashbuckle 10.x Support: Native compatibility with Microsoft.OpenApi v2.0 for modern .NET 10+ environments.
+    - Zero-Config Generator: Generator automatically activates when AddSannr() is detected in your code.
+    - Enhanced OpenAPI Schemas: Fixed Range (Min/Max) mapping for v2.0 schemas.
+    - Clean Build: Resolved IDE formatting warnings and updated documentation for a crisp developer experience.</PackageReleaseNotes>
     
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <IncludeBuildOutput>true</IncludeBuildOutput>

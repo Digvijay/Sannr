@@ -298,11 +298,6 @@ public static partial class SannrExtensions
             services.AddSannrProblemDetails();
         }
 
-        // Register validators generated at compile-time
-        RegisterGeneratedValidators(services);
-
         return services;
     }
-
-    static partial void RegisterGeneratedValidators(IServiceCollection services);
 }

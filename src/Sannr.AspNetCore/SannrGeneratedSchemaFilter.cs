@@ -24,7 +24,7 @@
 
 using System;
 using System.Collections.Generic;
-using Microsoft.OpenApi.Models;
+using Microsoft.OpenApi;
 using Swashbuckle.AspNetCore.SwaggerGen;
 
 namespace Sannr.OpenApi;
@@ -52,13 +52,18 @@ public class SannrGeneratedSchemaFilter : ISchemaFilter
     /// <summary>
     /// Applies validation constraints to a schema based on the registered type appliers.
     /// </summary>
-    public void Apply(OpenApiSchema schema, SchemaFilterContext context)
+    public void Apply(IOpenApiSchema schema, SchemaFilterContext context)
     {
         if (schema.Properties == null || context.Type == null)
             return;
 
-        var typeName = context.Type.FullName;
-        if (typeName != null && _appliers.TryGetValue(typeName, out var applier))
-            applier(schema);
+        // In Swashbuckle 10 / Microsoft.OpenApi v2+, IOpenApiSchema is used,
+        // but the actual object is often OpenApiSchema which has setters for common properties.
+        if (schema is OpenApiSchema openApiSchema)
+        {
+            var typeName = context.Type.FullName;
+            if (typeName != null && _appliers.TryGetValue(typeName, out var applier))
+                applier(openApiSchema);
+        }
     }
 }

@@ -5,16 +5,23 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [1.4.0] - 2026-03-03
+## [1.5.0] - 2026-03-03
 
 ### Added
-- **SANN004 Analyzer**: New build error when a class has Sannr validation attributes but is missing the `partial` keyword. Prevents silent source generator skips.
-- **Swashbuckle 10.x Compatibility**: Generated schema filter now targets the Swashbuckle.AspNetCore v10 API (`Microsoft.OpenApi` v2.0) by default.
-- **Phone, CreditCard, FileExtensions schemas**: These attributes now map to `format: "tel"`, `format: "credit-card"`, and `format: "file"` respectively.
+- **Zero-Config Generator Activation**: Sannr's source generator now automatically activates if it detects `AddSannr()` or `AddSannrValidators()` in your code. No more manual MSBuild property configuration required.
+- **Combined AOT Initializer**: Consolidated validator registration and OpenAPI schema appliers into a single, high-performance `[ModuleInitializer]`.
+- **Automatic Registration**: Removed the need for manual `RegisterGeneratedValidators` partial method implementation. Everything works "out of the box" while maintaining 100% Native AOT compatibility.
 
-### Changed
-- **Always-present `SannrGeneratedSchemaFilter`**: The filter class now lives directly in `Sannr.AspNetCore` and is always available, regardless of whether the source generator has run. Schema constraints are registered via a `[ModuleInitializer]` rather than being injected as a generated class. This removes all dependency on MSBuild opt-in properties.
-- **No MSBuild opt-in required**: `EnableSannrSchemaGen` and `SannrOpenApiVersion` properties are no longer needed. Simply reference Swashbuckle and annotate your models.
+### Fixed
+- **IDE0055 Warnings**: Resolved all trailing whitespace and formatting warnings in generated code.
+- **OpenAPI v2.x Range Mapping**: Correctly handles string-based `Minimum`/`Maximum` for Swashbuckle 10+ (Microsoft.OpenApi v2.x).
+
+## [1.4.0] - 2026-03-02
+
+### Added
+- **SANN004 Analyzer**: New build error when a class has Sannr validation attributes but is missing the `partial` keyword.
+- **Swashbuckle 10.x Compatibility**: Initial support for `Microsoft.OpenApi` v2.0.
+- **Phone, CreditCard, FileExtensions schemas**: Added mappings for specialized formats.
 
 ### Migration from v1.3
 If you previously used:

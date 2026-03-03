@@ -23,7 +23,7 @@
 // ----------------------------------------------------------------------------------
 
 using System.Collections.Generic;
-using Microsoft.OpenApi.Models;
+using Microsoft.OpenApi;
 using Sannr.OpenApi;
 using Swashbuckle.AspNetCore.SwaggerGen;
 using Xunit;
@@ -126,7 +126,7 @@ namespace Sannr.Tests
         {
             // Arrange
             var filter = new SannrGeneratedSchemaFilter();
-            var schema = new OpenApiSchema { Properties = new Dictionary<string, OpenApiSchema>() };
+            var schema = new OpenApiSchema { Properties = new Dictionary<string, IOpenApiSchema>() };
             var context = new SchemaFilterContext(
                 type: typeof(TestApiModel),
                 schemaGenerator: null!,
@@ -148,9 +148,9 @@ namespace Sannr.Tests
             var filter = new SannrGeneratedSchemaFilter();
             var schema = new OpenApiSchema
             {
-                Properties = new Dictionary<string, OpenApiSchema>
+                Properties = new Dictionary<string, IOpenApiSchema>
                 {
-                    ["EmailField"] = new OpenApiSchema { Type = "string" }
+                    ["EmailField"] = new OpenApiSchema { Type = JsonSchemaType.String }
                 }
             };
             var context = new SchemaFilterContext(
@@ -174,9 +174,9 @@ namespace Sannr.Tests
             var filter = new SannrGeneratedSchemaFilter();
             var schema = new OpenApiSchema
             {
-                Properties = new Dictionary<string, OpenApiSchema>
+                Properties = new Dictionary<string, IOpenApiSchema>
                 {
-                    ["AgeField"] = new OpenApiSchema { Type = "integer" }
+                    ["AgeField"] = new OpenApiSchema { Type = JsonSchemaType.Integer }
                 }
             };
             var context = new SchemaFilterContext(
@@ -190,8 +190,8 @@ namespace Sannr.Tests
             // Assert
             Assert.True(schema.Properties.ContainsKey("AgeField"));
             var ageProperty = schema.Properties["AgeField"];
-            Assert.Equal(18m, ageProperty.Minimum);
-            Assert.Equal(120m, ageProperty.Maximum);
+            Assert.Equal("18", ageProperty.Minimum);
+            Assert.Equal("120", ageProperty.Maximum);
         }
 
         [Fact]
@@ -201,9 +201,9 @@ namespace Sannr.Tests
             var filter = new SannrGeneratedSchemaFilter();
             var schema = new OpenApiSchema
             {
-                Properties = new Dictionary<string, OpenApiSchema>
+                Properties = new Dictionary<string, IOpenApiSchema>
                 {
-                    ["NameField"] = new OpenApiSchema { Type = "string" }
+                    ["NameField"] = new OpenApiSchema { Type = JsonSchemaType.String }
                 }
             };
             var context = new SchemaFilterContext(
@@ -228,9 +228,9 @@ namespace Sannr.Tests
             var filter = new SannrGeneratedSchemaFilter();
             var schema = new OpenApiSchema
             {
-                Properties = new Dictionary<string, OpenApiSchema>
+                Properties = new Dictionary<string, IOpenApiSchema>
                 {
-                    ["UrlField"] = new OpenApiSchema { Type = "string" }
+                    ["UrlField"] = new OpenApiSchema { Type = JsonSchemaType.String }
                 }
             };
             var context = new SchemaFilterContext(
@@ -254,9 +254,9 @@ namespace Sannr.Tests
             var filter = new SannrGeneratedSchemaFilter();
             var schema = new OpenApiSchema
             {
-                Properties = new Dictionary<string, OpenApiSchema>
+                Properties = new Dictionary<string, IOpenApiSchema>
                 {
-                    ["FileField"] = new OpenApiSchema { Type = "string" }
+                    ["FileField"] = new OpenApiSchema { Type = JsonSchemaType.String }
                 }
             };
             var context = new SchemaFilterContext(
@@ -280,9 +280,9 @@ namespace Sannr.Tests
             var filter = new SannrGeneratedSchemaFilter();
             var schema = new OpenApiSchema
             {
-                Properties = new Dictionary<string, OpenApiSchema>
+                Properties = new Dictionary<string, IOpenApiSchema>
                 {
-                    ["NoValidationField"] = new OpenApiSchema { Type = "string" }
+                    ["NoValidationField"] = new OpenApiSchema { Type = JsonSchemaType.String }
                 }
             };
             var context = new SchemaFilterContext(
@@ -323,7 +323,7 @@ namespace Sannr.Tests
         {
             // Arrange
             var filter = new SannrGeneratedSchemaFilter();
-            var schema = new OpenApiSchema { Properties = new Dictionary<string, OpenApiSchema>() };
+            var schema = new OpenApiSchema { Properties = new Dictionary<string, IOpenApiSchema>() };
             var context = new SchemaFilterContext(
                 type: null!,
                 schemaGenerator: null!,
@@ -341,9 +341,9 @@ namespace Sannr.Tests
             var filter = new SannrGeneratedSchemaFilter();
             var schema = new OpenApiSchema
             {
-                Properties = new Dictionary<string, OpenApiSchema>
+                Properties = new Dictionary<string, IOpenApiSchema>
                 {
-                    ["MultiField"] = new OpenApiSchema { Type = "string" }
+                    ["MultiField"] = new OpenApiSchema { Type = JsonSchemaType.String }
                 }
             };
             var context = new SchemaFilterContext(
@@ -369,9 +369,9 @@ namespace Sannr.Tests
             var filter = new SannrGeneratedSchemaFilter();
             var schema = new OpenApiSchema
             {
-                Properties = new Dictionary<string, OpenApiSchema>
+                Properties = new Dictionary<string, IOpenApiSchema>
                 {
-                    ["PriceField"] = new OpenApiSchema { Type = "number" }
+                    ["PriceField"] = new OpenApiSchema { Type = JsonSchemaType.Number }
                 }
             };
             var context = new SchemaFilterContext(
@@ -385,8 +385,8 @@ namespace Sannr.Tests
             // Assert
             Assert.True(schema.Properties.ContainsKey("PriceField"));
             var priceProperty = schema.Properties["PriceField"];
-            Assert.Equal(0.01m, priceProperty.Minimum);
-            Assert.Equal(999.99m, priceProperty.Maximum);
+            Assert.Equal("0.01", priceProperty.Minimum);
+            Assert.Equal("999.99", priceProperty.Maximum);
         }
 
         [Fact]
@@ -396,9 +396,9 @@ namespace Sannr.Tests
             var filter = new SannrGeneratedSchemaFilter();
             var schema = new OpenApiSchema
             {
-                Properties = new Dictionary<string, OpenApiSchema>
+                Properties = new Dictionary<string, IOpenApiSchema>
                 {
-                    ["RequiredField"] = new OpenApiSchema { Type = "string" }
+                    ["RequiredField"] = new OpenApiSchema { Type = JsonSchemaType.String }
                 }
             };
             var context = new SchemaFilterContext(
@@ -423,9 +423,9 @@ namespace Sannr.Tests
             var filter = new SannrGeneratedSchemaFilter();
             var schema = new OpenApiSchema
             {
-                Properties = new Dictionary<string, OpenApiSchema>
+                Properties = new Dictionary<string, IOpenApiSchema>
                 {
-                    ["PhoneField"] = new OpenApiSchema { Type = "string" }
+                    ["PhoneField"] = new OpenApiSchema { Type = JsonSchemaType.String }
                 }
             };
             var context = new SchemaFilterContext(
@@ -449,9 +449,9 @@ namespace Sannr.Tests
             var filter = new SannrGeneratedSchemaFilter();
             var schema = new OpenApiSchema
             {
-                Properties = new Dictionary<string, OpenApiSchema>
+                Properties = new Dictionary<string, IOpenApiSchema>
                 {
-                    ["CreditCardField"] = new OpenApiSchema { Type = "string" }
+                    ["CreditCardField"] = new OpenApiSchema { Type = JsonSchemaType.String }
                 }
             };
             var context = new SchemaFilterContext(
@@ -474,7 +474,7 @@ namespace Sannr.Tests
             // Arrange
             var testModelType = typeof(EmptyModel);
             var filter = new SannrGeneratedSchemaFilter();
-            var schema = new OpenApiSchema { Properties = new Dictionary<string, OpenApiSchema>() };
+            var schema = new OpenApiSchema { Properties = new Dictionary<string, IOpenApiSchema>() };
             var context = new SchemaFilterContext(
                 type: testModelType,
                 schemaGenerator: null!,

@@ -194,7 +194,7 @@ builder.Services.AddSwaggerGen(options =>
 });
 ```
 
-### After (Sannr v1.4)
+### After (Sannr v1.5)
 ```csharp
 builder.Services.AddSwaggerGen(options =>
 {
