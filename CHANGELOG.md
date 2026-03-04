@@ -5,6 +5,23 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.6.0] - 2026-03-04
+
+### Added
+- **Universal Class Library Support**: Sannr now works natively in Class Libraries without any ASP.NET Core or OpenAPI dependencies. The source generator automatically detects the environment and only emits Web-related registration code when appropriate.
+- **SANN005 Analyzer (Version Safety)**: New warning when a project's `SannrOpenApiVersion` MSBuild property doesn't match the actual `Microsoft.OpenApi` references in the compilation.
+- **Improved DI Registration**: Better handling of internal validator registration via `[ModuleInitializer]` that works across assembly boundaries.
+
+### Fixed
+- **Source Generator Mismatch**: Resolved an issue where models in Class Libraries were missing their generated validators but still had registration entries in the global initializer.
+- **Diagnostic Precision**: SANN004 (missing partial) now provides more accurate source locations and error messages.
+- **Generated File Visibility**: Configured `EmitCompilerGeneratedFiles` globally to assist in debugging and verifying generated code.
+
+### Technical Deep Dive
+- **Intelligent Environment Detection**: The generator now performs real-time analysis of compilation assembly references. If `Sannr.AspNetCore` symbols are not found, the generator automatically skips emitting Web-specific boilerplate (like `SannrInitializer.g.cs`), making it safe for pure library projects.
+- **OpenAPI Version Guard**: A new diagnostic engine examines the `Microsoft.OpenApi.OpenApiSchema` type definition in the compilation. If it detects a mismatch between the linked library version (v1.x vs v2.x) and the provided `SannrOpenApiVersion` MSBuild property, it emits **SANN005** to prevent runtime schema generation failures.
+- **Zero-Reflection Registry**: Validators in Class Libraries are now registered using `[ModuleInitializer]`. This ensures that when a library is referenced by a Web project, its validators are automatically registered in the global `SannrValidatorRegistry` before the application starts, maintaining full Native AOT compatibility.
+
 ## [1.5.0] - 2026-03-03
 
 ### Added

@@ -4,6 +4,9 @@
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
+    <EmitCompilerGeneratedFiles>true</EmitCompilerGeneratedFiles>
+    <CompilerGeneratedFilesOutputPath>Generated</CompilerGeneratedFilesOutputPath>
+    <DefaultItemExcludes>$(DefaultItemExcludes);$(CompilerGeneratedFilesOutputPath)/**</DefaultItemExcludes>
     
     <!-- Centralize Package Metadata -->
     <Authors>Digvijay Chauhan</Authors>
@@ -19,6 +22,7 @@
     <CompilerVisibleProperty Include="EnableSannrSchemaGen" />
     <CompilerVisibleProperty Include="SannrOpenApiVersion" />
   </ItemGroup>
+
 
   <!-- Common build settings for AOT-friendly libraries -->
   <PropertyGroup Condition="'$(IsAotCompatible)' == '' and '$(TargetFrameworkIdentifier)' == '.NETCoreApp'">

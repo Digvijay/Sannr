@@ -59,3 +59,9 @@ docs/node_modules/
 docs/.vitepress/dist/
 docs/build_output.log
 
+
+# --- Generated Documentation ---
+docs/changelog.md
+
+# --- Scripts ---
+release.sh

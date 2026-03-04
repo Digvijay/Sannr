@@ -9,7 +9,44 @@ export default defineConfig({
     title: "Sannr",
     description: "Enterprise-Grade, AOT-First Validation Engine for .NET",
     head: [
-        ['link', { rel: 'icon', href: '/icon.png' }]
+        ['link', { rel: 'icon', href: '/icon.png' }],
+        ['script', {}, `
+            (function() {
+                var cookieName = 'sannr-cookie-consent';
+                if (!localStorage.getItem(cookieName)) {
+                    document.addEventListener('DOMContentLoaded', function() {
+                        var banner = document.createElement('div');
+                        banner.id = 'cookie-banner';
+                        banner.style.position = 'fixed';
+                        banner.style.bottom = '20px';
+                        banner.style.left = '50%';
+                        banner.style.transform = 'translateX(-50%)';
+                        banner.style.backgroundColor = 'var(--vp-c-bg-soft)';
+                        banner.style.color = 'var(--vp-c-text-1)';
+                        banner.style.padding = '12px 24px';
+                        banner.style.borderRadius = '12px';
+                        banner.style.boxShadow = '0 8px 24px rgba(0,0,0,0.15)';
+                        banner.style.zIndex = '1000';
+                        banner.style.display = 'flex';
+                        banner.style.alignItems = 'center';
+                        banner.style.gap = '16px';
+                        banner.style.fontSize = '14px';
+                        banner.style.border = '1px solid var(--vp-c-divider)';
+                        banner.style.backdropFilter = 'blur(8px)';
+                        
+                        banner.innerHTML = '<span>We use cookies to improve your experience.</span>' +
+                                         '<button id="accept-cookies" style="background: var(--vp-c-brand); color: white; border: none; padding: 6px 16px; borderRadius: 8px; cursor: pointer; fontWeight: 600;">Accept</button>';
+                        
+                        document.body.appendChild(banner);
+                        
+                        document.getElementById('accept-cookies').onclick = function() {
+                            localStorage.setItem(cookieName, 'true');
+                            banner.style.display = 'none';
+                        };
+                    });
+                }
+            })();
+        `]
     ],
     themeConfig: {
         nav: [
