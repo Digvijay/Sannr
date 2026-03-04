@@ -28,16 +28,15 @@ public class GeneratorLogicTests
 
         var generator = new SannrGenerator();
         GeneratorDriver driver = CSharpGeneratorDriver.Create(generator);
-        
         driver = driver.RunGenerators(compilation);
         var runResult = driver.GetRunResult();
 
         // Verify no SannrInitializer is generated (since AspNetCore is missing)
         var generatedFiles = runResult.GeneratedTrees.Select(t => t.FilePath).ToList();
-        Assert.DoesNotContain(generatedFiles, f => f.EndsWith("SannrInitializer.g.cs"));
-        
+        Assert.DoesNotContain(generatedFiles, f => f.EndsWith("SannrInitializer.g.cs", StringComparison.Ordinal));
+
         // Verify validator IS generated
-        Assert.Contains(generatedFiles, f => f.EndsWith("MyModel.SannrValidator.g.cs"));
+        Assert.Contains(generatedFiles, f => f.EndsWith("MyModel.SannrValidator.g.cs", StringComparison.Ordinal));
     }
 
     [Fact]
@@ -68,11 +67,12 @@ public class GeneratorLogicTests
         Assert.Contains(diagnostics, d => d.Id == "SANN005");
     }
 
-    private static Compilation CreateCompilation(string source)
+    private static CSharpCompilation CreateCompilation(string source)
     {
         return CSharpCompilation.Create("TestAssembly",
             new[] { CSharpSyntaxTree.ParseText(source) },
-            new[] { 
+            new[]
+            {
                 MetadataReference.CreateFromFile(typeof(object).Assembly.Location),
                 MetadataReference.CreateFromFile(typeof(Sannr.RequiredAttribute).Assembly.Location)
             },
@@ -98,7 +98,7 @@ public class GeneratorLogicTests
             private readonly Dictionary<string, string> _options;
             public TestOptions(Dictionary<string, string> options) => _options = options;
 
-            public override bool TryGetValue(string key, out string? value)
+            public override bool TryGetValue(string key, [System.Diagnostics.CodeAnalysis.NotNullWhen(true)] out string? value)
                 => _options.TryGetValue(key, out value);
         }
     }
