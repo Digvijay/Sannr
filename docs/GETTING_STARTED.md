@@ -21,7 +21,44 @@ dotnet add package Sannr
 
 ---
 
-## 2. Greenfield Projects (New Setup)
+## 2. Using Sannr in Class Libraries
+
+Sannr version 1.6.0+ is designed to work in shared libraries and data models without requiring a reference to ASP.NET Core or Swashbuckle.
+
+### Step 1: Install Sannr.Core
+In your shared library project, add the core library:
+
+```bash
+dotnet add package Sannr.Core
+```
+
+### Step 2: Define Shared Models
+Your models must be declared as `partial` to allow the source generator to attach validation logic.
+
+```csharp
+using Sannr;
+
+namespace Shared.Models;
+
+// The generator automatically emits validation logic for this project 
+// without needing any Web SDK references.
+public partial class ProductDto
+{
+    [Required]
+    [StringLength(100)]
+    public string Name { get; set; } = string.Empty;
+
+    [Range(0.01, 1000.0)]
+    public decimal Price { get; set; }
+}
+```
+
+### Step 3: Consume in a Web Project
+When you reference this library in a Web project that uses `services.AddSannr()`, the validators from the library are automatically discovered and registered via `[ModuleInitializer]`.
+
+---
+
+## 3. Greenfield Projects (Web Setup)
 
 If you are starting a new project, follow these steps to enable Sannr's validation engine.
 

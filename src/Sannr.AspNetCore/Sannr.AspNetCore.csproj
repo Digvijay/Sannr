@@ -5,7 +5,7 @@
     <IsAotCompatible Condition="$([MSBuild]::IsTargetFrameworkCompatible('$(TargetFramework)', 'net8.0'))">true</IsAotCompatible> <!-- Ensures AOT compatibility for performance and deployment -->
     
     <PackageId>Sannr</PackageId>
-    <Version>1.5.0</Version>
+    <Version>1.6.0</Version>
     <Authors>Digvijay Chauhan</Authors>
     <Description>The AOT-first validation engine for .NET. (Single Package)</Description>
     <PackageTags>validation;aot;aspnetcore;performance;enterprise;reflection;source-generator</PackageTags>
@@ -17,12 +17,12 @@
     <RepositoryType>git</RepositoryType>
     <PackageIcon>icon.png</PackageIcon>
     <PackageReadmeFile>README.md</PackageReadmeFile>
-    <PackageReleaseNotes>v1.5.0 - Automatic AOT Registration &amp; Swashbuckle 10+ Synergy 🛡️
-    - Automatic Registration: No more manual/partial method calls. Validators are registered via [ModuleInitializer].
-    - Swashbuckle 10.x Support: Native compatibility with Microsoft.OpenApi v2.0 for modern .NET 10+ environments.
-    - Zero-Config Generator: Generator automatically activates when AddSannr() is detected in your code.
-    - Enhanced OpenAPI Schemas: Fixed Range (Min/Max) mapping for v2.0 schemas.
-    - Clean Build: Resolved IDE formatting warnings and updated documentation for a crisp developer experience.</PackageReleaseNotes>
+    <PackageReleaseNotes>v1.6.0 - Universal AOT Validation Support 🚀
+    - Universal Library Support: Sannr now works out-of-the-box in Class Libraries without any ASP.NET Core dependencies.
+    - Conditional OpenAPI Synergy: Source generator automatically detects your environment and only emits OpenAPI registration code when Swashbuckle/AspNetCore is present.
+    - Swashbuckle v10 Safety: New SANN005 analyzer warns if your SannrOpenApiVersion configuration doesn't match your project references.
+    - Improved SANN004 Diagnostics: More precise error reporting for missing 'partial' keywords.
+    - Dev Experience: Enabled EmitCompilerGeneratedFiles with automatic item exclusion for better debugging.</PackageReleaseNotes>
     
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <IncludeBuildOutput>true</IncludeBuildOutput>

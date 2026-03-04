@@ -1,10 +1,10 @@
 {
     "name": "sannr-docs",
-    "version": "1.5.0",
+    "version": "1.6.0",
     "description": "Sannr Documentation",
     "scripts": {
-        "docs:dev": "vitepress dev",
-        "docs:build": "vitepress build",
+        "docs:dev": "cp ../CHANGELOG.md changelog.md && vitepress dev",
+        "docs:build": "cp ../CHANGELOG.md changelog.md && vitepress build",
         "docs:preview": "vitepress preview"
     },
     "devDependencies": {

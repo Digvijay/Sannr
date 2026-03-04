@@ -237,7 +237,15 @@ Common issues:
 ### OpenAPI Schema Issues
 
 If OpenAPI schemas don't show validation constraints:
-- Ensure `options.SchemaFilter<Sannr.OpenApi.SannrGeneratedSchemaFilter>()` is called in your Swagger configuration
+- Ensure `options.SchemaFilter<Sannr.OpenApi.SannrGeneratedSchemaFilter>()` is called in your Swagger configuration.
+  For example, in `AddSwaggerGen`:
+  ```csharp
+  builder.Services.AddSwaggerGen(options =>
+  {
+      // High-performance, compile-time generated schema filter (AOT compatible)
+      options.SchemaFilter<Sannr.OpenApi.SannrGeneratedSchemaFilter>();
+  });
+  ```
 - Check that the model is used in endpoints with `Validated<T>`
 
 ## See Also

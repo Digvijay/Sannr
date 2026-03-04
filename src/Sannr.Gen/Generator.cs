@@ -134,9 +134,22 @@ public class SannrGenerator : IIncrementalGenerator
         context.RegisterSourceOutput(partialDiagnosticsProvider, (spc, diagnostic) =>
             spc.ReportDiagnostic(diagnostic!));
 
-        context.RegisterSourceOutput(validatorProvider.Combine(optionsWithDetectionProvider), (ctx, source) =>
+        context.RegisterSourceOutput(shadowTypeProvider, GenerateShadowTypes!);
+
+        // Detect if the project references Sannr.AspNetCore (and thus can provide OpenAPI integration)
+        var hasAspNetCoreProvider = context.CompilationProvider.Select((compilation, _) =>
+            compilation.GetTypeByMetadataName("Sannr.OpenApi.SannrGeneratedSchemaFilter") != null);
+
+        var combinedValidatorProvider = validatorProvider
+            .Combine(optionsWithDetectionProvider)
+            .Combine(hasAspNetCoreProvider);
+
+        context.RegisterSourceOutput(combinedValidatorProvider, (ctx, source) =>
         {
-            GenerateValidators(ctx, source.Left!, source.Right.Enable, source.Right.Version);
+            var targets = source.Left.Left;
+            var options = source.Left.Right;
+            var hasAspNetCore = source.Right;
+            GenerateValidators(ctx, targets!, options.Enable, options.Version, hasAspNetCore);
         });
 
         context.RegisterSourceOutput(fluentValidatorProvider.Combine(optionsWithDetectionProvider), (ctx, source) =>
@@ -144,7 +157,31 @@ public class SannrGenerator : IIncrementalGenerator
             GenerateFluentValidators(ctx, source.Left!, source.Right.Enable);
         });
 
-        context.RegisterSourceOutput(shadowTypeProvider, GenerateShadowTypes!);
+
+        // SANN005: Version mismatch detection
+        var versionMismatchProvider = context.CompilationProvider.Combine(optionsProvider)
+            .Select((combined, _) =>
+            {
+                var compilation = combined.Left;
+                var configuredVersion = combined.Right.Version;
+                bool isConfiguredV2 = !string.Equals(configuredVersion, "v3", StringComparison.OrdinalIgnoreCase);
+
+                // Detection: v2.x has Microsoft.OpenApi.OpenApiSchema, v1.x has Microsoft.OpenApi.Models.OpenApiSchema
+                bool hasV2Symbol = compilation.GetTypeByMetadataName("Microsoft.OpenApi.OpenApiSchema") != null;
+                bool hasV1Symbol = compilation.GetTypeByMetadataName("Microsoft.OpenApi.Models.OpenApiSchema") != null;
+
+                if (isConfiguredV2 && hasV1Symbol && !hasV2Symbol) return (Config: (string?)configuredVersion, Detected: "1.x");
+                if (!isConfiguredV2 && hasV2Symbol && !hasV1Symbol) return (Config: (string?)configuredVersion, Detected: "2.x");
+                return (Config: (string?)null, Detected: (string?)null);
+            });
+
+        context.RegisterSourceOutput(versionMismatchProvider, (spc, version) =>
+        {
+            if (version.Config != null)
+            {
+                spc.ReportDiagnostic(Diagnostic.Create(DiagnosticDescriptors.SwashbuckleVersionMismatch, Location.None, version.Config, version.Detected));
+            }
+        });
     }
 
     private static bool IsAddSannrCall(SyntaxNode node)
@@ -197,6 +234,14 @@ public class SannrGenerator : IIncrementalGenerator
             defaultSeverity: DiagnosticSeverity.Error,
             isEnabledByDefault: true,
             description: "Sannr source generator requires model classes to be declared as 'partial' to generate validation code.");
+
+        public static readonly DiagnosticDescriptor SwashbuckleVersionMismatch = new DiagnosticDescriptor(
+            id: "SANN005",
+            title: "Swashbuckle / Microsoft.OpenApi version mismatch",
+            messageFormat: "Project is using a Microsoft.OpenApi version that likely does not match configured SannrOpenApiVersion '{0}'. Detected OpenAPI v{1} style references.",
+            category: "SannrGenerator",
+            defaultSeverity: DiagnosticSeverity.Warning,
+            isEnabledByDefault: true);
     }
 
     /// <summary>
@@ -277,7 +322,7 @@ public class SannrGenerator : IIncrementalGenerator
         }
         return null;
     }
-    private static void GenerateValidators(SourceProductionContext context, ImmutableArray<INamedTypeSymbol> targets, bool enableSannrSchemaGen, string openApiVersion)
+    private static void GenerateValidators(SourceProductionContext context, ImmutableArray<INamedTypeSymbol> targets, bool enableSannrSchemaGen, string openApiVersion, bool hasAspNetCore)
     {
         var processedClasses = new HashSet<string>(StringComparer.Ordinal);
 
@@ -296,16 +341,15 @@ public class SannrGenerator : IIncrementalGenerator
             if (!processedClasses.Add(classKey))
                 continue; // Skip duplicate
 
-            // Only generate if explicitly opted-in via AddSannr() or project property
-            // (In a real scenario, we might check if the class is actually used in a Sannr context)
-            if (!enableSannrSchemaGen) continue;
-
             // Regular attribute-based validation
             GenerateValidator(context, classSymbol);
         }
 
-        // Generate combined initializer for OpenAPI filters and Validators
-        GenerateInitializer(context, targets, openApiVersion);
+        // Generate combined initializer for OpenAPI filters if ASP.NET Core is present
+        if (hasAspNetCore)
+        {
+            GenerateInitializer(context, targets, openApiVersion);
+        }
     }
 
     /// <summary>
@@ -381,7 +425,7 @@ public class SannrGenerator : IIncrementalGenerator
         var symbol = ctx.SemanticModel.GetDeclaredSymbol(classDecl, ct) as INamedTypeSymbol;
         if (symbol == null || !HasValidationAttributes(symbol)) return null;
         if (classDecl.Modifiers.Any(m => m.IsKind(SyntaxKind.PartialKeyword))) return null;
-        return Diagnostic.Create(DiagnosticDescriptors.PartialClassRequiredDescriptor, classDecl.Identifier.GetLocation(), symbol.Name);
+        return Diagnostic.Create(DiagnosticDescriptors.PartialClassRequiredDescriptor, classDecl.Identifier.GetLocation(), classDecl.Identifier.Text);
     }
 
     /// <summary>
