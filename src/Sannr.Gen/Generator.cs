@@ -34,23 +34,6 @@ using Microsoft.CodeAnalysis.CSharp.Syntax;
 namespace Sannr.Gen;
 
 /// <summary>
-/// Minimal test generator to verify analyzer loading.
-/// </summary>
-[Generator]
-public class TestGenerator : ISourceGenerator
-{
-    public void Initialize(GeneratorInitializationContext context)
-    {
-        // No-op
-    }
-
-    public void Execute(GeneratorExecutionContext context)
-    {
-        context.AddSource("TestGenerated.g.cs", "// Test generated code");
-    }
-}
-
-/// <summary>
 /// Source generator for Sannr validators. Generates validation logic for attributed classes.
 /// </summary>
 [Generator]
@@ -1726,7 +1709,7 @@ public class SannrGenerator : IIncrementalGenerator
     private static string ParseFluentValidationFromString(string methodBody, ITypeSymbol targetType)
     {
         var sb = new StringBuilder();
-        var lines = methodBody.Split('\n', StringSplitOptions.RemoveEmptyEntries)
+        var lines = methodBody.Split(new[] { '\n' }, StringSplitOptions.RemoveEmptyEntries)
                               .Select(line => line.Trim())
                               .Where(line => !string.IsNullOrWhiteSpace(line))
                               .ToArray();

@@ -5,6 +5,38 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.7.0] - 2026-09-25
+
+### Fixed
+- **Validation filter silently passed invalid payloads (fail-open).** Two different classes were
+  named `SannrValidatorRegistry`: `Sannr.SannrValidatorRegistry` (written to by the generator via
+  `[ModuleInitializer]`) and `Sannr.AspNetCore.SannrValidatorRegistry` (never written to). C#
+  binds an unqualified name to the one in the containing namespace, so every lookup inside
+  `Sannr.AspNetCore` resolved to the permanently empty registry, the filter found no validator,
+  and invalid requests returned `200 OK`. Registry lookups are now fully qualified, the duplicate
+  filter and extension classes are removed, and the shadow registry is an `[Obsolete]` forwarder.
+- **Fail-closed by default.** `WithSannrValidation()` now verifies at startup that a generated
+  validator exists for every parameter it is asked to guard, and throws instead of silently
+  skipping validation. Opt out with `SannrValidationOptions.RequireValidator = false`.
+- **`global.json` prevented the repository from building on any current SDK** (`latestPatch`
+  combined with `allowPrerelease: false` pinned an SDK that is no longer installed).
+- **A leftover non-incremental `TestGenerator` shipped in the package** and injected a dead
+  generated file into every consuming compilation. Removed.
+- **The source generator targeted `netstandard2.1`**, which Roslyn does not support for compiler
+  extensions (RS1041). Retargeted to `netstandard2.0`.
+
+### Changed
+- Multi-targets `net8.0` (LTS) and `net10.0` (current). `net11.0` builds are validated in CI
+  behind an opt-in switch but are not shipped in the released package yet.
+- Dependency floors raised to clear advisories: `Microsoft.OpenApi` to 2.12.2
+  (GHSA-v5pm-xwqc-g5wc, High) and all `OpenTelemetry` packages to 1.18.0
+  (GHSA-g94r-2vxg-569j, Moderate). These floors are security-relevant and must not be lowered.
+
+### Added
+- HTTP-level integration tests that assert a `400` is actually returned for an invalid payload.
+  The previous unit tests exercised the registry directly and so could not observe the fail-open
+  behaviour at all.
+
 ## [1.6.0] - 2026-03-04
 
 ### Added

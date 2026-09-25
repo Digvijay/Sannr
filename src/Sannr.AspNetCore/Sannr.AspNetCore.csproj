@@ -1,11 +1,11 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <TargetFramework>net8.0</TargetFramework>
+    <TargetFrameworks>$(ToolkitLibraryTargetFrameworks)</TargetFrameworks>
     <Nullable>enable</Nullable>
     <IsAotCompatible Condition="$([MSBuild]::IsTargetFrameworkCompatible('$(TargetFramework)', 'net8.0'))">true</IsAotCompatible> <!-- Ensures AOT compatibility for performance and deployment -->
     
     <PackageId>Sannr</PackageId>
-    <Version>1.6.0</Version>
+    <Version>1.7.0</Version>
     <Authors>Digvijay Chauhan</Authors>
     <Description>The AOT-first validation engine for .NET. (Single Package)</Description>
     <PackageTags>validation;aot;aspnetcore;performance;enterprise;reflection;source-generator</PackageTags>
@@ -44,7 +44,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <None Include="..\Sannr.Gen\bin\$(Configuration)\netstandard2.1\Sannr.Gen.dll" 
+    <None Include="..\Sannr.Gen\bin\$(Configuration)\netstandard2.0\Sannr.Gen.dll" 
           Pack="true" 
           PackagePath="analyzers/dotnet/cs" 
           Visible="false" />

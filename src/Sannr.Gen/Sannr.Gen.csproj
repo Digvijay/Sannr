@@ -1,6 +1,11 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <TargetFramework>netstandard2.1</TargetFramework>
+    <!--
+      Roslyn compiler extensions must target netstandard2.0 (RS1041). Targeting netstandard2.1
+      makes the compiler's behaviour unpredictable when the consuming project targets a different
+      framework, because the generator is loaded into the compiler process itself.
+    -->
+    <TargetFramework>netstandard2.0</TargetFramework>
     <EnforceExtendedAnalyzerRules>true</EnforceExtendedAnalyzerRules>
     <LangVersion>latest</LangVersion>
     <Nullable>enable</Nullable>

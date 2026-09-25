@@ -6,66 +6,99 @@ permissions:
 on:
   push:
     branches: [ "main", "development" ]
-    paths:
-      - 'src/**'
-      - 'tests/**'
-      - '.github/workflows/ci.yml'
-      - 'Directory.Build.props'
-      - 'Directory.Packages.props'
-      - 'global.json'
-      - 'Sannr.sln'
   pull_request:
     branches: [ "main", "development" ]
-    paths:
-      - 'src/**'
-      - 'tests/**'
-      - '.github/workflows/ci.yml'
-      - 'Directory.Build.props'
-      - 'Directory.Packages.props'
-      - 'global.json'
-      - 'Sannr.sln'
+  workflow_dispatch:
+
+env:
+  DOTNET_NOLOGO: true
+  DOTNET_SKIP_FIRST_TIME_EXPERIENCE: true
+  DOTNET_CLI_TELEMETRY_OPTOUT: true
 
 jobs:
   build:
-    name: Build & Test
+    name: Build & Test (.NET 8 LTS + .NET 10)
     runs-on: ubuntu-latest
-    
+
     steps:
-    - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+        with:
+          # Required: Nerdbank.GitVersioning walks history to compute version height and
+          # hard-fails on a shallow clone.
+          fetch-depth: 0
 
-    - name: Setup .NET
-      uses: actions/setup-dotnet@v4
-      with:
-        dotnet-version: 10.0.x
+      - name: Setup .NET (8.0 LTS and 10.0)
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: |
+            8.0.x
+            10.0.x
 
-    - name: Check Formatting
-      run: dotnet format --verify-no-changes Sannr.sln
+      - name: Restore
+        run: dotnet restore Sannr.sln
 
-    - name: Restore dependencies
-      run: dotnet restore Sannr.sln
+      - name: Check formatting
+        run: dotnet format --verify-no-changes Sannr.sln
 
-    - name: Build
-      run: dotnet build Sannr.sln --no-restore --configuration Release
+      - name: Build
+        run: dotnet build Sannr.sln --no-restore --configuration Release
 
-    - name: Test
-      run: |
-        dotnet test Sannr.sln --no-build --configuration Release --verbosity normal --collect:"XPlat Code Coverage" --results-directory ./coverage
-        # Consolidate coverage results if needed. Using a standard report generator is recommended in real projects.
+      - name: Test
+        run: >
+          dotnet test Sannr.sln --no-build --configuration Release
+          --collect:"XPlat Code Coverage" --results-directory ./coverage
 
-    - name: Upload Coverage
-      uses: actions/upload-artifact@v4
-      with:
-        name: code-coverage
-        path: ./coverage/**/coverage.cobertura.xml
+      - name: Upload coverage
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: code-coverage
+          path: ./coverage
 
-    - name: Pack
-      run: |
-        # ONLY pack the main project now. 
-        # It handles bundling Core and Gen automatically.
-        dotnet pack src/Sannr.AspNetCore/Sannr.AspNetCore.csproj -c Release -o ./artifacts
+      - name: Pack
+        run: dotnet pack Sannr.sln --no-build --configuration Release --output ./artifacts
 
-    - name: Upload Artifacts
-      uses: actions/upload-artifact@v4
-      with:
-        name: nuget-packages
-        path: ./artifacts/*.nupkg
+      - name: Upload packages
+        uses: actions/upload-artifact@v4
+        with:
+          name: nuget-packages
+          path: ./artifacts/*.nupkg
+
+  preview:
+    name: Preview .NET (net11.0)
+    runs-on: ubuntu-latest
+    # Advisory. A preview SDK can regress for reasons outside this repository, so this leg
+    # reports breakage without blocking the merge queue.
+    continue-on-error: true
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup .NET (8.0, 10.0 and 11.0 preview)
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: |
+            8.0.x
+            10.0.x
+            11.0.x
+          dotnet-quality: preview
+
+      - name: Report SDK version
+        run: dotnet --info
+
+      - name: Restore (including net11.0)
+        env:
+          INCLUDE_PREVIEW_TFM: 'true'
+        run: dotnet restore Sannr.sln
+
+      - name: Build (including net11.0)
+        env:
+          INCLUDE_PREVIEW_TFM: 'true'
+        run: dotnet build Sannr.sln --no-restore --configuration Release
+
+      - name: Test (including net11.0)
+        env:
+          INCLUDE_PREVIEW_TFM: 'true'
+        run: dotnet test Sannr.sln --no-build --configuration Release

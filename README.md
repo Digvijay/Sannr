@@ -22,12 +22,13 @@ FluentValidation and allocates less. The specific multiples depend heavily on th
 hardware; see [Performance](#-performance-benchmarks) for the numbers and the machine they were
 taken on, and reproduce them before quoting them.
 
-> **Known issue — please read before using the ASP.NET Core integration.**
-> `WithSannrValidation` has been observed accepting payloads that the generated validator
-> rejects, and `SannrValidatorRegistry` treats an unregistered type as valid. Until that is
-> fixed, resolve the validator from the registry and invoke it explicitly in your handler, and
-> assert at startup that the validator you expect is registered. See
-> [docs/known-issues.md](docs/known-issues.md).
+> **Fixed in 1.7.0 — security-relevant.** In 1.6.0 and earlier, `WithSannrValidation` accepted
+> payloads the generated validator rejects, because two different classes were named
+> `SannrValidatorRegistry` and every lookup inside `Sannr.AspNetCore` bound to a permanently empty
+> one. The registry also treated an unregistered type as valid. As of 1.7.0 the filter enforces
+> validation, is verified by HTTP-level integration tests, and **fails closed**: it throws at
+> startup if a validator it is asked to apply does not exist. **If you are on 1.6.0 or earlier,
+> upgrade.** Full detail in [docs/known-issues.md](docs/known-issues.md).
 
 **Static Reflection** with "Shadow Types" - Get PII tagging, property metadata, and Deep Cloning capabilities without the runtime cost of Reflection.
 

@@ -1,0 +1,54 @@
+<Project>
+
+  <!--
+    Shared target-framework policy for the Sustainable .NET Toolkit repositories.
+
+    Goals:
+      * Keep supporting the current LTS (net8.0) so existing consumers are not stranded.
+      * Build and test on the current release (net10.0).
+      * Build and test on the next release (net11.0) so that breaking changes are found during the
+        preview window rather than on release day.
+
+    The preview target framework is opt-in rather than auto-detected. Auto-detection was tried and
+    does not work: TargetFrameworks has to be known during evaluation of Directory.Build.props,
+    which MSBuild imports from Microsoft.Common.props before the SDK defines NETCoreSdkVersion, so
+    the SDK version is not observable at that point. An opt-in switch is deterministic, keeps a
+    plain `dotnet build` working on every SDK, and lets CI turn the preview leg on explicitly.
+
+    Enable it with either:
+        dotnet build -p:IncludePreviewTargetFramework=true
+        $env:INCLUDE_PREVIEW_TFM = 'true'
+
+    Building the preview target framework requires a matching preview SDK to be installed.
+  -->
+
+  <PropertyGroup Condition="'$(IncludePreviewTargetFramework)' == '' and '$(INCLUDE_PREVIEW_TFM)' != ''">
+    <IncludePreviewTargetFramework>$(INCLUDE_PREVIEW_TFM)</IncludePreviewTargetFramework>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(IncludePreviewTargetFramework)' == ''">
+    <IncludePreviewTargetFramework>false</IncludePreviewTargetFramework>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <!-- The preview framework. Bump this one place when the next preview opens. -->
+    <ToolkitPreviewTargetFramework>net11.0</ToolkitPreviewTargetFramework>
+
+    <!-- Frameworks for shipping libraries: current LTS plus current release. -->
+    <ToolkitLibraryTargetFrameworks>net8.0;net10.0</ToolkitLibraryTargetFrameworks>
+    <ToolkitLibraryTargetFrameworks Condition="'$(IncludePreviewTargetFramework)' == 'true'">$(ToolkitLibraryTargetFrameworks);$(ToolkitPreviewTargetFramework)</ToolkitLibraryTargetFrameworks>
+
+    <!-- Frameworks for tests, samples and executables: current release, plus preview. -->
+    <ToolkitAppTargetFrameworks>net10.0</ToolkitAppTargetFrameworks>
+    <ToolkitAppTargetFrameworks Condition="'$(IncludePreviewTargetFramework)' == 'true'">$(ToolkitAppTargetFrameworks);$(ToolkitPreviewTargetFramework)</ToolkitAppTargetFrameworks>
+
+    <!--
+      Frameworks for the primary test projects. Tests must run on every framework the library
+      ships, otherwise a target framework is published without ever having been executed. Sannr's
+      tests, for example, ran only on net8.0 while the package shipped net8.0 and net10.0.
+    -->
+    <ToolkitTestTargetFrameworks>net8.0;net10.0</ToolkitTestTargetFrameworks>
+    <ToolkitTestTargetFrameworks Condition="'$(IncludePreviewTargetFramework)' == 'true'">$(ToolkitTestTargetFrameworks);$(ToolkitPreviewTargetFramework)</ToolkitTestTargetFrameworks>
+  </PropertyGroup>
+
+</Project>
