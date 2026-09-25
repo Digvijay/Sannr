@@ -65,3 +65,6 @@ docs/changelog.md
 
 # --- Scripts ---
 release.sh
+
+*.snupkg
+*.backup

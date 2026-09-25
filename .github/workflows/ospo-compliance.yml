@@ -1,0 +1,92 @@
+name: OSPO compliance
+
+# Supply-chain and governance gates required before this project can be proposed
+# to an Open Source Programs Office review.
+
+permissions:
+  contents: read
+
+on:
+  push:
+    branches: [ "main", "master" ]
+  pull_request:
+  schedule:
+    - cron: "0 6 * * 1"
+  workflow_dispatch:
+
+jobs:
+  dependency-audit:
+    name: Dependency vulnerability audit
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Restore
+        run: dotnet restore Sannr.sln
+
+      - name: Report vulnerable packages
+        run: dotnet list Sannr.sln package --vulnerable --include-transitive
+
+      - name: Fail on any vulnerable package
+        shell: bash
+        run: |
+          set -o pipefail
+          dotnet list Sannr.sln package --vulnerable --include-transitive 2>&1 | tee audit.log
+          if grep -qE '(Critical|High|Moderate|Low)' audit.log; then
+            echo "::error::Vulnerable dependencies detected. Update them, or record a documented, time-bound exception in docs/dependency-exceptions.md."
+            exit 1
+          fi
+          echo "No vulnerable packages reported."
+
+      - name: Report deprecated packages
+        continue-on-error: true
+        run: dotnet list Sannr.sln package --deprecated --include-transitive
+
+  license-and-governance:
+    name: Governance files present
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Verify required governance files
+        shell: bash
+        run: |
+          missing=0
+          for f in LICENSE README.md SECURITY.md SUPPORT.md CODE_OF_CONDUCT.md CONTRIBUTING.md .github/CODEOWNERS; do
+            if [ ! -f "$f" ]; then
+              echo "::error::Missing required governance file: $f"
+              missing=1
+            fi
+          done
+          exit $missing
+
+  sbom:
+    name: Generate SBOM
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Restore
+        run: dotnet restore Sannr.sln
+
+      - name: Install CycloneDX tool
+        run: dotnet tool install --global CycloneDX
+
+      - name: Produce CycloneDX SBOM
+        run: $HOME/.dotnet/tools/dotnet-CycloneDX Sannr.sln -o ./sbom
+
+      - name: Upload SBOM
+        uses: actions/upload-artifact@v4
+        with:
+          name: sbom
+          path: ./sbom

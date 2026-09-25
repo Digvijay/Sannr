@@ -1,0 +1,13 @@
+# Code owners for Sannr.
+#
+# Listed owners are automatically requested for review on pull requests that
+# touch matching paths. See https://docs.github.com/articles/about-code-owners
+
+* @Digvijay
+
+# Governance, security, and release-critical paths require owner review.
+/.github/                   @Digvijay
+/SECURITY.md                @Digvijay
+/CODE_OF_CONDUCT.md         @Digvijay
+/SUPPORT.md                 @Digvijay
+/LICENSE                    @Digvijay

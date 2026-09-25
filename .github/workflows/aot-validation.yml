@@ -1,0 +1,84 @@
+name: Native AOT validation
+
+# Proves the Native AOT claim instead of asserting it: publishes a real consumer
+# with PublishAot=true, then executes the produced native binary.
+
+permissions:
+  contents: read
+
+on:
+  push:
+    branches: [ "main", "master" ]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  aot-publish-and-run:
+    name: AOT publish and run (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ ubuntu-latest, windows-latest ]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Install AOT native toolchain (Linux)
+        if: runner.os == 'Linux'
+        run: sudo apt-get update && sudo apt-get install -y clang zlib1g-dev
+
+      - name: Publish with Native AOT
+        run: >
+          dotnet publish src/Sannr.Playground/Sannr.Playground.csproj
+          --configuration Release
+          -p:PublishAot=true
+          -p:TreatWarningsAsErrors=true
+          -p:TrimmerSingleWarn=false
+          --output ./aot-output
+
+      - name: Execute the native binary
+        shell: bash
+        run: |
+          set -e
+          binary=$(find ./aot-output -maxdepth 1 -type f \( -perm -u+x -o -name '*.exe' \) ! -name '*.pdb' ! -name '*.json' ! -name '*.dbg' | head -n 1)
+          if [ -z "$binary" ]; then
+            echo "::error::No native executable was produced."
+            ls -R ./aot-output
+            exit 1
+          fi
+          echo "Running $binary"
+          "$binary"
+
+      - name: Report native binary size
+        shell: bash
+        run: |
+          echo "### Native AOT output (${{ matrix.os }})" >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          ls -lh ./aot-output | head -n 25 >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+
+  trim-analysis:
+    name: Trimming and AOT analyzers
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Build with AOT and trim analyzers as errors
+        run: >
+          dotnet build Sannr.sln
+          --configuration Release
+          -p:EnableAotAnalyzer=true
+          -p:EnableTrimAnalyzer=true
+          -p:EnableSingleFileAnalyzer=true
+          -p:WarningsAsErrors=IL2026,IL2046,IL2062,IL2067,IL2070,IL2072,IL2075,IL2087,IL2091,IL3050,IL3051,IL3052,IL3053
