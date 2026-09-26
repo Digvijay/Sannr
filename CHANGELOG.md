@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [1.7.0] - 2026-09-25
 
+### Fixed — found by running CI on GitHub-hosted x64 runners for the first time
+- **The AOT validation workflow had never run to completion.** It passed `-p:PublishAot=true` on
+  the command line, which creates a *global* property that MSBuild propagates into every
+  `ProjectReference` — including the `netstandard2.0` generator, which cannot be AOT-compiled
+  (`NETSDK1207`). The flag was also redundant: the target project already declares `PublishAot`.
+  Removed; AOT stays configured in the project file, where it does not flow across references.
+- **The trim and AOT warnings-as-errors list was never enforced.** It was passed as
+  `-p:WarningsAsErrors=IL2026,IL2046,...`, and the dotnet CLI splits `-p:` values on commas, so
+  every code after the first was parsed as a separate switch and the run failed with
+  `MSB1006: Property is not valid. Switch: IL2046` before compiling anything. The codes are now
+  joined with `%3B`, the escaped semicolon.
+
 ### Fixed
 - **Validation filter silently passed invalid payloads (fail-open).** Two different classes were
   named `SannrValidatorRegistry`: `Sannr.SannrValidatorRegistry` (written to by the generator via

@@ -37,7 +37,6 @@ jobs:
         run: >
           dotnet publish src/Sannr.Playground/Sannr.Playground.csproj
           --configuration Release
-          -p:PublishAot=true
           -p:TreatWarningsAsErrors=true
           -p:TrimmerSingleWarn=false
           --output ./aot-output
@@ -81,4 +80,4 @@ jobs:
           -p:EnableAotAnalyzer=true
           -p:EnableTrimAnalyzer=true
           -p:EnableSingleFileAnalyzer=true
-          -p:WarningsAsErrors=IL2026,IL2046,IL2062,IL2067,IL2070,IL2072,IL2075,IL2087,IL2091,IL3050,IL3051,IL3052,IL3053
+          -p:WarningsAsErrors=IL2026%3BIL2046%3BIL2062%3BIL2067%3BIL2070%3BIL2072%3BIL2075%3BIL2087%3BIL2091%3BIL3050%3BIL3051%3BIL3052%3BIL3053

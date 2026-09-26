@@ -257,6 +257,48 @@ the graph, so the pins did nothing; SDK 11 reports that as `NU1510`, twelve time
 
 ---
 
+## 13. `-p:PublishAot=true` on the command line broke the generator project (NETSDK1207)
+
+**Severity: high. Fixed in 1.7.0. Affected CI only — the AOT gate had never run to completion.**
+
+`aot-validation.yml` passed `-p:PublishAot=true` to `dotnet publish`. The flag was redundant, since
+the target project already declares `PublishAot`. It was also harmful: a `-p:` switch on the command
+line creates a **global property**, and MSBuild propagates global properties into every
+`ProjectReference` it builds. The generator targets `netstandard2.0`, which cannot be AOT-compiled,
+so the run failed with `error NETSDK1207: Ahead-of-time compilation is not supported for the target
+framework.`
+
+The identical property declared *inside* a project file does not flow across a `ProjectReference`.
+That asymmetry is why this reproduced only on CI.
+
+**Fix:** the flag is removed. AOT remains configured in the project file.
+
+---
+
+## 14. The IL-warning list was split on its commas, and one file broke `dotnet format`
+
+**Severity: high. Fixed in 1.7.0. Affected CI only.**
+
+The same AOT step passed `-p:WarningsAsErrors=IL2026,IL2046,IL2062,...`. The dotnet CLI splits
+`-p:` values on commas, so every code after the first was parsed as a separate switch and the run
+failed with `MSBUILD : error MSB1006: Property is not valid. Switch: IL2046` before compiling
+anything. The gate had therefore never enforced a single trim or AOT warning as an error. A bare
+`;` would not help either, because it is the property separator.
+
+Separately, `dotnet format --verify-no-changes Sannr.sln` — which CI runs — failed with
+`FINALNEWLINE` on `tests/Sannr.FluentValidation.Tests/FluentValidationTests.cs`, a file added
+during this review without a trailing newline.
+
+**Fix:** the codes are joined with `%3B`, the escaped semicolon, which reaches MSBuild as one
+property value. The test file gained its trailing newline; `dotnet format --verify-no-changes
+Sannr.sln` now exits 0.
+
+Both were found by opening a pull request, which ran CI on GitHub-hosted x64 runners for the first
+time. Neither could have been reproduced by building locally, because both are properties of how
+the workflow invokes the CLI rather than of the code.
+
+---
+
 # Open
 
 Nothing is open in Sannr.
