@@ -371,17 +371,17 @@ public class SannrGenerator : IIncrementalGenerator
             .OfType<IPropertySymbol>()
             .Any(prop => prop.GetAttributes().Any(attr =>
                 attr.AttributeClass?.Name.EndsWith("Attribute", System.StringComparison.Ordinal) == true &&
-                (attr.AttributeClass.Name.Contains("Required", System.StringComparison.Ordinal) ||
-                 attr.AttributeClass.Name.Contains("StringLength", System.StringComparison.Ordinal) ||
-                 attr.AttributeClass.Name.Contains("Range", System.StringComparison.Ordinal) ||
-                 attr.AttributeClass.Name.Contains("EmailAddress", System.StringComparison.Ordinal) ||
-                 attr.AttributeClass.Name.Contains("CreditCard", System.StringComparison.Ordinal) ||
-                 attr.AttributeClass.Name.Contains("Url", System.StringComparison.Ordinal) ||
-                 attr.AttributeClass.Name.Contains("Phone", System.StringComparison.Ordinal) ||
-                 attr.AttributeClass.Name.Contains("FileExtensions", System.StringComparison.Ordinal) ||
-                 attr.AttributeClass.Name.Contains("CustomValidator", System.StringComparison.Ordinal) ||
-                 attr.AttributeClass.Name.Contains("RequiredIf", System.StringComparison.Ordinal) ||
-                 attr.AttributeClass.Name.Contains("Sanitize", System.StringComparison.Ordinal))));
+                (attr.AttributeClass.Name.IndexOf("Required", System.StringComparison.Ordinal) >= 0 ||
+                 attr.AttributeClass.Name.IndexOf("StringLength", System.StringComparison.Ordinal) >= 0 ||
+                 attr.AttributeClass.Name.IndexOf("Range", System.StringComparison.Ordinal) >= 0 ||
+                 attr.AttributeClass.Name.IndexOf("EmailAddress", System.StringComparison.Ordinal) >= 0 ||
+                 attr.AttributeClass.Name.IndexOf("CreditCard", System.StringComparison.Ordinal) >= 0 ||
+                 attr.AttributeClass.Name.IndexOf("Url", System.StringComparison.Ordinal) >= 0 ||
+                 attr.AttributeClass.Name.IndexOf("Phone", System.StringComparison.Ordinal) >= 0 ||
+                 attr.AttributeClass.Name.IndexOf("FileExtensions", System.StringComparison.Ordinal) >= 0 ||
+                 attr.AttributeClass.Name.IndexOf("CustomValidator", System.StringComparison.Ordinal) >= 0 ||
+                 attr.AttributeClass.Name.IndexOf("RequiredIf", System.StringComparison.Ordinal) >= 0 ||
+                 attr.AttributeClass.Name.IndexOf("Sanitize", System.StringComparison.Ordinal) >= 0)));
     }
 
     /// <summary>

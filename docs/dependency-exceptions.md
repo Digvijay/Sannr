@@ -1,8 +1,8 @@
 # Dependency exceptions
 
 The `OSPO compliance` workflow fails the build when `dotnet list package --vulnerable
---include-transitive` reports any advisory. This file is the only supported way to accept a
-finding temporarily, and every entry must be time-bound and owned.
+--include-transitive` reports any advisory. Entries here document risks for review but do not
+bypass the dependency audit; vulnerable packages must be updated for the workflow to pass.
 
 An exception is acceptable only when **all** of the following hold:
 
@@ -12,8 +12,7 @@ An exception is acceptable only when **all** of the following hold:
 3. An owner and an expiry date are recorded below.
 4. A tracking issue exists.
 
-Expired entries must be removed or renewed. An expired entry is treated as a build failure,
-not as an accepted risk.
+Expired entries must be removed or renewed. An expired entry is not an accepted risk.
 
 ## Active exceptions
 

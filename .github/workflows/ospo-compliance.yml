@@ -38,7 +38,7 @@ jobs:
           set -o pipefail
           dotnet list Sannr.sln package --vulnerable --include-transitive 2>&1 | tee audit.log
           if grep -qE '(Critical|High|Moderate|Low)' audit.log; then
-            echo "::error::Vulnerable dependencies detected. Update them, or record a documented, time-bound exception in docs/dependency-exceptions.md."
+            echo "::error::Vulnerable dependencies detected. Update them to pass the dependency audit."
             exit 1
           fi
           echo "No vulnerable packages reported."

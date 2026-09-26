@@ -210,6 +210,18 @@ public class EndpointFilterIntegrationTests
     }
 
     [Fact]
+    public void EndpointBindingAnUnregisteredModel_CanOptOutWithConfiguredOptions()
+    {
+        var exception = Record.Exception(() =>
+            MaterializeEndpoints(
+                app => app.MapPost("/unregistered", (UnregisteredRequest request) => Results.Ok())
+                          .WithSannrValidation(),
+                services => services.Configure<SannrValidationOptions>(o => o.RequireValidator = false)));
+
+        Assert.Null(exception);
+    }
+
+    [Fact]
     public void EndpointBindingAValidatedModel_BuildsWithoutComplaint()
     {
         // Guards against the fail-closed check becoming over-eager and rejecting good endpoints.

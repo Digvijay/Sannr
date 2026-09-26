@@ -17,6 +17,8 @@ are resolved so that anyone evaluating a specific released version can see what 
 | 10 | Generator state leaked across compilations; output non-deterministic | Moderate | ≤ 1.6.0 | **Fixed in 1.7.0** |
 | 11 | Debug scaffolding injected into every consumer | Moderate | ≤ 1.6.0 | **Fixed in 1.7.0** |
 | 12 | Obsolete package pins warned on the .NET 11 SDK (NU1510) | Low | build only | **Fixed in 1.7.0** |
+| 13 | Command-line AOT flag broke generator build (NETSDK1207) | High | CI only | **Fixed in 1.7.0** |
+| 14 | IL-warning list parsing and missing test-file newline broke CI | High | CI only | **Fixed in 1.7.0** |
 
 ---
 
