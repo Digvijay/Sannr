@@ -8,7 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Changed
-- Refreshed Dependabot-managed dependencies: OpenTelemetry.Api and MessagePack central package pins, the docs Rollup lockfile, and the .NET SDK pin. The SDK pin now targets the 10.0.300 feature band while preserving the preview SDK roll-forward needed by the opt-in net11.0 validation leg.
+- Refreshed Dependabot-managed dependencies: OpenTelemetry.Api and MessagePack central package pins, and the docs Rollup lockfile. The SDK pin stays on the lowest 10.0 feature band so contributors with older 10.0 SDK installs can still roll forward, while preserving the preview SDK roll-forward needed by the opt-in net11.0 validation leg.
 
 ## [1.7.0] - 2026-09-25
 
