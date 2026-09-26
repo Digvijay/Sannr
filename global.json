@@ -3,6 +3,5 @@
     "version": "10.0.300",
     "rollForward": "latestMajor",
     "allowPrerelease": true
-  },
-  "msbuild-sdks": {}
+  }
 }

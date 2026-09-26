@@ -8,7 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Changed
-- Refreshed Dependabot-managed dependencies: OpenTelemetry.Api and MessagePack central package pins, the docs Rollup lockfile, and the .NET SDK pin. The SDK roll-forward policy now accepts newer 10.0 feature bands while preserving the preview SDK roll-forward needed by the opt-in net11.0 validation leg.
+- Refreshed Dependabot-managed dependencies: OpenTelemetry.Api and MessagePack central package pins, the docs Rollup lockfile, and the .NET SDK pin. The SDK pin now targets the 10.0.300 feature band while preserving the preview SDK roll-forward needed by the opt-in net11.0 validation leg.
 
 ## [1.7.0] - 2026-09-25
 
@@ -57,10 +57,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 - Multi-targets `net8.0` (LTS) and `net10.0` (current). `net11.0` builds are validated in CI
   behind an opt-in switch but are not shipped in the released package yet.
-- Dependency floors raised to clear advisories: `Microsoft.OpenApi` to 2.12.2,
-  all `OpenTelemetry` packages to 1.18.0
-  (GHSA-v5pm-xwqc-g5wc, High; GHSA-g94r-2vxg-569j, Moderate). These floors are
-  security-relevant and must not be lowered.
+- Dependency floors raised to clear advisories: `Microsoft.OpenApi` to 2.12.2
+  (GHSA-v5pm-xwqc-g5wc, High) and all `OpenTelemetry` packages to 1.18.0
+  (GHSA-g94r-2vxg-569j, Moderate). These floors are security-relevant and must not be lowered.
 
 ### Added
 - HTTP-level integration tests that assert a `400` is actually returned for an invalid payload.
