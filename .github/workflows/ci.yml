@@ -5,9 +5,9 @@ permissions:
 
 on:
   push:
-    branches: [ "main", "development" ]
+    branches: [ "main", "master", "development" ]
   pull_request:
-    branches: [ "main", "development" ]
+    branches: [ "main", "master", "development" ]
   workflow_dispatch:
 
 env:
@@ -18,7 +18,13 @@ env:
 jobs:
   build:
     name: Build & Test (.NET 8 LTS + .NET 10)
-    runs-on: ubuntu-latest
+    # x64 Linux and x64 Windows. Culture, path-separator and line-ending defects have all been
+    # found in these repositories; a single-OS matrix cannot see any of them.
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ ubuntu-latest, windows-latest ]
 
     steps:
       - uses: actions/checkout@v4
@@ -52,13 +58,14 @@ jobs:
         uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: code-coverage
+          name: code-coverage-${{ matrix.os }}
           path: ./coverage
 
       - name: Pack
         run: dotnet pack Sannr.sln --no-build --configuration Release --output ./artifacts
 
       - name: Upload packages
+        if: matrix.os == 'ubuntu-latest'
         uses: actions/upload-artifact@v4
         with:
           name: nuget-packages

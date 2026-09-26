@@ -24,6 +24,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   generated file into every consuming compilation. Removed.
 - **The source generator targeted `netstandard2.1`**, which Roslyn does not support for compiler
   extensions (RS1041). Retargeted to `netstandard2.0`.
+- **Fluent validators were silently not generated** unless the project also set
+  `EnableSannrSchemaGen` or called `AddSannr()`. The fluent test project could not compile for
+  that reason and was not in the solution, so nothing noticed. Output is now unconditional.
+- **Generator output was not reproducible.** A static set leaked across compilations (validators
+  vanished on the second build in the IDE or compiler server), hint names used `Guid.NewGuid()`,
+  and templates stamped `DateTime.Now`. All three removed.
+- **Debug scaffolding was still injected into every consumer** after the `TestGenerator` removal
+  above: `GeneratorInitDebug.g.cs`, `TestGenerator.g.cs`, `ValidationTargetsDebug.g.cs`,
+  `FluentValidatorsDebug.g.cs` and `// DEBUG` comments. Removed with an unused syntax parser.
+- `dotnet pack --no-build` failed with `NETSDK1085`; `GeneratePackageOnBuild` is removed.
+- Removed `System.Net.Http` and `System.Text.RegularExpressions` pins that the SDK already prunes
+  (`NU1510` on SDK 11).
 
 ### Changed
 - Multi-targets `net8.0` (LTS) and `net10.0` (current). `net11.0` builds are validated in CI
@@ -84,10 +96,7 @@ Change any `options.AddSannrValidationSchemas()` calls to:
 options.SchemaFilter<SannrGeneratedSchemaFilter>();
 ```
 
-
-
 ## [1.3.0] - 2026-01-11
-
 
 ### Added
 - **Static Reflection**: Introduced "Shadow Types" (`[SannrReflect]`) for zero-allocation, AOT-compatible inspection and manipulation of models.

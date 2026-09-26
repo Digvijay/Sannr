@@ -12,6 +12,11 @@ are resolved so that anyone evaluating a specific released version can see what 
 | 5 | `global.json` made the repository unbuildable | High | ≤ 1.6.0 | **Fixed in 1.7.0** |
 | 6 | Dead `TestGenerator` shipped to every consumer | Moderate | ≤ 1.6.0 | **Fixed in 1.7.0** |
 | 7 | Generator targeted `netstandard2.1` (RS1041) | Moderate | ≤ 1.6.0 | **Fixed in 1.7.0** |
+| 8 | `dotnet pack --no-build` failed on the solution | Moderate | ≤ 1.6.0 | **Fixed in 1.7.0** |
+| 9 | Fluent validators silently not generated | High | ≤ 1.6.0 | **Fixed in 1.7.0** |
+| 10 | Generator state leaked across compilations; output non-deterministic | Moderate | ≤ 1.6.0 | **Fixed in 1.7.0** |
+| 11 | Debug scaffolding injected into every consumer | Moderate | ≤ 1.6.0 | **Fixed in 1.7.0** |
+| 12 | Obsolete package pins warned on the .NET 11 SDK (NU1510) | Low | build only | **Fixed in 1.7.0** |
 
 ---
 
@@ -161,6 +166,97 @@ Retargeted to `netstandard2.0`. This required replacing one API unavailable ther
 
 ---
 
+## 8. `dotnet pack --no-build` failed on the solution
+
+**Severity: moderate. Fixed in 1.7.0. Affected the build only, not consumers.**
+
+`src/Sannr.AspNetCore/Sannr.AspNetCore.csproj` packs `Sannr.Core` into its own package through a
+`CopyProjectReferencesToPackage` target that depends on `ResolveReferences`. Under
+`dotnet pack --no-build` that dependency still invoked `Build` on `Sannr.Core`, which the SDK
+forbids (`NETSDK1085`), for both `net8.0` and `net10.0`. Packing the solution after building it,
+which is exactly the CI "Pack" step, produced `Sannr.Cli` only and failed. `GeneratePackageOnBuild`
+packed on every build and hid the problem locally.
+
+**Fix:** `BuildProjectReferences` is `false` when `NoBuild` is set, and `GeneratePackageOnBuild`
+is removed (the publish workflow packs explicitly). `dotnet pack --no-build` now produces
+`Sannr.1.7.0.nupkg` and `Sannr.Cli.1.7.0.nupkg`. The contents were inspected: `Sannr.AspNetCore`
+and `Sannr.Core` for `net8.0` and `net10.0`, and `Sannr.Gen` under `analyzers/dotnet/cs`.
+
+---
+
+## 9. Fluent validators were silently not generated
+
+**Severity: high. Status: fixed in 1.7.0. Affects 1.6.0 and earlier.**
+
+A class deriving from `ValidatorConfig<T>` is meant to produce a static `{Name}FluentValidator`.
+The generator only emitted that output when the project had also set `EnableSannrSchemaGen` or
+called `AddSannr()`, neither of which has anything to do with fluent rules. Without them the
+validator was simply absent: no diagnostic, no warning, and a consumer calling it got `CS0103`.
+
+The test project that should have caught this, `tests/Sannr.FluentValidation.Tests`, did not
+compile for exactly that reason. It was not part of `Sannr.sln`, so neither local builds nor CI
+ever built it, and it targeted `net8.0` only.
+
+**Fix:** fluent output no longer depends on either switch. The test project is in the solution,
+targets every supported framework, and passes (7 tests × 2 frameworks). `FluentGeneratorTests`
+drives the generator directly with no opt-in and asserts the validator is produced; it failed
+before the fix.
+
+---
+
+## 10. Generator state leaked across compilations, and its output was non-deterministic
+
+**Severity: moderate. Status: fixed in 1.7.0. Affects 1.6.0 and earlier.**
+
+Three defects with one consequence — the same input did not reliably produce the same output:
+
+* A `static HashSet<string>` recorded which validators had been emitted. Generator instances are
+  reused by the IDE and the compiler server, so on the second compilation every validator was
+  considered "already generated" and silently skipped.
+* Fluent output used `Guid.NewGuid()` in its hint name, so every build produced a different file
+  name and defeated incremental caching and deterministic builds.
+* Two templates stamped `// Generated: {DateTime.Now}` into their output.
+
+**Fix:** the set is per invocation, hint names are `{namespace}.{class}.g.cs`, and the timestamps
+are gone. `FluentGeneratorTests` runs the generator twice in one process and asserts the validator
+is produced both times, and that file names and contents are identical; both tests failed before
+the fix.
+
+---
+
+## 11. Debug scaffolding was injected into every consumer
+
+**Severity: moderate. Status: fixed in 1.7.0. Affects 1.6.0 and earlier.**
+
+Entry 6 removed a dead `TestGenerator` class but not the rest of the scaffolding it belonged to.
+`SannrGenerator` itself still added `GeneratorInitDebug.g.cs` (containing `DateTime.Now`),
+`TestGenerator.g.cs`, `ValidationTargetsDebug.g.cs` and `FluentValidatorsDebug.g.cs` to every
+consuming compilation, and emitted `// DEBUG: Raw method body` comments into generated validators.
+A syntax-based fluent parser (`ParseFluentValidationFromSyntax` and its helpers) was never
+called.
+
+This entry exists because entry 6 was recorded as fixed when it was only partly fixed.
+
+**Fix:** all debug output and the dead parser are deleted (about 300 lines). A test asserts that a
+compilation containing a fluent validator produces no `*Debug*` or `TestGenerator.g.cs` file, no `// DEBUG`
+comment and no timestamp.
+
+---
+
+## 12. Obsolete package pins warned on the .NET 11 SDK
+
+**Severity: low. Fixed in 1.7.0. Affected the build only.**
+
+Both test projects referenced `System.Net.Http` 4.3.4 and `System.Text.RegularExpressions` 4.3.1,
+the usual pins against advisories in the 4.3.0 packages that old `netstandard1.x` dependencies pull
+in. Every target framework here supplies both assemblies, and the SDK prunes those packages from
+the graph, so the pins did nothing; SDK 11 reports that as `NU1510`, twelve times.
+
+**Fix:** removed from both projects and from `Directory.Packages.props`. Restoring with
+`NuGetAuditMode=all` reports no advisories, and neither package appears in the transitive graph.
+
+---
+
 # Open
 
 Nothing is open in Sannr.
@@ -170,10 +266,12 @@ the entries above are worth:
 
 * Every result recorded here was produced on a single Windows ARM64 machine. CI has never executed
   on a GitHub-hosted runner, so nothing above is confirmed on x64 or on Linux.
-* The `net11.0` preview leg is opt-in via `IncludePreviewTargetFramework` and has not been
-  exercised recently, because the preview SDK is not installed on the machine used for this work.
+* The `net11.0` leg is opt-in via `IncludePreviewTargetFramework`. It has been exercised on the
+  same machine with SDK `11.0.100-rc.1.26425.128` (restore, build and every test, `net8.0`,
+  `net10.0` and `net11.0`), with no failures. A release candidate is not a release; the leg
+  should be re-run against the GA SDK.
 
-A record of seven fixed defects measures how hard this repository was looked at. It is not a claim
+A record of twelve fixed defects measures how hard this repository was looked at. It is not a claim
 that there is nothing left to find.
 
 ---

@@ -24,8 +24,9 @@
     - Improved SANN004 Diagnostics: More precise error reporting for missing 'partial' keywords.
     - Dev Experience: Enabled EmitCompilerGeneratedFiles with automatic item exclusion for better debugging.</PackageReleaseNotes>
     
-    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <IncludeBuildOutput>true</IncludeBuildOutput>
+    <!-- CopyProjectReferencesToPackage depends on ResolveReferences, which would rebuild references under pack no-build (NETSDK1085). -->
+    <BuildProjectReferences Condition="'$(NoBuild)' == 'true'">false</BuildProjectReferences>
     <TargetsForTfmSpecificBuildOutput>$(TargetsForTfmSpecificBuildOutput);CopyProjectReferencesToPackage</TargetsForTfmSpecificBuildOutput>
   </PropertyGroup>
 

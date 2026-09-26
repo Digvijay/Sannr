@@ -117,7 +117,7 @@ public partial class ComprehensiveValidator : ValidatorConfig<ComprehensiveValid
 
         // Specialized validations
         RuleFor(x => x.Website)
-            .Must(url => url == null || url.StartsWith("http"))
+            .Must(url => url == null || url.StartsWith("http", StringComparison.Ordinal))
             .WithMessage("Website must start with http");
 
         RuleFor(x => x.PhoneNumber)
@@ -129,7 +129,7 @@ public partial class ComprehensiveValidator : ValidatorConfig<ComprehensiveValid
             .WithMessage("Credit card number is invalid");
 
         RuleFor(x => x.FileName)
-            .Must(name => name == null || name.Contains("."))
+            .Must(name => name == null || name.Contains('.'))
             .WithMessage("File name must have an extension");
 
         // Date validation
