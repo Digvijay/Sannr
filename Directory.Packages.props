@@ -5,13 +5,15 @@
   </PropertyGroup>
   <ItemGroup>
     <!-- Core Dependencies -->
-    <PackageVersion Include="MessagePack" Version="2.5.301" />
     <PackageVersion Include="Microsoft.CodeAnalysis.CSharp" Version="4.14.0" />
     <PackageVersion Include="Microsoft.CodeAnalysis.Analyzers" Version="3.11.0" />
+    <PackageVersion Include="System.Diagnostics.DiagnosticSource" Version="10.0.0" />
     <!-- 1.14.0 and earlier carry GHSA-g94r-2vxg-569j (Moderate) via OpenTelemetry.Api. Do not lower these OpenTelemetry floors. -->
     <PackageVersion Include="OpenTelemetry.Api" Version="1.18.0" />
     <PackageVersion Include="OpenTelemetry" Version="1.18.0" />
-    <PackageVersion Include="System.Diagnostics.DiagnosticSource" Version="10.0.0" />
+
+    <!-- Serialization -->
+    <PackageVersion Include="MessagePack" Version="2.5.301" />
     
     <!-- ASP.NET Core & OpenAPI -->
     <PackageVersion Include="Microsoft.Extensions.DependencyInjection" Version="10.0.0" />
