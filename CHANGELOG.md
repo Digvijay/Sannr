@@ -8,7 +8,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Changed
-- Refreshed Dependabot-managed dependencies: OpenTelemetry.Api and MessagePack central package pins, and the docs Rollup lockfile. The SDK pin stays on the lowest 10.0 feature band so contributors with older 10.0 SDK installs can still roll forward, while preserving the preview SDK roll-forward needed by the opt-in net11.0 validation leg.
+- Refreshed Dependabot-managed central package pins: `OpenTelemetry.Api` to 1.18.0
+  and `MessagePack` to 2.5.301.
+- Refreshed the docs Rollup package lock.
+- Kept the SDK pin on the lowest 10.0 feature band so contributors with older 10.0 SDK
+  installs can still roll forward, while preserving the preview SDK roll-forward needed by
+  the opt-in net11.0 validation leg.
 
 ## [1.7.0] - 2026-09-25
 
