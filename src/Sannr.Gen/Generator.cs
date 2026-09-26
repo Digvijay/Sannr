@@ -34,23 +34,6 @@ using Microsoft.CodeAnalysis.CSharp.Syntax;
 namespace Sannr.Gen;
 
 /// <summary>
-/// Minimal test generator to verify analyzer loading.
-/// </summary>
-[Generator]
-public class TestGenerator : ISourceGenerator
-{
-    public void Initialize(GeneratorInitializationContext context)
-    {
-        // No-op
-    }
-
-    public void Execute(GeneratorExecutionContext context)
-    {
-        context.AddSource("TestGenerated.g.cs", "// Test generated code");
-    }
-}
-
-/// <summary>
 /// Source generator for Sannr validators. Generates validation logic for attributed classes.
 /// </summary>
 [Generator]
@@ -88,14 +71,6 @@ public class SannrGenerator : IIncrementalGenerator
                 Version: combined.Left.Version,
                 Enable: combined.Left.Enable || combined.Right
             ));
-
-        // Debug: Verify generator is initialized
-        context.RegisterPostInitializationOutput(ctx =>
-        {
-            ctx.AddSource("GeneratorInitDebug.g.cs", "// Generator initialized successfully at " + DateTime.Now);
-        });
-        // Simple test: Always add a source file to verify generator is running
-        context.RegisterPostInitializationOutput(ctx => ctx.AddSource("TestGenerator.g.cs", "// Test: Generator is working!"));
 
         // Enhanced incremental validator generation pipeline
         var validatorProvider = context.SyntaxProvider
@@ -1695,12 +1670,14 @@ public class SannrGenerator : IIncrementalGenerator
     /// </summary>
     private static string GenerateValidationCode(FluentValidatorConfigInfo config)
     {
-        if (string.IsNullOrEmpty(config.MethodBody))
+        if (config.MethodBody is not { Length: > 0 })
             return "// No validation rules configured";
 
         // Parse the fluent validation rules from the method body
         return ParseFluentValidationRules(config.MethodBody, config.TargetType);
     }
+
+    private static readonly char[] LineSeparators = { '\n' };
 
     /// <summary>
     /// Parses fluent validation rules from the Configure method body.
@@ -1726,7 +1703,7 @@ public class SannrGenerator : IIncrementalGenerator
     private static string ParseFluentValidationFromString(string methodBody, ITypeSymbol targetType)
     {
         var sb = new StringBuilder();
-        var lines = methodBody.Split('\n', StringSplitOptions.RemoveEmptyEntries)
+        var lines = methodBody.Split(LineSeparators, StringSplitOptions.RemoveEmptyEntries)
                               .Select(line => line.Trim())
                               .Where(line => !string.IsNullOrWhiteSpace(line))
                               .ToArray();
@@ -1837,7 +1814,7 @@ public class SannrGenerator : IIncrementalGenerator
                 {
                     var (property, rule, message) = result.Value;
 
-                    if (!string.IsNullOrEmpty(property))
+                    if (property is { Length: > 0 })
                     {
                         currentProperty = property;
                         if (!ruleChains.ContainsKey(property))
@@ -1846,12 +1823,12 @@ public class SannrGenerator : IIncrementalGenerator
                         }
                     }
 
-                    if (!string.IsNullOrEmpty(currentProperty) && !string.IsNullOrEmpty(rule))
+                    if (currentProperty is { Length: > 0 } && rule is { Length: > 0 })
                     {
                         ruleChains[currentProperty].Rules.Add(rule);
                     }
 
-                    if (!string.IsNullOrEmpty(currentProperty) && !string.IsNullOrEmpty(message))
+                    if (currentProperty is { Length: > 0 } && message is { Length: > 0 })
                     {
                         ruleChains[currentProperty].Message = message;
                     }

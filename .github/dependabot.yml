@@ -12,6 +12,17 @@ updates:
     open-pull-requests-limit: 10
     labels:
       - "dependencies"
+    ignore:
+      # Sannr.Gen is a Roslyn compiler extension. The Microsoft.CodeAnalysis
+      # compiler packages declare the *minimum* Roslyn a consumer must have,
+      # so a generator built against 5.x stops loading in the 4.x compilers
+      # that ship with the .NET 8 SDK and VS 2022. Hold the major deliberately
+      # and raise it only when dropping those toolchains is intended.
+      # Microsoft.CodeAnalysis.Analyzers is dev-time only and stays current.
+      - dependency-name: "Microsoft.CodeAnalysis.CSharp"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "Microsoft.CodeAnalysis.CSharp.Workspaces"
+        update-types: ["version-update:semver-major"]
     groups:
       microsoft-extensions:
         patterns:

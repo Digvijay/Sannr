@@ -1,6 +1,8 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <TargetFramework>netstandard2.1</TargetFramework>
+    <!-- Roslyn loads compiler extensions from netstandard2.0 only. Targeting
+         netstandard2.1 trips RS1041 and makes generator loading unpredictable. -->
+    <TargetFramework>$(SannrGeneratorTargetFramework)</TargetFramework>
     <EnforceExtendedAnalyzerRules>true</EnforceExtendedAnalyzerRules>
     <LangVersion>latest</LangVersion>
     <Nullable>enable</Nullable>

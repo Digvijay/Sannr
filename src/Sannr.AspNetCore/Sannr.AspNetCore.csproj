@@ -44,7 +44,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <None Include="..\Sannr.Gen\bin\$(Configuration)\netstandard2.1\Sannr.Gen.dll" 
+    <None Include="..\Sannr.Gen\bin\$(Configuration)\$(SannrGeneratorTargetFramework)\Sannr.Gen.dll" 
           Pack="true" 
           PackagePath="analyzers/dotnet/cs" 
           Visible="false" />

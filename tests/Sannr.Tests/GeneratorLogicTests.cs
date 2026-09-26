@@ -67,6 +67,71 @@ public class GeneratorLogicTests
         Assert.Contains(diagnostics, d => d.Id == "SANN005");
     }
 
+    [Fact]
+    public void Generator_Should_Not_Emit_Debug_Or_Test_Scaffolding()
+    {
+        var compilation = CreateCompilation(@"
+            namespace MyLib;
+            using Sannr;
+
+            public partial class MyModel {
+                [Required]
+                public string Name { get; set; }
+            }
+        ");
+
+        var generator = new SannrGenerator();
+        GeneratorDriver driver = CSharpGeneratorDriver.Create(generator);
+        driver = driver.RunGenerators(compilation);
+
+        var generatedFiles = driver.GetRunResult().GeneratedTrees
+            .Select(t => System.IO.Path.GetFileName(t.FilePath))
+            .ToList();
+
+        // These were emitted into every consuming compilation until they were
+        // removed. GeneratorInitDebug.g.cs additionally embedded DateTime.Now,
+        // which made the output non-deterministic and unreproducible.
+        string[] scaffolding =
+        {
+            "TestGenerator.g.cs",
+            "TestGenerated.g.cs",
+            "GeneratorInitDebug.g.cs",
+        };
+
+        foreach (var name in scaffolding)
+        {
+            Assert.DoesNotContain(generatedFiles, f => string.Equals(f, name, StringComparison.Ordinal));
+        }
+    }
+
+    [Fact]
+    public void Generator_Should_Produce_Identical_Output_Across_Runs()
+    {
+        var source = @"
+            namespace MyLib;
+            using Sannr;
+
+            public partial class MyModel {
+                [Required]
+                public string Name { get; set; }
+            }
+        ";
+
+        static string[] Run(string src)
+        {
+            var driver = CSharpGeneratorDriver.Create(new SannrGenerator())
+                .RunGenerators(CreateCompilation(src));
+            return driver.GetRunResult().GeneratedTrees
+                .OrderBy(t => t.FilePath, StringComparer.Ordinal)
+                .Select(t => t.GetText().ToString())
+                .ToArray();
+        }
+
+        // A generator that embeds timestamps or other ambient state breaks
+        // reproducible builds and defeats incremental caching.
+        Assert.Equal(Run(source), Run(source));
+    }
+
     private static CSharpCompilation CreateCompilation(string source)
     {
         return CSharpCompilation.Create("TestAssembly",
