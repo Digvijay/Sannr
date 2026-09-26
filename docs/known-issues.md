@@ -161,6 +161,23 @@ Retargeted to `netstandard2.0`. This required replacing one API unavailable ther
 
 ---
 
+# Open
+
+Nothing is open in Sannr.
+
+Two caveats belong here rather than in the table, because neither is a defect and both bound what
+the entries above are worth:
+
+* Every result recorded here was produced on a single Windows ARM64 machine. CI has never executed
+  on a GitHub-hosted runner, so nothing above is confirmed on x64 or on Linux.
+* The `net11.0` preview leg is opt-in via `IncludePreviewTargetFramework` and has not been
+  exercised recently, because the preview SDK is not installed on the machine used for this work.
+
+A record of seven fixed defects measures how hard this repository was looked at. It is not a claim
+that there is nothing left to find.
+
+---
+
 ## Supported frameworks
 
 As of 1.7.0, Sannr multi-targets `net8.0` (LTS) and `net10.0` (current), rather than forcing
