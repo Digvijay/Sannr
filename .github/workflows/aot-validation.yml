@@ -45,9 +45,17 @@ jobs:
         shell: bash
         run: |
           set -e
-          binary=$(find ./aot-output -maxdepth 1 -type f \( -perm -u+x -o -name '*.exe' \) ! -name '*.pdb' ! -name '*.json' ! -name '*.dbg' | head -n 1)
-          if [ -z "$binary" ]; then
-            echo "::error::No native executable was produced."
+          name=Sannr.Playground
+          if [ "$RUNNER_OS" = "Windows" ]; then
+            binary="./aot-output/$name.exe"
+          else
+            binary="./aot-output/$name"
+          fi
+          # Deliberately an exact name rather than a find over executable bits: on Windows
+          # every file looks executable to find, so the old probe picked
+          # aspnetcorev2_inprocess.dll and died with "Exec format error".
+          if [ ! -f "$binary" ]; then
+            echo "::error::No native executable was produced at $binary."
             ls -R ./aot-output
             exit 1
           fi
@@ -74,10 +82,24 @@ jobs:
           dotnet-version: 10.0.x
 
       - name: Build with AOT and trim analyzers as errors
-        run: >
-          dotnet build Sannr.sln
-          --configuration Release
-          -p:EnableAotAnalyzer=true
-          -p:EnableTrimAnalyzer=true
-          -p:EnableSingleFileAnalyzer=true
-          -p:WarningsAsErrors=IL2026%3BIL2046%3BIL2062%3BIL2067%3BIL2070%3BIL2072%3BIL2075%3BIL2087%3BIL2091%3BIL3050%3BIL3051%3BIL3052%3BIL3053
+        # Scoped to the projects that are actually published. Running this across the whole
+        # solution gated the result on Sannr.Tests, which uses MapPost and the HttpClient JSON
+        # helpers -- APIs that are correct in an integration test and say nothing about whether
+        # the shipped library is AOT-clean. All 96 failures came from that one test project.
+        #
+        # The %3B in WarningsAsErrors is a semicolon. It has to stay escaped: the dotnet CLI
+        # splits a -p: value on semicolons, so a plain list makes every code after the first
+        # parse as its own switch and the run dies with MSB1006 before compiling anything.
+        shell: bash
+        run: |
+          set -e
+          for project in src/Sannr.Core/Sannr.Core.csproj src/Sannr.AspNetCore/Sannr.AspNetCore.csproj; do
+            echo "::group::$project"
+            dotnet build "$project" \
+              --configuration Release \
+              -p:EnableAotAnalyzer=true \
+              -p:EnableTrimAnalyzer=true \
+              -p:EnableSingleFileAnalyzer=true \
+              -p:WarningsAsErrors=IL2026%3BIL2046%3BIL2062%3BIL2067%3BIL2070%3BIL2072%3BIL2075%3BIL2087%3BIL2091%3BIL3050%3BIL3051%3BIL3052%3BIL3053
+            echo "::endgroup::"
+          done

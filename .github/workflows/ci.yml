@@ -95,17 +95,34 @@ jobs:
       - name: Report SDK version
         run: dotnet --info
 
+      - name: Detect whether a .NET 11 SDK is actually installed
+        id: preview_sdk
+        shell: bash
+        run: |
+          # setup-dotnet does not fail when a requested preview SDK has not been published yet,
+          # so the build silently falls back to the newest installed SDK and every net11.0
+          # target framework fails with NETSDK1045. Check for the SDK rather than assume it.
+          if dotnet --list-sdks | grep -q '^11\.'; then
+            echo "available=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "available=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::No .NET 11 SDK is installed on this runner, so the preview target framework was not built. Installed SDKs: $(dotnet --list-sdks | tr '\n' ' ')"
+          fi
+
       - name: Restore (including net11.0)
+        if: steps.preview_sdk.outputs.available == 'true'
         env:
           INCLUDE_PREVIEW_TFM: 'true'
         run: dotnet restore Sannr.sln
 
       - name: Build (including net11.0)
+        if: steps.preview_sdk.outputs.available == 'true'
         env:
           INCLUDE_PREVIEW_TFM: 'true'
         run: dotnet build Sannr.sln --no-restore --configuration Release
 
       - name: Test (including net11.0)
+        if: steps.preview_sdk.outputs.available == 'true'
         env:
           INCLUDE_PREVIEW_TFM: 'true'
         run: dotnet test Sannr.sln --no-build --configuration Release
