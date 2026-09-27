@@ -16,6 +16,12 @@
     <RepositoryUrl>https://github.com/Digvijay/Sannr</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
+
+    <!-- Single source of truth for the source generator's target framework.
+         Roslyn loads compiler extensions from netstandard2.0 only, and the
+         packaging path in Sannr.AspNetCore derives from this so the two can
+         never drift apart. -->
+    <SannrGeneratorTargetFramework>netstandard2.0</SannrGeneratorTargetFramework>
   </PropertyGroup>
 
   <!-- Make Sannr MSBuild properties visible to Source Generators -->

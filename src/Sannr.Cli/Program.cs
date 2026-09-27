@@ -1,6 +1,4 @@
 using System.CommandLine;
-using System.CommandLine.Invocation;
-using System.CommandLine.Parsing;
 using System.Text.RegularExpressions;
 using Microsoft.CodeAnalysis;
 
@@ -12,66 +10,81 @@ public class Program
     {
         var rootCommand = new RootCommand("Sannr Migration Tools - Migrate from other validation libraries to Sannr");
 
-        var fluentValidationCommand = new Command("fluentvalidation", "Migrate from FluentValidation to Sannr");
-        fluentValidationCommand.AddOption(new Option<string>("--input", "Input file or directory containing FluentValidation code") { IsRequired = true });
-        fluentValidationCommand.AddOption(new Option<string>("--output", "Output directory for migrated Sannr code") { IsRequired = true });
-        fluentValidationCommand.AddOption(new Option<string>("--target", () => "fluent", "Target Sannr migration style: 'attribute' or 'fluent'"));
-        fluentValidationCommand.AddOption(new Option<bool>("--overwrite", "Overwrite existing files"));
-        fluentValidationCommand.AddOption(new Option<bool>("--dry-run", "Show what would be migrated without making changes"));
+        var fvInput = new Option<string>("--input") { Description = "Input file or directory containing FluentValidation code", Required = true };
+        var fvOutput = new Option<string>("--output") { Description = "Output directory for migrated Sannr code", Required = true };
+        var fvTarget = new Option<string>("--target") { Description = "Target Sannr migration style: 'attribute' or 'fluent'", DefaultValueFactory = _ => "fluent" };
+        var fvOverwrite = new Option<bool>("--overwrite") { Description = "Overwrite existing files" };
+        var fvDryRun = new Option<bool>("--dry-run") { Description = "Show what would be migrated without making changes" };
 
-        var dataAnnotationsCommand = new Command("dataannotations", "Migrate from DataAnnotations to Sannr");
-        dataAnnotationsCommand.AddOption(new Option<string>("--input", "Input file or directory containing DataAnnotations code") { IsRequired = true });
-        dataAnnotationsCommand.AddOption(new Option<string>("--output", "Output directory for migrated Sannr code") { IsRequired = true });
-        dataAnnotationsCommand.AddOption(new Option<bool>("--overwrite", "Overwrite existing files"));
-        dataAnnotationsCommand.AddOption(new Option<bool>("--dry-run", "Show what would be migrated without making changes"));
-
-        var analyzeCommand = new Command("analyze", "Analyze validation code to understand migration complexity");
-        analyzeCommand.AddOption(new Option<string>("--input", "Input file or directory to analyze") { IsRequired = true });
-        analyzeCommand.AddOption(new Option<string?>("--type", "Type of validation library (fluentvalidation, dataannotations, auto)"));
-
-        rootCommand.AddCommand(fluentValidationCommand);
-        rootCommand.AddCommand(dataAnnotationsCommand);
-        rootCommand.AddCommand(analyzeCommand);
-
-        fluentValidationCommand.SetHandler(async (InvocationContext context) =>
+        var fluentValidationCommand = new Command("fluentvalidation", "Migrate from FluentValidation to Sannr")
         {
-            var input = context.ParseResult.GetValueForOption(fluentValidationCommand.Options.OfType<Option<string>>().First(o => o.Name == "input"));
-            var output = context.ParseResult.GetValueForOption(fluentValidationCommand.Options.OfType<Option<string>>().First(o => o.Name == "output"));
-            var target = context.ParseResult.GetValueForOption(fluentValidationCommand.Options.OfType<Option<string>>().First(o => o.Name == "target"));
-            var overwrite = context.ParseResult.GetValueForOption(fluentValidationCommand.Options.OfType<Option<bool>>().First(o => o.Name == "overwrite"));
-            var dryRun = context.ParseResult.GetValueForOption(fluentValidationCommand.Options.OfType<Option<bool>>().First(o => o.Name == "dry-run"));
+            fvInput, fvOutput, fvTarget, fvOverwrite, fvDryRun,
+        };
 
+        var daInput = new Option<string>("--input") { Description = "Input file or directory containing DataAnnotations code", Required = true };
+        var daOutput = new Option<string>("--output") { Description = "Output directory for migrated Sannr code", Required = true };
+        var daOverwrite = new Option<bool>("--overwrite") { Description = "Overwrite existing files" };
+        var daDryRun = new Option<bool>("--dry-run") { Description = "Show what would be migrated without making changes" };
+
+        var dataAnnotationsCommand = new Command("dataannotations", "Migrate from DataAnnotations to Sannr")
+        {
+            daInput, daOutput, daOverwrite, daDryRun,
+        };
+
+        var analyzeInput = new Option<string>("--input") { Description = "Input file or directory to analyze", Required = true };
+        var analyzeType = new Option<string?>("--type") { Description = "Type of validation library (fluentvalidation, dataannotations, auto)" };
+
+        var analyzeCommand = new Command("analyze", "Analyze validation code to understand migration complexity")
+        {
+            analyzeInput, analyzeType,
+        };
+
+        rootCommand.Subcommands.Add(fluentValidationCommand);
+        rootCommand.Subcommands.Add(dataAnnotationsCommand);
+        rootCommand.Subcommands.Add(analyzeCommand);
+
+        fluentValidationCommand.SetAction(async (parseResult, cancellationToken) =>
+        {
+            var target = parseResult.GetValue(fvTarget);
             var targetEnum = string.Equals(target, "attribute", StringComparison.OrdinalIgnoreCase) ? MigrationTarget.Attribute : MigrationTarget.Fluent;
-            await MigrateFluentValidationAsync(input!, output!, targetEnum, overwrite, dryRun, context.Console);
+            await MigrateFluentValidationAsync(
+                parseResult.GetValue(fvInput)!,
+                parseResult.GetValue(fvOutput)!,
+                targetEnum,
+                parseResult.GetValue(fvOverwrite),
+                parseResult.GetValue(fvDryRun),
+                parseResult.InvocationConfiguration.Output).ConfigureAwait(false);
         });
 
-        dataAnnotationsCommand.SetHandler(async (InvocationContext context) =>
+        dataAnnotationsCommand.SetAction(async (parseResult, cancellationToken) =>
         {
-            var input = context.ParseResult.GetValueForOption(dataAnnotationsCommand.Options.OfType<Option<string>>().First(o => o.Name == "input"));
-            var output = context.ParseResult.GetValueForOption(dataAnnotationsCommand.Options.OfType<Option<string>>().First(o => o.Name == "output"));
-            var overwrite = context.ParseResult.GetValueForOption(dataAnnotationsCommand.Options.OfType<Option<bool>>().First(o => o.Name == "overwrite"));
-            var dryRun = context.ParseResult.GetValueForOption(dataAnnotationsCommand.Options.OfType<Option<bool>>().First(o => o.Name == "dry-run"));
-            await MigrateDataAnnotationsAsync(input!, output!, overwrite, dryRun, context.Console);
+            await MigrateDataAnnotationsAsync(
+                parseResult.GetValue(daInput)!,
+                parseResult.GetValue(daOutput)!,
+                parseResult.GetValue(daOverwrite),
+                parseResult.GetValue(daDryRun),
+                parseResult.InvocationConfiguration.Output).ConfigureAwait(false);
         });
 
-        analyzeCommand.SetHandler(async (InvocationContext context) =>
+        analyzeCommand.SetAction(async (parseResult, cancellationToken) =>
         {
-            var input = context.ParseResult.GetValueForOption(analyzeCommand.Options.OfType<Option<string>>().First(o => o.Name == "input"));
-            var type = context.ParseResult.GetValueForOption(analyzeCommand.Options.OfType<Option<string?>>().First(o => o.Name == "type"));
-            await AnalyzeValidationCodeAsync(input!, type, context.Console);
+            await AnalyzeValidationCodeAsync(
+                parseResult.GetValue(analyzeInput)!,
+                parseResult.GetValue(analyzeType),
+                parseResult.InvocationConfiguration.Output).ConfigureAwait(false);
         });
 
-        rootCommand.SetHandler((InvocationContext context) =>
+        rootCommand.SetAction(parseResult =>
         {
-            context.Console.WriteLine("Sannr Migration Tools");
-            context.Console.WriteLine("Use 'sannr --help' to see available commands.");
-            return Task.CompletedTask;
+            parseResult.InvocationConfiguration.Output.WriteLine("Sannr Migration Tools");
+            parseResult.InvocationConfiguration.Output.WriteLine("Use 'sannr --help' to see available commands.");
+            return 0;
         });
 
-        return await rootCommand.InvokeAsync(args);
+        return await rootCommand.Parse(args).InvokeAsync().ConfigureAwait(false);
     }
 
-    static async Task MigrateFluentValidationAsync(string input, string output, MigrationTarget target, bool overwrite, bool dryRun, IConsole console)
+    static async Task MigrateFluentValidationAsync(string input, string output, MigrationTarget target, bool overwrite, bool dryRun, TextWriter console)
     {
         console.WriteLine($"🔄 Migrating FluentValidation code from: {input}");
         console.WriteLine($"📁 Output directory: {output}");
@@ -104,7 +117,7 @@ public class Program
         }
     }
 
-    static async Task MigrateDataAnnotationsAsync(string input, string output, bool overwrite, bool dryRun, IConsole console)
+    static async Task MigrateDataAnnotationsAsync(string input, string output, bool overwrite, bool dryRun, TextWriter console)
     {
         console.WriteLine($"🔄 Migrating DataAnnotations code from: {input}");
         console.WriteLine($"📁 Output directory: {output}");
@@ -136,7 +149,7 @@ public class Program
         }
     }
 
-    static async Task AnalyzeValidationCodeAsync(string input, string? type, IConsole console)
+    static async Task AnalyzeValidationCodeAsync(string input, string? type, TextWriter console)
     {
         console.WriteLine($"🔍 Analyzing validation code in: {input}");
         console.WriteLine($"🏷️  Library type: {type ?? "auto-detect"}");

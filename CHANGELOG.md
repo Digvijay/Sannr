@@ -8,12 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Changed
-- Refreshed Dependabot-managed central package pins: `OpenTelemetry.Api` to 1.18.0
-  and `MessagePack` to 2.5.301.
-- Refreshed the docs Rollup package lock.
-- Kept the SDK pin on the lowest 10.0 feature band so contributors with older 10.0 SDK
-  installs can still roll forward, while preserving the preview SDK roll-forward needed by
-  the opt-in net11.0 validation leg.
+- Refreshed Dependabot-managed dependencies: OpenTelemetry.Api and MessagePack central package pins, the docs Rollup lockfile, a docs site kept on stable VitePress 1.x with Vite pinned forward to 6.4.3 through an npm override (no non-vulnerable Vite exists in the 5.x line that VitePress 1.x declares), and the .NET SDK pin. The SDK roll-forward policy now accepts newer 10.0 feature bands so local and CI builds can use the currently installed 10.0 SDK without weakening preview opt-in behavior.
 
 ## [1.7.0] - 2026-09-25
 
@@ -56,8 +51,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   above: `GeneratorInitDebug.g.cs`, `TestGenerator.g.cs`, `ValidationTargetsDebug.g.cs`,
   `FluentValidatorsDebug.g.cs` and `// DEBUG` comments. Removed with an unused syntax parser.
 - `dotnet pack --no-build` failed with `NETSDK1085`; `GeneratePackageOnBuild` is removed.
-- Removed `System.Net.Http` and `System.Text.RegularExpressions` pins that the SDK already prunes
-  (`NU1510` on SDK 11).
+- Retained the `System.Net.Http` and `System.Text.RegularExpressions` transitive pins added on
+  main, because transitive pinning is enabled and SDK 10.0.401 restores them without `NU1510`.
+  Revisit if a later SDK starts pruning them.
 
 ### Changed
 - Multi-targets `net8.0` (LTS) and `net10.0` (current). `net11.0` builds are validated in CI

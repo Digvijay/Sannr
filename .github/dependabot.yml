@@ -1,3 +1,8 @@
+# Dependabot version updates. Security updates run without this file, but
+# version updates do not: every ecosystem the repository actually ships must
+# be listed here or it is silently unwatched.
+# https://docs.github.com/code-security/dependabot/dependabot-version-updates/configuration-options-for-the-dependabot.yml-file
+
 version: 2
 updates:
   - package-ecosystem: "nuget"
@@ -7,11 +12,27 @@ updates:
     open-pull-requests-limit: 10
     labels:
       - "dependencies"
+    ignore:
+      # Sannr.Gen is a Roslyn compiler extension. The Microsoft.CodeAnalysis
+      # compiler packages declare the *minimum* Roslyn a consumer must have,
+      # so a generator built against a newer version stops loading in the
+      # compilers that ship with the .NET 8 SDK and VS 2022. 4.8.0 is the
+      # deliberate support floor: minor bumps move it just as surely as major
+      # ones do (4.14 already requires VS 2022 17.14), so both are held and
+      # raised only when dropping those toolchains is intended.
+      # Microsoft.CodeAnalysis.Analyzers is dev-time only and stays current.
+      - dependency-name: "Microsoft.CodeAnalysis.CSharp"
+        update-types: ["version-update:semver-major", "version-update:semver-minor"]
+      - dependency-name: "Microsoft.CodeAnalysis.CSharp.Workspaces"
+        update-types: ["version-update:semver-major", "version-update:semver-minor"]
     groups:
       microsoft-extensions:
         patterns:
           - "Microsoft.Extensions.*"
           - "Microsoft.AspNetCore.*"
+      roslyn:
+        patterns:
+          - "Microsoft.CodeAnalysis.*"
       opentelemetry:
         patterns:
           - "OpenTelemetry*"
@@ -22,6 +43,20 @@ updates:
           - "coverlet.*"
 
   - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    labels:
+      - "dependencies"
+
+  - package-ecosystem: "npm"
+    directory: "/docs"
+    schedule:
+      interval: "weekly"
+    labels:
+      - "dependencies"
+
+  - package-ecosystem: "dotnet-sdk"
     directory: "/"
     schedule:
       interval: "weekly"

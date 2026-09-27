@@ -440,7 +440,7 @@ NuGet Packages:
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Sannr" Version="1.4.0" />
+    <PackageReference Include="Sannr" Version="1.6.0" />
     <!-- Source generator included automatically -->
   </ItemGroup>
 </Project>
