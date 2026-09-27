@@ -320,6 +320,35 @@ that there is nothing left to find.
 
 ---
 
+## 15. Three CI gates could not fail for a real reason, and one could not pass at all
+
+All four were found by running the pipeline rather than by reading it.
+
+**The trim and AOT gate measured the tests, not the library.** It ran the analyzers over
+`Sannr.sln` with the IL codes promoted to errors. All 96 errors came from `Sannr.Tests`, which
+uses `MapPost`, `PostAsJsonAsync` and `ReadFromJsonAsync` - reflective by nature and not
+shipped. The two published projects were never the thing being measured. Scoped the gate to
+`Sannr.Core` and `Sannr.AspNetCore`, both of which build clean under the same switches.
+
+**The AOT publish step picked the wrong file on Windows.** It located the published binary with
+`find ... -perm -u+x`. Every file looks executable on Windows, so the step selected
+`aspnetcorev2_inprocess.dll` and exited 126 with "Exec format error". Replaced with the exact
+published binary name.
+
+**The preview job could never have worked.** `setup-dotnet` does not fail when a requested
+preview SDK has not been published, so a missing SDK surfaced as `NETSDK1045` on every
+`net11.0` target rather than as a skip. Adding a presence check was not sufficient: the .NET 11
+SDK *was* installed (`11.0.100-rc.1.26425.128`), but `global.json` pins `10.0.401` with
+`allowPrerelease: false` so that the stable matrix legs are reproducible, and that pin applied
+to the preview job too. The installed SDK could never be selected. The job now relaxes the pin
+in the runner's working copy only and asserts on the SDK that is actually *selected* rather than
+the one that is merely present, skipping with a `::notice::` otherwise.
+
+**`dotnet-quality: preview` applied to every channel.** Requesting `8.0.x`, `10.0.x` and
+`11.0.x` in one `setup-dotnet` step installed `8.0.100-rc.2` and `10.0.100-rc.2` in place of the
+released SDKs, so the preview job was not testing the shipping SDKs at all. The .NET 11 request
+is now a separate step.
+
 ## Supported frameworks
 
 As of 1.7.0, Sannr multi-targets `net8.0` (LTS) and `net10.0` (current), rather than forcing

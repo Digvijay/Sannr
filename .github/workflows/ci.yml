@@ -83,31 +83,64 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Setup .NET (8.0, 10.0 and 11.0 preview)
+      - name: Setup .NET (8.0 and 10.0)
         uses: actions/setup-dotnet@v6
         with:
           dotnet-version: |
             8.0.x
             10.0.x
-            11.0.x
+
+      # Requested separately: dotnet-quality applies to every channel in the same step, so
+      # asking for preview alongside 8.0.x and 10.0.x installed 8.0.100-rc.2 and 10.0.100-rc.2
+      # in place of the released SDKs.
+      - name: Setup .NET 11 preview
+        uses: actions/setup-dotnet@v6
+        with:
+          dotnet-version: 11.0.x
           dotnet-quality: preview
 
       - name: Report SDK version
         run: dotnet --info
 
-      - name: Detect whether a .NET 11 SDK is actually installed
+      - name: Select the .NET 11 SDK if one is available
         id: preview_sdk
         shell: bash
         run: |
-          # setup-dotnet does not fail when a requested preview SDK has not been published yet,
-          # so the build silently falls back to the newest installed SDK and every net11.0
-          # target framework fails with NETSDK1045. Check for the SDK rather than assume it.
-          if dotnet --list-sdks | grep -q '^11\.'; then
-            echo "available=true" >> "$GITHUB_OUTPUT"
-          else
+          # Two separate things can stop this job from building net11.0, and both used to fail
+          # it instead of skipping it:
+          #
+          #  1. setup-dotnet does not fail when a requested preview SDK has not been published,
+          #     so the job silently continues with the newest installed SDK.
+          #  2. global.json pins 10.0.401 with allowPrerelease:false, so that the stable matrix
+          #     legs are reproducible. That pin applies here too, which meant the .NET 11 SDK
+          #     installed above was never selected and every net11.0 target framework failed
+          #     with NETSDK1045.
+          #
+          # Relax the pin for this job only. The edit is confined to the runner's working copy;
+          # the committed global.json, and therefore the stable legs, keep the strict pin.
+          if ! dotnet --list-sdks | grep -q '^11\.'; then
             echo "available=false" >> "$GITHUB_OUTPUT"
             echo "::notice::No .NET 11 SDK is installed on this runner, so the preview target framework was not built. Installed SDKs: $(dotnet --list-sdks | tr '\n' ' ')"
+            exit 0
           fi
+
+          sdk="$(dotnet --list-sdks | grep '^11\.' | tail -1 | cut -d' ' -f1)"
+          tmp="$(mktemp)"
+          jq --arg v "$sdk" '.sdk.version = $v | .sdk.rollForward = "latestFeature" | .sdk.allowPrerelease = true' global.json > "$tmp"
+          mv "$tmp" global.json
+
+          # Assert on the SDK that is actually selected, not on the one that is merely present.
+          selected="$(dotnet --version)"
+          echo "Selected SDK: $selected"
+          case "$selected" in
+            11.*)
+              echo "available=true" >> "$GITHUB_OUTPUT"
+              ;;
+            *)
+              echo "available=false" >> "$GITHUB_OUTPUT"
+              echo "::notice::A .NET 11 SDK is installed but $selected was selected, so the preview target framework was not built."
+              ;;
+          esac
 
       - name: Restore (including net11.0)
         if: steps.preview_sdk.outputs.available == 'true'
