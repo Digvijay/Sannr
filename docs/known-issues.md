@@ -360,5 +360,6 @@ package until it is a supported release.
 
 ## Reporting
 
-Security-relevant issues should follow [SECURITY.md](../SECURITY.md) rather than being filed as
-public issues.
+Security-relevant issues should follow
+[SECURITY.md](https://github.com/Digvijay/Sannr/blob/main/SECURITY.md) rather than being filed
+as public issues.
