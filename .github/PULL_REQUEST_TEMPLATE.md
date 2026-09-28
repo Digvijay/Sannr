@@ -1,32 +1,34 @@
-# Pull Request Template
+## Summary
 
-## Description
-Please include a summary of the change and which issue is fixed. Please also include relevant motivation and context.
+<!-- What does this change do, and why? -->
 
-Fixes # (issue)
+## Related issue
+
+<!-- e.g. Fixes #123 -->
 
 ## Type of change
-- [ ] Bug fix (non-breaking change which fixes an issue)
-- [ ] New feature (non-breaking change which adds functionality)
-- [ ] Breaking change (fix or feature that would cause existing functionality to not work as expected)
-- [ ] Documentation update
-- [ ] Performance improvement
 
-## How Has This Been Tested?
-Please describe the tests that you ran to verify your changes.
+- [ ] Bug fix (non-breaking)
+- [ ] New feature (non-breaking)
+- [ ] Breaking change
+- [ ] Documentation only
+- [ ] Build, CI, or release tooling
 
-- [ ] Unit Tests
-- [ ] Integration Tests
-- [ ] Benchmark Tests
-- [ ] Manual Verification
+## Checklist
 
-## Checklist:
-- [ ] My code follows the style guidelines of this project
-- [ ] I have performed a self-review of my own code
-- [ ] I have commented my code, particularly in hard-to-understand areas
-- [ ] I have made corresponding changes to the documentation
-- [ ] My changes generate no new warnings
-- [ ] I have added tests that prove my fix is effective or that my feature works
-- [ ] New and existing unit tests pass locally with my changes
-- [ ] Any dependent changes have been merged and published in downstream modules
-- [ ] I have updated the CHANGELOG.md if necessary
+- [ ] Tests cover the change, and the full suite passes locally
+- [ ] Public API changes are documented and follow semantic versioning
+- [ ] Native AOT and trimming compatibility is preserved (no new runtime reflection on a supported path)
+- [ ] No new build warnings
+- [ ] Documentation updated where behaviour changed
+- [ ] `CHANGELOG.md` updated for user-visible changes
+- [ ] No new TODOs without a tracking issue
+
+## Performance impact
+
+<!-- If this touches a hot path or generated code, state the measured impact and how it was measured.
+     Claims about performance must be backed by reproducible benchmark output. -->
+
+## Security impact
+
+<!-- Does this change affect input handling, generated code, serialization, or a trust boundary? -->

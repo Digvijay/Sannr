@@ -263,4 +263,3 @@ If OpenAPI schemas don't show validation constraints:
 
 - [OpenAPI Integration](/integrations/openapi) - Automatic schema generation
 - [Validation Attributes](/features/validation-attributes) - Available validation attributes
-- [Publishing Guide](https://github.com/Digvijay/Sannr/blob/master/docs/PUBLISHING.md) - Deployment considerations

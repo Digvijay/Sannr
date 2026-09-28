@@ -1,4 +1,5 @@
 <Project>
+  <Import Project="Directory.TargetFrameworks.props" />
   <PropertyGroup>
     <LangVersion>latest</LangVersion>
     <Nullable>enable</Nullable>
@@ -37,8 +38,14 @@
 
   <!-- Enable high quality analysis -->
   <PropertyGroup>
-    <AnalysisLevel>latest</AnalysisLevel>
-    <AnalysisMode>Recommended</AnalysisMode>
+    <!--
+      Pinned deliberately. <AnalysisLevel>latest</AnalysisLevel> means "whatever the newest SDK on
+      the build machine enforces", so installing a new SDK can fail a build that has not changed.
+      That happened here: the .NET 11 RC SDK turned previously-clean code into 314 build errors
+      (IDE0055, IDE0011, IDE0059) with TreatWarningsAsErrors on. Pinning keeps builds reproducible
+      across SDKs; raise it deliberately and fix the new diagnostics in the same commit.
+    -->
+    <AnalysisLevel>10.0</AnalysisLevel>    <AnalysisMode>Recommended</AnalysisMode>
     <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
     <NoWarn>$(NoWarn);CA2007;CA1014</NoWarn>
   </PropertyGroup>

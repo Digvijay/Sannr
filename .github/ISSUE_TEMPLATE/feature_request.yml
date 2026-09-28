@@ -1,28 +1,33 @@
 name: Feature request
-description: Suggest an idea for this project
-labels: ["enhancement"]
+description: Propose a change or new capability
+title: "[Feature]: "
+labels: ["enhancement", "needs-triage"]
 body:
   - type: textarea
-    id: vision
+    id: problem
     attributes:
-      label: Is your feature request related to a problem? Please describe.
-      description: A clear and concise description of what the problem is. Ex. I'm always frustrated when [...]
+      label: What problem are you trying to solve?
+      description: Describe the underlying need rather than a specific implementation.
     validations:
       required: true
+
   - type: textarea
-    id: solution
+    id: proposal
     attributes:
-      label: Describe the solution you'd like
-      description: A clear and concise description of what you want to happen.
+      label: Proposed solution
     validations:
       required: true
+
   - type: textarea
     id: alternatives
     attributes:
-      label: Describe alternatives you've considered
-      description: A clear and concise description of any alternative solutions or features you've considered.
-  - type: textarea
-    id: context
+      label: Alternatives considered
+
+  - type: checkboxes
+    id: constraints
     attributes:
-      label: Additional context
-      description: Add any other context or screenshots about the feature request here.
+      label: Design constraints acknowledged
+      options:
+        - label: This proposal does not require runtime reflection on a supported code path
+        - label: This proposal remains compatible with Native AOT and trimming
+        - label: I am willing to help implement this

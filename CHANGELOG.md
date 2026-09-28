@@ -10,6 +10,63 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 - Refreshed Dependabot-managed dependencies: OpenTelemetry.Api and MessagePack central package pins, the docs Rollup lockfile, a docs site kept on stable VitePress 1.x with Vite pinned forward to 6.4.3 through an npm override (no non-vulnerable Vite exists in the 5.x line that VitePress 1.x declares), and the .NET SDK pin. The SDK roll-forward policy now accepts newer 10.0 feature bands so local and CI builds can use the currently installed 10.0 SDK without weakening preview opt-in behavior.
 
+## [1.7.0] - 2026-09-25
+
+### Fixed — found by running CI on GitHub-hosted x64 runners for the first time
+- **The AOT validation workflow had never run to completion.** It passed `-p:PublishAot=true` on
+  the command line, which creates a *global* property that MSBuild propagates into every
+  `ProjectReference` — including the `netstandard2.0` generator, which cannot be AOT-compiled
+  (`NETSDK1207`). The flag was also redundant: the target project already declares `PublishAot`.
+  Removed; AOT stays configured in the project file, where it does not flow across references.
+- **The trim and AOT warnings-as-errors list was never enforced.** It was passed as
+  `-p:WarningsAsErrors=IL2026,IL2046,...`, and the dotnet CLI splits `-p:` values on commas, so
+  every code after the first was parsed as a separate switch and the run failed with
+  `MSB1006: Property is not valid. Switch: IL2046` before compiling anything. The codes are now
+  joined with `%3B`, the escaped semicolon.
+
+### Fixed
+- **Validation filter silently passed invalid payloads (fail-open).** Two different classes were
+  named `SannrValidatorRegistry`: `Sannr.SannrValidatorRegistry` (written to by the generator via
+  `[ModuleInitializer]`) and `Sannr.AspNetCore.SannrValidatorRegistry` (never written to). C#
+  binds an unqualified name to the one in the containing namespace, so every lookup inside
+  `Sannr.AspNetCore` resolved to the permanently empty registry, the filter found no validator,
+  and invalid requests returned `200 OK`. Registry lookups are now fully qualified, the duplicate
+  filter and extension classes are removed, and the shadow registry is an `[Obsolete]` forwarder.
+- **Fail-closed by default.** `WithSannrValidation()` now verifies at startup that a generated
+  validator exists for every parameter it is asked to guard, and throws instead of silently
+  skipping validation. Opt out with `SannrValidationOptions.RequireValidator = false`.
+- **`global.json` prevented the repository from building on any current SDK** (`latestPatch`
+  combined with `allowPrerelease: false` pinned an SDK that is no longer installed).
+- **A leftover non-incremental `TestGenerator` shipped in the package** and injected a dead
+  generated file into every consuming compilation. Removed.
+- **The source generator targeted `netstandard2.1`**, which Roslyn does not support for compiler
+  extensions (RS1041). Retargeted to `netstandard2.0`.
+- **Fluent validators were silently not generated** unless the project also set
+  `EnableSannrSchemaGen` or called `AddSannr()`. The fluent test project could not compile for
+  that reason and was not in the solution, so nothing noticed. Output is now unconditional.
+- **Generator output was not reproducible.** A static set leaked across compilations (validators
+  vanished on the second build in the IDE or compiler server), hint names used `Guid.NewGuid()`,
+  and templates stamped `DateTime.Now`. All three removed.
+- **Debug scaffolding was still injected into every consumer** after the `TestGenerator` removal
+  above: `GeneratorInitDebug.g.cs`, `TestGenerator.g.cs`, `ValidationTargetsDebug.g.cs`,
+  `FluentValidatorsDebug.g.cs` and `// DEBUG` comments. Removed with an unused syntax parser.
+- `dotnet pack --no-build` failed with `NETSDK1085`; `GeneratePackageOnBuild` is removed.
+- Retained the `System.Net.Http` and `System.Text.RegularExpressions` transitive pins added on
+  main, because transitive pinning is enabled and SDK 10.0.401 restores them without `NU1510`.
+  Revisit if a later SDK starts pruning them.
+
+### Changed
+- Multi-targets `net8.0` (LTS) and `net10.0` (current). `net11.0` builds are validated in CI
+  behind an opt-in switch but are not shipped in the released package yet.
+- Dependency floors raised to clear advisories: `Microsoft.OpenApi` to 2.12.2
+  (GHSA-v5pm-xwqc-g5wc, High) and all `OpenTelemetry` packages to 1.18.0
+  (GHSA-g94r-2vxg-569j, Moderate). These floors are security-relevant and must not be lowered.
+
+### Added
+- HTTP-level integration tests that assert a `400` is actually returned for an invalid payload.
+  The previous unit tests exercised the registry directly and so could not observe the fail-open
+  behaviour at all.
+
 ## [1.6.0] - 2026-03-04
 
 ### Added
@@ -57,10 +114,7 @@ Change any `options.AddSannrValidationSchemas()` calls to:
 options.SchemaFilter<SannrGeneratedSchemaFilter>();
 ```
 
-
-
 ## [1.3.0] - 2026-01-11
-
 
 ### Added
 - **Static Reflection**: Introduced "Shadow Types" (`[SannrReflect]`) for zero-allocation, AOT-compatible inspection and manipulation of models.

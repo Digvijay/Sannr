@@ -5,67 +5,157 @@ permissions:
 
 on:
   push:
-    branches: [ "main", "development" ]
-    paths:
-      - 'src/**'
-      - 'tests/**'
-      - '.github/workflows/ci.yml'
-      - 'Directory.Build.props'
-      - 'Directory.Packages.props'
-      - 'global.json'
-      - 'Sannr.sln'
+    branches: [ "main", "master", "development" ]
   pull_request:
-    branches: [ "main", "development" ]
-    paths:
-      - 'src/**'
-      - 'tests/**'
-      - '.github/workflows/ci.yml'
-      - 'Directory.Build.props'
-      - 'Directory.Packages.props'
-      - 'global.json'
-      - 'Sannr.sln'
+    branches: [ "main", "master", "development" ]
+  workflow_dispatch:
+
+env:
+  DOTNET_NOLOGO: true
+  DOTNET_SKIP_FIRST_TIME_EXPERIENCE: true
+  DOTNET_CLI_TELEMETRY_OPTOUT: true
 
 jobs:
   build:
-    name: Build & Test
-    runs-on: ubuntu-latest
-    
+    name: Build & Test (.NET 8 LTS + .NET 10)
+    # x64 Linux and x64 Windows. Culture, path-separator and line-ending defects have all been
+    # found in these repositories; a single-OS matrix cannot see any of them.
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ ubuntu-latest, windows-latest ]
+
     steps:
-    - uses: actions/checkout@v7
+      - uses: actions/checkout@v7
+        with:
+          # Required: Nerdbank.GitVersioning walks history to compute version height and
+          # hard-fails on a shallow clone.
+          fetch-depth: 0
 
-    - name: Setup .NET
-      uses: actions/setup-dotnet@v6
-      with:
-        dotnet-version: 10.0.x
+      - name: Setup .NET (8.0 LTS and 10.0)
+        uses: actions/setup-dotnet@v6
+        with:
+          dotnet-version: |
+            8.0.x
+            10.0.x
 
-    - name: Check Formatting
-      run: dotnet format --verify-no-changes Sannr.sln
+      - name: Restore
+        run: dotnet restore Sannr.sln
 
-    - name: Restore dependencies
-      run: dotnet restore Sannr.sln
+      - name: Check formatting
+        run: dotnet format --verify-no-changes Sannr.sln
 
-    - name: Build
-      run: dotnet build Sannr.sln --no-restore --configuration Release
+      - name: Build
+        run: dotnet build Sannr.sln --no-restore --configuration Release
 
-    - name: Test
-      run: |
-        dotnet test Sannr.sln --no-build --configuration Release --verbosity normal --collect:"XPlat Code Coverage" --results-directory ./coverage
-        # Consolidate coverage results if needed. Using a standard report generator is recommended in real projects.
+      - name: Test
+        run: >
+          dotnet test Sannr.sln --no-build --configuration Release
+          --collect:"XPlat Code Coverage" --results-directory ./coverage
 
-    - name: Upload Coverage
-      uses: actions/upload-artifact@v7
-      with:
-        name: code-coverage
-        path: ./coverage/**/coverage.cobertura.xml
+      - name: Upload coverage
+        uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: code-coverage-${{ matrix.os }}
+          path: ./coverage
 
-    - name: Pack
-      run: |
-        # ONLY pack the main project now. 
-        # It handles bundling Core and Gen automatically.
-        dotnet pack src/Sannr.AspNetCore/Sannr.AspNetCore.csproj -c Release -o ./artifacts
+      - name: Pack
+        run: dotnet pack Sannr.sln --no-build --configuration Release --output ./artifacts
 
-    - name: Upload Artifacts
-      uses: actions/upload-artifact@v7
-      with:
-        name: nuget-packages
-        path: ./artifacts/*.nupkg
+      - name: Upload packages
+        if: matrix.os == 'ubuntu-latest'
+        uses: actions/upload-artifact@v7
+        with:
+          name: nuget-packages
+          path: ./artifacts/*.nupkg
+
+  preview:
+    name: Preview .NET (net11.0)
+    runs-on: ubuntu-latest
+    # Advisory. A preview SDK can regress for reasons outside this repository, so this leg
+    # reports breakage without blocking the merge queue.
+    continue-on-error: true
+
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - name: Setup .NET (8.0 and 10.0)
+        uses: actions/setup-dotnet@v6
+        with:
+          dotnet-version: |
+            8.0.x
+            10.0.x
+
+      # Requested separately: dotnet-quality applies to every channel in the same step, so
+      # asking for preview alongside 8.0.x and 10.0.x installed 8.0.100-rc.2 and 10.0.100-rc.2
+      # in place of the released SDKs.
+      - name: Setup .NET 11 preview
+        uses: actions/setup-dotnet@v6
+        with:
+          dotnet-version: 11.0.x
+          dotnet-quality: preview
+
+      - name: Report SDK version
+        run: dotnet --info
+
+      - name: Select the .NET 11 SDK if one is available
+        id: preview_sdk
+        shell: bash
+        run: |
+          # Two separate things can stop this job from building net11.0, and both used to fail
+          # it instead of skipping it:
+          #
+          #  1. setup-dotnet does not fail when a requested preview SDK has not been published,
+          #     so the job silently continues with the newest installed SDK.
+          #  2. global.json pins 10.0.401 with allowPrerelease:false, so that the stable matrix
+          #     legs are reproducible. That pin applies here too, which meant the .NET 11 SDK
+          #     installed above was never selected and every net11.0 target framework failed
+          #     with NETSDK1045.
+          #
+          # Relax the pin for this job only. The edit is confined to the runner's working copy;
+          # the committed global.json, and therefore the stable legs, keep the strict pin.
+          if ! dotnet --list-sdks | grep -q '^11\.'; then
+            echo "available=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::No .NET 11 SDK is installed on this runner, so the preview target framework was not built. Installed SDKs: $(dotnet --list-sdks | tr '\n' ' ')"
+            exit 0
+          fi
+
+          sdk="$(dotnet --list-sdks | grep '^11\.' | tail -1 | cut -d' ' -f1)"
+          tmp="$(mktemp)"
+          jq --arg v "$sdk" '.sdk.version = $v | .sdk.rollForward = "latestFeature" | .sdk.allowPrerelease = true' global.json > "$tmp"
+          mv "$tmp" global.json
+
+          # Assert on the SDK that is actually selected, not on the one that is merely present.
+          selected="$(dotnet --version)"
+          echo "Selected SDK: $selected"
+          case "$selected" in
+            11.*)
+              echo "available=true" >> "$GITHUB_OUTPUT"
+              ;;
+            *)
+              echo "available=false" >> "$GITHUB_OUTPUT"
+              echo "::notice::A .NET 11 SDK is installed but $selected was selected, so the preview target framework was not built."
+              ;;
+          esac
+
+      - name: Restore (including net11.0)
+        if: steps.preview_sdk.outputs.available == 'true'
+        env:
+          INCLUDE_PREVIEW_TFM: 'true'
+        run: dotnet restore Sannr.sln
+
+      - name: Build (including net11.0)
+        if: steps.preview_sdk.outputs.available == 'true'
+        env:
+          INCLUDE_PREVIEW_TFM: 'true'
+        run: dotnet build Sannr.sln --no-restore --configuration Release
+
+      - name: Test (including net11.0)
+        if: steps.preview_sdk.outputs.available == 'true'
+        env:
+          INCLUDE_PREVIEW_TFM: 'true'
+        run: dotnet test Sannr.sln --no-build --configuration Release

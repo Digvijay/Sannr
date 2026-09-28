@@ -10,9 +10,25 @@
 [![.NET 8 LTS](https://img.shields.io/badge/.NET-8.0%20LTS-purple)](https://dotnet.microsoft.com/en-us/download/dotnet/8.0)
 [![Documentation](https://img.shields.io/badge/docs-sannr.digvijay.dev-blue?logo=gitbook)](https://sannr.digvijay.dev)
 
-**The Enterprise-Grade, AOT-First Validation Engine for .NET.**
+**An AOT-first validation engine for .NET.**
 
-**Blazingly fast validation** - Up to 20x faster than DataAnnotations with 95% less memory usage. Sannr is a high-performance validation library designed to replace `System.ComponentModel.DataAnnotations` in modern cloud-native applications. By utilizing **Roslyn Source Generators**, Sannr moves validation logic from runtime reflection to compile-time C#, resulting in zero startup overhead and complete compatibility with **Native AOT** trimming.
+Sannr replaces `System.ComponentModel.DataAnnotations` in cloud-native applications. It uses
+Roslyn source generators to move validation from runtime reflection into compile-time C#, so
+there is no startup cost for building validators and the result is compatible with Native AOT
+trimming.
+
+On the models benchmarked in this repository it is measurably faster than DataAnnotations and
+FluentValidation and allocates less. The specific multiples depend heavily on the model and the
+hardware; see [Performance](#-performance-benchmarks) for the numbers and the machine they were
+taken on, and reproduce them before quoting them.
+
+> **Fixed in 1.7.0 — security-relevant.** In 1.6.0 and earlier, `WithSannrValidation` accepted
+> payloads the generated validator rejects, because two different classes were named
+> `SannrValidatorRegistry` and every lookup inside `Sannr.AspNetCore` bound to a permanently empty
+> one. The registry also treated an unregistered type as valid. As of 1.7.0 the filter enforces
+> validation, is verified by HTTP-level integration tests, and **fails closed**: it throws at
+> startup if a validator it is asked to apply does not exist. **If you are on 1.6.0 or earlier,
+> upgrade.** Full detail in [docs/known-issues.md](docs/known-issues.md).
 
 **Static Reflection** with "Shadow Types" - Get PII tagging, property metadata, and Deep Cloning capabilities without the runtime cost of Reflection.
 
@@ -85,7 +101,7 @@ Standard validation libraries rely on Reflection, which is slow, memory-intensiv
 | Feature | System.ComponentModel.DataAnnotations | **Sannr** |
 | :--- | :--- | :--- |
 | **Runtime Mechanism** | Reflection (Slow) | **Static C# (Instant)** |
-| **Native AOT** | ⚠️ Requires warnings/trimming | **✅ 100% Trimming Safe** |
+| **Native AOT** | ⚠️ Requires warnings/trimming | **✅ Trimming and AOT safe** |
 | **Async Support** | ❌ Synchronous Only | **✅ Native `Task<T>`** |
 | **Dependency Injection** | ❌ Service Locator Anti-Pattern | **✅ `IServiceProvider` Support** |
 | **Conditional Logic** | ❌ Custom implementation required | **✅ `[RequiredIf]` Built-in** |
@@ -139,46 +155,59 @@ Sannr takes a different approach:
 - **Container size issues** - Reflection requires keeping metadata that bloats container images
 - **Security scanning problems** - Dynamic code execution makes compliance audits difficult
 
-### Business Advantages of AOT Technology
+### Why compile-time validation helps
 
-#### 💰 **Cost Savings**
-- **Up to 19x faster validation** (benchmarked: 518ns vs 10,341ns for complex models) means fewer servers needed
-- **87-95% less memory allocation** (256B vs 2,080B for simple models) allows more users per server
-- **Near-zero GC pressure** with minimal Gen0 collections for optimal serverless performance
-- **Smaller container images** reduce storage and transfer costs
+#### 💰 Infrastructure
+- Faster validation and lower allocation mean more requests served per core, and less GC work
+- Native AOT startup removes the per-instance warm-up cost that dominates short-lived workloads
+- Smaller images reduce storage, transfer, and cold-start time
 
-#### ⚡ **User Experience**
-- **Blazingly fast validation** - Complex models validate in under 1 microsecond
-- **Instant app startup** - No more waiting for validation systems to initialize
-- **Faster API responses** - Validation happens in microseconds, not milliseconds
-- **Better mobile performance** - Critical for mobile apps and PWAs
+#### ⚡ Runtime behaviour
+- Validation cost is predictable: no first-call reflection penalty, no per-type cache warm-up
+- Startup does no validation-system initialisation at all
 
-#### 🏢 **Enterprise Benefits**
-- **Cloud-native ready** - Works perfectly in Kubernetes, serverless, and edge computing
-- **Compliance friendly** - No dynamic code execution means easier security audits
-- **Future-proof** - Compatible with .NET's most advanced compilation technologies
+#### 🏢 Operational
+- Works under Native AOT, so it fits Kubernetes, serverless, and edge deployments
+- No dynamic code execution, which simplifies security review
+- Compatible with trimming
 
-### The Sannr Difference
-
-Instead of asking "Can we afford this technology?", Sannr asks "Can we afford NOT to use it?"
-
-In an era where milliseconds matter and cloud costs dominate IT budgets, Sannr delivers genuine performance improvements that translate directly to business value.
+How much any of this is worth depends entirely on your workload. Measure it.
 
 ---
 
-## ⚡ Performance Benchmarks: Blazingly Fast Validation
+## ⚡ Performance benchmarks
 
-### Benchmark Results Overview
+### Original results
 
 *Tested on: Intel Core i7-4980HQ CPU 2.80GHz (Haswell), 8 logical cores, macOS 15.7, .NET 8.0.22*
 
-| Validation Scenario | **Sannr** | FluentValidation | DataAnnotations | 🚀 **vs DataAnnotations** | 💪 **vs FluentValidation** |
+That is a 2014 laptop CPU running .NET 8. These numbers are kept for history, but they should
+not be used to size anything and the multiples below do not reproduce on current hardware.
+
+| Validation Scenario | **Sannr** | FluentValidation | DataAnnotations | vs DataAnnotations | vs FluentValidation |
 |---------------------|-----------|-----------------|----------------|-------------------------|--------------------------|
 | **Simple Model** (3 fields) | **207.8 ns** | 1,371.3 ns | 2,802.4 ns | **13.5x faster** | **6.6x faster** |
 | **Complex Model** (15 fields) | **623.5 ns** | 5,682.9 ns | 12,156.7 ns | **20x faster** | **9x faster** |
-| **Async Validation** | **183.8 ns** | N/A | N/A | **Fastest async** | **Fastest async** |
+| **Async Validation** | **183.8 ns** | N/A | N/A | n/a | n/a |
 | **Memory (Simple)** | **256 B** | 736 B | 2,080 B | **87% reduction** | **65% reduction** |
 | **Memory (Complex)** | **392 B** | 1,208 B | 8,192 B | **95% reduction** | **67% reduction** |
+
+### Independent re-measurement
+
+An independent benchmark of a three-field model on current hardware (Snapdragon X Elite
+X1E80100, ARM64, .NET 10.0.12, BenchmarkDotNet 0.15.8) in the
+[viking-air](https://github.com/Digvijay/viking-air) integration demo:
+
+| Library | Mean | Allocated |
+|---|---:|---:|
+| **Sannr** | **56.59 ns** | **256 B** |
+| FluentValidation | 164.51 ns | 696 B |
+| DataAnnotations | 366.83 ns | 1224 B |
+
+Sannr is 2.9x faster than FluentValidation and 6.5x faster than DataAnnotations there — a real
+and useful advantage, but roughly half the multiples reported above. Sannr's own absolute
+numbers and allocation figures reproduce closely; the competing libraries have simply improved
+since the original run. Quote the range, not the maximum.
 
 ### Performance Visualization: The "Wow" Factor
 

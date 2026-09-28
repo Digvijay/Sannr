@@ -1,11 +1,11 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <TargetFramework>net8.0</TargetFramework>
+    <TargetFrameworks>$(ToolkitLibraryTargetFrameworks)</TargetFrameworks>
     <Nullable>enable</Nullable>
     <IsAotCompatible Condition="$([MSBuild]::IsTargetFrameworkCompatible('$(TargetFramework)', 'net8.0'))">true</IsAotCompatible> <!-- Ensures AOT compatibility for performance and deployment -->
     
     <PackageId>Sannr</PackageId>
-    <Version>1.6.0</Version>
+    <Version>1.7.0</Version>
     <Authors>Digvijay Chauhan</Authors>
     <Description>The AOT-first validation engine for .NET. (Single Package)</Description>
     <PackageTags>validation;aot;aspnetcore;performance;enterprise;reflection;source-generator</PackageTags>
@@ -17,15 +17,15 @@
     <RepositoryType>git</RepositoryType>
     <PackageIcon>icon.png</PackageIcon>
     <PackageReadmeFile>README.md</PackageReadmeFile>
-    <PackageReleaseNotes>v1.6.0 - Universal AOT Validation Support 🚀
-    - Universal Library Support: Sannr now works out-of-the-box in Class Libraries without any ASP.NET Core dependencies.
-    - Conditional OpenAPI Synergy: Source generator automatically detects your environment and only emits OpenAPI registration code when Swashbuckle/AspNetCore is present.
-    - Swashbuckle v10 Safety: New SANN005 analyzer warns if your SannrOpenApiVersion configuration doesn't match your project references.
-    - Improved SANN004 Diagnostics: More precise error reporting for missing 'partial' keywords.
-    - Dev Experience: Enabled EmitCompilerGeneratedFiles with automatic item exclusion for better debugging.</PackageReleaseNotes>
+    <PackageReleaseNotes>v1.7.0 - OSPO readiness
+    - Multi-targets .NET 8 and .NET 10, with opt-in .NET 11 preview validation in CI.
+    - Fixes ASP.NET Core validation wiring and fails closed when an endpoint has no registered validator.
+    - Retargets the generator to netstandard2.0 and makes generated output deterministic.
+    - Updates dependency floors and adds governance, dependency audit, and AOT validation checks.</PackageReleaseNotes>
     
-    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <IncludeBuildOutput>true</IncludeBuildOutput>
+    <!-- CopyProjectReferencesToPackage depends on ResolveReferences, which would rebuild references under pack no-build (NETSDK1085). -->
+    <BuildProjectReferences Condition="'$(NoBuild)' == 'true'">false</BuildProjectReferences>
     <TargetsForTfmSpecificBuildOutput>$(TargetsForTfmSpecificBuildOutput);CopyProjectReferencesToPackage</TargetsForTfmSpecificBuildOutput>
   </PropertyGroup>
 
@@ -62,3 +62,4 @@
   </Target>
 
 </Project>
+

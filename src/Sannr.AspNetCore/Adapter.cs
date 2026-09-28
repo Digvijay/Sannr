@@ -54,6 +54,26 @@ public class SannrValidationOptions
     public bool EnableEnhancedErrorResponses { get; set; }
 
     /// <summary>
+    /// Gets or sets whether an endpoint protected by <c>WithSannrValidation</c> must have a
+    /// registered validator for every model parameter it binds.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// Defaults to <see langword="true"/>, which makes Sannr <em>fail closed</em>. When an
+    /// endpoint binds a model that has no registered validator, endpoint construction throws
+    /// rather than silently allowing unvalidated input through.
+    /// </para>
+    /// <para>
+    /// Prior to 1.7.0 the behaviour was the opposite: a missing validator meant the request was
+    /// accepted without validation, and nothing was logged. A generator, registration or wiring
+    /// failure therefore presented as "all input is valid". Setting this to
+    /// <see langword="false"/> restores that behaviour and is not recommended; if you do set it,
+    /// do so deliberately and record why.
+    /// </para>
+    /// </remarks>
+    public bool RequireValidator { get; set; } = true;
+
+    /// <summary>
     /// Gets or sets whether to include validation rule metadata in error responses.
     /// </summary>
     public bool IncludeValidationRuleMetadata { get; set; } = true;

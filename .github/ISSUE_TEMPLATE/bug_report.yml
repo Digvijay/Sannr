@@ -1,50 +1,70 @@
 name: Bug report
-description: Create a report to help us improve
-labels: ["bug"]
+description: Report a defect so it can be reproduced and fixed
+title: "[Bug]: "
+labels: ["bug", "needs-triage"]
 body:
   - type: markdown
     attributes:
       value: |
-        Thanks for taking the time to fill out this bug report!
+        Thanks for filing a report. Please do not report security vulnerabilities here —
+        see SECURITY.md for the private reporting process.
+
   - type: textarea
     id: what-happened
     attributes:
       label: What happened?
-      description: Also tell us, what did you expect to happen?
-      placeholder: Tell us what you see!
+      description: Describe the actual behaviour, including any exception and stack trace.
     validations:
       required: true
+
   - type: textarea
-    id: reproduction
+    id: expected
     attributes:
-      label: Reproduction Steps
-      description: Please provide a minimal reproduction or a code snippet.
-      placeholder: |
-        1. ...
-        2. ...
+      label: What did you expect to happen?
     validations:
       required: true
+
+  - type: textarea
+    id: repro
+    attributes:
+      label: Minimal reproduction
+      description: The smallest code or repository that reproduces the issue.
+      render: csharp
+    validations:
+      required: true
+
   - type: input
-    id: version
+    id: package-version
     attributes:
-      label: Sannr Version
-      description: What version of Sannr are you using?
-      placeholder: e.g. 1.1.0
+      label: Package version
+      placeholder: e.g. 1.2.0
     validations:
       required: true
-  - type: dropdown
+
+  - type: input
     id: dotnet-version
     attributes:
-      label: .NET Version
-      options:
-        - .NET 8.0
-        - .NET 9.0 (Preview)
-        - Other (please specify in description)
+      label: .NET SDK version
+      description: Output of `dotnet --version`
     validations:
       required: true
-  - type: textarea
-    id: logs
+
+  - type: dropdown
+    id: deployment
     attributes:
-      label: Relevant log output
-      description: Please copy and paste any relevant log output. This will be automatically formatted into code, so no need for backticks.
-      render: shell
+      label: Compilation mode
+      options:
+        - JIT (default)
+        - Native AOT
+        - Trimmed, not AOT
+        - Not sure
+    validations:
+      required: true
+
+  - type: input
+    id: os
+    attributes:
+      label: Operating system and architecture
+      placeholder: e.g. Ubuntu 24.04 x64, Windows 11 arm64
+    validations:
+      required: true
